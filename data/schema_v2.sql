@@ -32,27 +32,8 @@ CREATE TABLE transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Probo-style Opinion Trading
-CREATE TABLE probo_events (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  question TEXT NOT NULL,
-  category TEXT DEFAULT 'finance',
-  image_url TEXT,
-  end_time TIMESTAMPTZ NOT NULL,
-  status TEXT DEFAULT 'active', -- 'active', 'closed', 'void'
-  result TEXT, -- 'yes', 'no'
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- 4. Removed - Opinion Trading Protocol (Probo)
 
-CREATE TABLE probo_predictions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users ON DELETE CASCADE,
-  event_id UUID REFERENCES probo_events ON DELETE CASCADE,
-  choice TEXT NOT NULL, -- 'yes', 'no'
-  amount INT NOT NULL,
-  status TEXT DEFAULT 'pending', -- 'pending', 'won', 'lost', 'void'
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
 
 -- RLS & RPC for Project 1
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -61,11 +42,8 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 CREATE POLICY "Admin full access profiles" ON profiles FOR ALL USING (true);
 CREATE POLICY "Allow public profile creation" ON profiles FOR INSERT WITH CHECK (true);
 
-ALTER TABLE probo_events ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read events" ON probo_events FOR SELECT USING (true);
+-- Probo policies removed
 
-ALTER TABLE probo_predictions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own predictions" ON probo_predictions FOR SELECT USING (auth.uid() = user_id);
 
 CREATE OR REPLACE FUNCTION increment_user_coins(u_id UUID, amount INT)
 RETURNS void AS $$

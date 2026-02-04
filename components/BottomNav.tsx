@@ -9,33 +9,32 @@ export default function BottomNav() {
     const { user } = useUser();
     const pathname = usePathname();
 
-    if (!user || user.is_admin) return null;
+    if (!user || user.is_admin || pathname === '/') return null;
 
     const navItems = [
-        { name: 'HOME', href: '/dashboard', icon: Home },
+        { name: 'DASHBOARD', href: '/dashboard', icon: Home },
         { name: 'TASKS', href: '/earn', icon: CheckSquare },
-        { name: 'PREDICT', href: '/predictions', icon: TrendingUp },
         { name: 'PLAY', href: '/game', icon: Trophy },
         { name: 'WALLET', href: '/wallet', icon: Wallet },
         { name: 'PROFILE', href: '/profile', icon: User },
     ];
 
     return (
-        <nav style={{
-            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-            width: 'calc(100% - 32px)', maxWidth: '600px',
-            background: 'rgba(5, 5, 5, 0.8)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 'var(--radius-md)',
+        <nav className="glass-panel" style={{
+            position: 'fixed', bottom: '0', left: '0', right: '0',
+            width: '100%', height: '44px',
+            background: 'rgba(2, 6, 23, 0.98)',
+            backdropFilter: 'blur(50px)',
+            border: 'none',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
             zIndex: 1000,
-            display: 'flex', justifyContent: 'center',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+            display: 'flex', alignItems: 'center',
+            boxShadow: '0 -5px 25px rgba(0,0,0,0.5)'
         }}>
             <div style={{
-                width: '100%',
-                display: 'flex', justifyContent: 'space-around',
-                padding: '12px 10px'
+                width: '100%', maxWidth: '900px', margin: '0 auto',
+                display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+                height: '100%', padding: '0 12px'
             }}>
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
@@ -46,29 +45,42 @@ export default function BottomNav() {
                             key={item.name}
                             href={item.href}
                             style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-                                color: isActive ? '#fff' : 'var(--text-muted)',
+                                display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px',
+                                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
                                 textDecoration: 'none',
-                                transition: 'all 0.4s var(--transition)',
-                                transform: isActive ? 'scale(1.05)' : 'scale(1)'
+                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                flex: 1,
+                                height: '100%',
+                                justifyContent: 'center',
+                                position: 'relative'
                             }}
                         >
-                            <div style={{
-                                padding: '10px 20px', borderRadius: '12px',
-                                background: isActive ? 'var(--sapphire-glow)' : 'transparent',
-                                border: isActive ? '1px solid var(--sapphire)' : '1px solid transparent',
-                                transition: 'all 0.4s var(--transition)',
-                                color: isActive ? 'var(--sapphire)' : 'currentColor',
-                                boxShadow: isActive ? '0 0 20px rgba(0, 112, 243, 0.2)' : 'none'
-                            }}>
-                                <Icon size={22} color={isActive ? 'var(--sapphire)' : 'currentColor'} strokeWidth={isActive ? 2.5 : 2} />
-                            </div>
+                            <Icon
+                                size={16}
+                                color={isActive ? 'var(--primary)' : 'currentColor'}
+                                strokeWidth={isActive ? 3 : 2}
+                                style={{
+                                    transition: '0.3s',
+                                    filter: isActive ? 'drop-shadow(0 0 8px var(--primary-glow))' : 'none'
+                                }}
+                            />
                             <span style={{
-                                fontSize: '0.6rem', fontWeight: '950',
-                                letterSpacing: '1.5px',
-                                opacity: isActive ? 1 : 0.5,
-                                color: isActive ? '#fff' : 'inherit'
+                                fontSize: '0.65rem', fontWeight: '950',
+                                letterSpacing: '1px',
+                                opacity: isActive ? 1 : 0.4,
+                                textTransform: 'uppercase',
+                                transition: '0.3s'
                             }}>{item.name}</span>
+
+                            {/* Minimalism: Precision Top Glow */}
+                            {isActive && (
+                                <div style={{
+                                    position: 'absolute', top: '-1px', left: '15%', right: '15%', height: '2px',
+                                    background: 'var(--primary)',
+                                    boxShadow: '0 0 15px var(--primary-glow)',
+                                    borderRadius: '0 0 4px 4px'
+                                }} />
+                            )}
                         </Link>
                     );
                 })}

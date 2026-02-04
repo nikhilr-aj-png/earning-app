@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         // 2. Fetch User Profile
         const { data: profile, error: profileError } = await supabaseMain
             .from('profiles')
-            .select('coins')
+            .select('coins, is_premium')
             .eq('id', userId)
             .single();
 
@@ -32,17 +32,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
         }
 
-        const newBalance = profile.coins + task.reward;
+        const isPremium = profile.is_premium === true;
+        const baseReward = task.reward;
+        const booster = isPremium ? Math.floor(baseReward * 0.2) : 0;
+        const totalReward = baseReward + booster;
+        const newBalance = (profile.coins || 0) + totalReward;
 
-        // 3. Perform Transaction and Update Balance (Note: In production use an extension or RPC for transaction atomicity)
+        // 3. Record Transaction
         const { error: txError } = await supabaseMain
             .from('transactions')
             .insert([
                 {
                     user_id: userId,
-                    amount: task.reward,
+                    amount: totalReward,
                     type: 'earn',
-                    description: `Completed task: ${task.title}`
+                    description: `Completed task: ${task.title} ${isPremium ? '(+20% PREMIUM BOOST)' : ''}`
                 }
             ]);
 
@@ -59,7 +63,13 @@ export async function POST(request: Request) {
             throw new Error('Failed to update balance');
         }
 
-        return NextResponse.json({ success: true, reward: task.reward, newBalance });
+        return NextResponse.json({
+            success: true,
+            reward: totalReward,
+            base: baseReward,
+            bonus: booster,
+            newBalance
+        });
     } catch (error: any) {
         console.error('Task Completion Error:', error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

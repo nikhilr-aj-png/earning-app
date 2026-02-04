@@ -60,7 +60,10 @@ export async function POST(req: Request) {
             email: user.email,
             name: finalProfile.name,
             coins: finalProfile.coins,
-            is_admin: finalProfile.is_admin || false
+            is_admin: finalProfile.is_admin || false,
+            is_premium: finalProfile.is_premium || false,
+            premium_until: finalProfile.premium_until,
+            is_blocked: finalProfile.is_blocked || false
         });
 
     } catch (error: any) {

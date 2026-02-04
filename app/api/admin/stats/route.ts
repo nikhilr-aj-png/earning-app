@@ -7,6 +7,17 @@ export async function GET(request: Request) {
         const userId = request.headers.get('x-user-id');
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+        // VERIFY ADMIN PRIVILEGES
+        const { data: profile, error: profileError } = await supabaseMain
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single();
+
+        if (profileError || !profile?.is_admin) {
+            return NextResponse.json({ error: 'Forbidden. Admin privileges required.' }, { status: 403 });
+        }
+
         // 1. Total User Count
         const { count: totalUsers, error: userError } = await supabaseMain
             .from('profiles')

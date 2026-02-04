@@ -3,6 +3,19 @@ import { supabaseMain } from '@/lib/supabase';
 
 export async function GET(request: Request) {
     try {
+        const userId = request.headers.get('x-user-id');
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const { data: profile, error: profileError } = await supabaseMain
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single();
+
+        if (profileError || !profile?.is_admin) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         const { data: tasks, error } = await supabaseMain
             .from('tasks')
             .select('*')
@@ -17,6 +30,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
+        const userId = request.headers.get('x-user-id');
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const { data: profile, error: profileError } = await supabaseMain
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single();
+
+        if (profileError || !profile?.is_admin) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         const { title, reward, type, url, cooldown } = await request.json();
         const id = 't' + Date.now();
 
@@ -35,6 +61,19 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
+        const userId = request.headers.get('x-user-id');
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const { data: profile, error: profileError } = await supabaseMain
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single();
+
+        if (profileError || !profile?.is_admin) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 

@@ -7,6 +7,10 @@ interface User {
     email: string;
     coins: number;
     referral_code: string;
+    is_admin: boolean;
+    is_premium: boolean;
+    premium_until?: string;
+    is_blocked: boolean;
 }
 
 interface UserState {

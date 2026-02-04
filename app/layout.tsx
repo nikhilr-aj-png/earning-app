@@ -55,8 +55,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
         <ClientProviders>
-          <div className="min-h-screen" style={{ display: 'flex', flexDirection: 'column' }}>
-            <main style={{ flex: 1 }}>
+          <div className="min-h-screen" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <main style={{ flex: 1, width: '100%' }}>
               {children}
             </main>
             <Footer />

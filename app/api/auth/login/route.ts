@@ -30,7 +30,10 @@ export async function POST(req: Request) {
             email: user.email,
             name: profile.name,
             coins: profile.coins,
-            is_admin: profile.is_admin || false
+            is_admin: profile.is_admin || false,
+            is_premium: profile.is_premium || false,
+            premium_until: profile.premium_until,
+            is_blocked: profile.is_blocked || false
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 400 });

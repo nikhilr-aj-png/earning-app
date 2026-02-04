@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 
 export default function Footer() {
     const pathname = usePathname();
-    const isAuthPage = pathname === "/";
+    const isHomePage = pathname === "/";
 
-    if (isAuthPage) return null;
+    if (!isHomePage) return null;
 
     return (
         <footer style={{
@@ -38,23 +38,71 @@ export default function Footer() {
 
                     {/* Navigation Section */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase" }}>OPERATIONS</h4>
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
-                            <li><Link href="/dashboard" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Dashboard</Link></li>
-                            <li><Link href="/game" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Arena</Link></li>
-                            <li><Link href="/predictions" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Predict</Link></li>
-                            <li><Link href="/earn" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Tasks</Link></li>
+                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", color: 'var(--primary)' }}>OPERATIONS</h4>
+                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <li>
+                                <Link href="/dashboard" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)' }}>
+                                        <Zap size={14} color="var(--primary)" />
+                                    </div>
+                                    Dashboard
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/game" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(34, 197, 94, 0.1)' }}>
+                                        <Zap size={14} color="var(--emerald)" />
+                                    </div>
+                                    Arena
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/earn" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(250, 204, 21, 0.1)' }}>
+                                        <Zap size={14} color="var(--gold)" />
+                                    </div>
+                                    Tasks
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 
                     {/* Support Section */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase" }}>SUPPORT</h4>
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
-                            <li><Link href="/support" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Help Center</Link></li>
-                            <li><Link href="/about" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>About Identity</Link></li>
-                            <li><Link href="/terms" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Terms of Service</Link></li>
-                            <li><Link href="/privacy" style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.8rem", transition: "0.3s" }}>Privacy Protocol</Link></li>
+                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", color: 'var(--violet)' }}>EXECUTIVE SUPPORT</h4>
+                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <li>
+                                <Link href="/support" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.1)' }}>
+                                        <Mail size={14} color="var(--violet)" />
+                                    </div>
+                                    Help Center
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/about" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)' }}>
+                                        <Shield size={14} color="var(--primary)" />
+                                    </div>
+                                    About Identity
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/terms" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(148, 163, 184, 0.1)' }}>
+                                        <ExternalLink size={14} color="var(--text-muted)" />
+                                    </div>
+                                    Terms of Service
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/privacy" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
+                                    <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(244, 63, 94, 0.1)' }}>
+                                        <Shield size={14} color="var(--rose)" />
+                                    </div>
+                                    Privacy Protocol
+                                </Link>
+                            </li>
                         </ul>
                     </div>
                 </div>

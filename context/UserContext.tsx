@@ -13,6 +13,9 @@ interface UserContextType {
     verifyOtp: (email: string, token: string) => Promise<void>;
     logout: () => void;
     refreshUser: () => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
+    resetPassword: (email: string, token: string, newPassword: string) => Promise<void>;
+    resendOtp: (email: string, type: 'signup' | 'recovery') => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -40,6 +43,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
+            if (data.is_blocked) {
+                showToast("ACCESS DENIED. ACCOUNT SUSPENDED.", "error");
+                return;
+            }
             setUser(data);
             showToast("ACCESS GRANTED. WELCOME EXECUTIVE.", "success");
             router.push('/dashboard');
@@ -78,6 +85,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
+            if (data.is_blocked) {
+                showToast("ACCESS DENIED. ACCOUNT SUSPENDED.", "error");
+                return;
+            }
             setUser(data);
             showToast("IDENTITY VERIFIED. ENTRY SECURED.", "success");
             router.push('/dashboard');
@@ -101,15 +112,79 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             });
             if (res.ok) {
                 const newData = await res.json();
+                if (newData.is_blocked) {
+                    showToast("ACCESS DENIED. ACCOUNT SUSPENDED.", "error");
+                    logout();
+                    return;
+                }
                 setUser(newData);
+            } else if (res.status === 404 || res.status === 401) {
+                // Profile missing or unauthorized - terminated session
+                logout();
             }
         } catch (err) {
             console.error("Failed to refresh user", err);
         }
     };
 
+    const forgotPassword = async (email: string) => {
+        try {
+            const res = await fetch('/api/auth/forgot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            showToast("RECOVERY CODE TRANSMITTED.", "info");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Recovery request failed';
+            showToast(message.toUpperCase(), "error");
+            throw err;
+        }
+    };
+
+    const resetPassword = async (email: string, token: string, newPassword: string) => {
+        try {
+            const res = await fetch('/api/auth/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, token, newPassword }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showToast("PROTOCOL UPDATED. ACCESS RESTORED.", "success");
+            // Automatically log them in or ask them to login?
+            // The reset API route uses updateUser which update the session.
+            // But we should probably redirect or refresh.
+            router.push('/');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Reset failed';
+            showToast(message.toUpperCase(), "error");
+            throw err;
+        }
+    };
+
+    const resendOtp = async (email: string, type: 'signup' | 'recovery') => {
+        try {
+            const res = await fetch('/api/auth/otp/resend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, type }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            showToast("VERIFICATION PROTOCOL RE-TRANSMITTED.", "info");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Resend failed';
+            showToast(message.toUpperCase(), "error");
+            throw err;
+        }
+    };
+
     return (
-        <UserContext.Provider value={{ user, loading, login, register, verifyOtp, logout, refreshUser }}>
+        <UserContext.Provider value={{ user, loading, login, register, verifyOtp, logout, refreshUser, forgotPassword, resetPassword, resendOtp }}>
             {children}
         </UserContext.Provider>
     );

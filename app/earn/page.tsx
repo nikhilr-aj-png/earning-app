@@ -79,7 +79,7 @@ export default function EarnPage() {
                     <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '4px' }}>OPERATIONAL FLOW</span>
                 </div>
                 <h1 className="font-heading" style={{ fontSize: '3.2rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '8px', lineHeight: 1.1 }}>Flow Center</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.5px', lineHeight: '1.6', maxWidth: '500px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.5px', lineHeight: '1.6', width: '99%', maxWidth: 'var(--max-width)' }}>
                     Execute verified protocols to scale your portfolio. Global mission parameters are optimized for high-volume acquisition.
                 </p>
                 {/* Subtle Decorative Glow */}
@@ -89,39 +89,40 @@ export default function EarnPage() {
             {/* Task Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px', marginBottom: '48px' }}>
                 {tasks.map((task: Task) => (
-                    <div key={task.id} className="glass-panel" style={{
-                        padding: '32px',
-                        border: '1px solid #111',
-                        borderRadius: '12px',
-                        background: 'rgba(5,5,5,0.8)',
-                        display: 'flex', flexDirection: 'column', gap: '28px',
+                    <div key={task.id} className="glass-panel glass-vibrant" style={{
+                        padding: '40px',
+                        border: '1.5px solid var(--emerald)',
+                        borderRadius: '24px',
+                        background: 'linear-gradient(135deg, #065f46 0%, #020617 100%)',
+                        display: 'flex', flexDirection: 'column', gap: '32px',
                         transition: 'all 0.5s var(--transition)',
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        boxShadow: '0 20px 40px rgba(16, 185, 129, 0.2)'
                     }}>
-                        <div className="flex" style={{ gap: '24px', alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                        <div className="flex" style={{ gap: '28px', alignItems: 'center', position: 'relative', zIndex: 2 }}>
                             <div style={{
-                                width: '64px', height: '64px',
-                                borderRadius: '12px',
-                                border: '1px solid var(--glass-border)',
-                                background: 'rgba(255,255,255,0.02)',
-                                color: 'var(--emerald)',
+                                width: '80px', height: '80px',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'rgba(255,255,255,0.1)',
+                                color: '#fff',
+                                boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
                                 flexShrink: 0
                             }} className="flex-center">
-                                {task.type === "ad" && <PlayCircle size={24} strokeWidth={1.5} />}
-                                {task.type === "visit" && <ExternalLink size={24} strokeWidth={1.5} />}
-                                {task.type === "checkin" && <CheckCircle2 size={24} strokeWidth={1.5} />}
-                                {task.type === "quiz" && <Clock size={24} strokeWidth={1.5} />}
+                                {task.type === "ad" && <PlayCircle size={32} strokeWidth={2} />}
+                                {task.type === "visit" && <ExternalLink size={32} strokeWidth={2} />}
+                                {task.type === "checkin" && <CheckCircle2 size={32} strokeWidth={2} />}
+                                {task.type === "quiz" && <Clock size={32} strokeWidth={2} />}
                             </div>
                             <div style={{ flex: 1 }}>
-                                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '6px', marginBottom: '4px' }}>
-                                    <h3 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', letterSpacing: '0.5px' }}>{task.title.toUpperCase()}</h3>
-                                    {task.reward >= 100 && <span className="badge-gold" style={{ fontSize: '0.5rem', padding: '1px 6px', borderRadius: '2px' }}>HIGH REWARD</span>}
+                                <div className="flex" style={{ flexDirection: 'column', gap: '4px' }}>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', letterSpacing: '1px' }}>{task.title.toUpperCase()}</h3>
+                                    {task.reward >= 100 && <div className="badge-gold" style={{ fontSize: '0.55rem', alignSelf: 'flex-start' }}>HIGH REWARD NODE</div>}
                                 </div>
-                                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px' }}>
-                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--emerald)' }} />
-                                    <span style={{ color: 'var(--emerald)', fontSize: '1.25rem', fontWeight: '950', letterSpacing: '-1px' }}>{task.reward.toLocaleString()}</span>
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px', marginTop: '4px' }}>FLOW CREDIT</span>
+                                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginTop: '12px' }}>
+                                    <span style={{ color: 'var(--emerald)', fontSize: '1.75rem', fontWeight: '950', letterSpacing: '-2px' }}>{task.reward.toLocaleString()}</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '950', letterSpacing: '2px', marginTop: '4px' }}>FLOW CAPITAL</span>
                                 </div>
                             </div>
                         </div>
@@ -132,15 +133,15 @@ export default function EarnPage() {
                             className="btn"
                             style={{
                                 width: '100%',
-                                height: '64px',
-                                fontSize: '0.8rem',
-                                borderRadius: '8px',
-                                background: 'var(--emerald)',
+                                height: '72px',
+                                fontSize: '0.9rem',
+                                borderRadius: '16px',
+                                background: '#fff',
                                 color: '#000',
                                 border: 'none',
                                 fontWeight: '950',
-                                letterSpacing: '3px',
-                                boxShadow: '0 10px 20px rgba(16, 185, 129, 0.1)'
+                                letterSpacing: '4px',
+                                boxShadow: '0 15px 30px rgba(255,255,255,0.2)'
                             }}
                         >
                             {completingId === task.id ? "EXECUTING PROTOCOL..." : "EXECUTE MISSION"}

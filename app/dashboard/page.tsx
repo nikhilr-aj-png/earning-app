@@ -3,7 +3,7 @@
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity } from "lucide-react";
+import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity, Copy, Crown } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/context/ToastContext";
 
@@ -40,89 +40,95 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="animate-fade-in" style={{ padding: '24px 20px' }}>
-            {/* Live Operational Ticker */}
-            <div className="ticker-wrap glass-panel" style={{
-                padding: '12px 0',
-                marginBottom: '24px',
-                borderRadius: '2px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(0,0,0,0.5)',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                <div className="ticker-item" style={{ fontSize: '0.65rem', fontWeight: '900', color: 'var(--emerald)', letterSpacing: '2px' }}>
-                    LIVE: EXECUTIVE ID 82** ACQUIRED 500 FLOW • ARENA ROUND #812 PAYOUT: 1.25M FLOW • NETWORK VOLUME: 4.82M • VIP UPGRADE: USER_ELITE GOLD
-                </div>
+        <div className="animate-fade-in" style={{ padding: '24px 8px' }}>
+            {/* Branding Header - Link to Landing Page */}
+            <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 10 }}>
+                <Link href="/" className="flex-center" style={{
+                    gap: '12px', textDecoration: 'none', padding: '12px 24px', borderRadius: 'full', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)'
+                }}>
+                    <Zap size={18} color="var(--primary)" fill="var(--primary)" />
+                    <span style={{ color: '#fff', fontWeight: '950', letterSpacing: '4px', fontSize: '0.9rem' }}>EARNFLOW</span>
+                </Link>
             </div>
 
+
+            {/* Decorative Background Bloom */}
+            <div style={{ position: 'fixed', top: '10%', left: '-10%', width: '400px', height: '400px', background: 'var(--sapphire)', filter: 'blur(150px)', opacity: 0.1, pointerEvents: 'none', zIndex: 0 }} />
+            <div style={{ position: 'fixed', bottom: '20%', right: '-10%', width: '300px', height: '300px', background: 'var(--violet)', filter: 'blur(150px)', opacity: 0.1, pointerEvents: 'none', zIndex: 0 }} />
+
             {/* Header Section */}
-            <div className="flex-between" style={{ marginBottom: '32px' }}>
+            <div className="flex-between" style={{ marginBottom: '32px', position: 'relative', zIndex: 1 }}>
                 <div>
                     <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>
                             {greeting},
                         </span>
-                        <div className="badge-gold" style={{
-                            fontSize: '0.55rem',
-                            fontWeight: '900',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            letterSpacing: '1px'
-                        }}>VIP GOLD</div>
+                        <div className="badge-gold" style={{ fontSize: '0.55rem' }}>VIP GOLD</div>
                     </div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.5px' }}>
-                        {user.name}
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: '950', letterSpacing: '-2px' }}>
+                        {user.name.toUpperCase()}
                     </h1>
                 </div>
                 <button
                     onClick={logout}
                     className="glass-panel flex-center"
-                    style={{ padding: '12px', borderRadius: '12px', color: 'var(--text-dim)', border: '1px solid var(--glass-border)' }}
+                    style={{ padding: '12px', borderRadius: '16px', color: 'var(--text-dim)', border: '1px solid var(--glass-border)', background: 'var(--bg-secondary)' }}
                 >
-                    <LogOut size={20} strokeWidth={1.5} />
+                    <LogOut size={20} strokeWidth={2.5} />
                 </button>
             </div>
 
-            {/* Executive Balance Card - Vibrant sapphire */}
+            {/* Executive Balance Card - Extreme Vibrant */}
             <div className="glass-panel glass-vibrant" style={{
-                padding: '40px 32px',
-                background: 'linear-gradient(135deg, #001f3f 0%, #000 70%)',
-                border: '1px solid var(--sapphire)',
+                padding: '60px 40px',
+                background: 'linear-gradient(135deg, #1e40af 0%, #7e22ce 50%, #020617 100%)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 marginBottom: '40px',
                 position: 'relative',
                 overflow: 'hidden',
-                borderRadius: '8px',
-                boxShadow: '0 20px 40px rgba(0, 112, 243, 0.15)'
+                borderRadius: '32px',
+                boxShadow: '0 40px 80px rgba(59, 130, 246, 0.3)',
+                zIndex: 1
             }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                    <div className="flex-between" style={{ marginBottom: '16px' }}>
-                        <div className="flex-center" style={{ gap: '8px' }}>
-                            <div style={{ padding: '6px', borderRadius: '4px', background: 'var(--sapphire-glow)' }}>
-                                <Zap size={14} color="var(--sapphire)" fill="currentColor" />
+                    <div className="flex-between" style={{ marginBottom: '24px' }}>
+                        <div className="flex-center" style={{ gap: '16px' }}>
+                            <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
+                                <Zap size={24} color="#fff" fill="currentColor" />
                             </div>
-                            <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px' }}>
-                                PORTFOLIO ASSETS
+                            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>
+                                ASSET CONTROL
+                            </span>
+                        </div>
+                        {user.is_premium ? (
+                            <div className="badge-gold flex-center" style={{ gap: '8px', padding: '8px 16px', borderRadius: '12px' }}>
+                                <Crown size={14} fill="currentColor" />
+                                <span style={{ fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>PREMIUM ELITE</span>
+                            </div>
+                        ) : (
+                            <Link href="/premium" className="glass-panel flex-center" style={{ gap: '8px', padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px', color: '#fff', opacity: 0.6 }}>FREE TIER</span>
+                                <span style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '1px' }}>UPGRADE</span>
+                            </Link>
+                        )}
+                    </div>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '48px' }}>
+                        <span style={{ fontSize: '5rem', fontWeight: '950', letterSpacing: '-6px', lineHeight: 1, color: '#fff' }}>
+                            {user.coins.toLocaleString()}
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
+                            <span style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', opacity: 0.8, letterSpacing: '4px' }}>FLOW</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '1px' }}>
+                                ≈ ₹{(user.coins / 10).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>
-                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '32px' }}>
-                        <span style={{ fontSize: '3.8rem', fontWeight: '900', letterSpacing: '-4px', fontFamily: 'var(--font-outfit)', color: '#fff' }}>
-                            {user.coins.toLocaleString()}
-                        </span>
-                        <span style={{ fontSize: '0.8rem', fontWeight: '900', color: 'var(--sapphire)', marginTop: '16px', letterSpacing: '2px' }}>FLOW</span>
-                    </div>
-                    <Link href="/wallet" className="btn" style={{ width: '100%', fontSize: '0.75rem', padding: '20px', background: '#fff', color: '#000' }}>
-                        MANAGE CAPITAL <ChevronRight size={18} strokeWidth={3} />
+                    <Link href="/wallet" className="btn" style={{ width: '100%', height: '72px', fontSize: '0.9rem', borderRadius: '16px', background: '#fff', color: '#000', boxShadow: '0 15px 30px rgba(255,255,255,0.2)' }}>
+                        WITHDRAWAL <ChevronRight size={24} strokeWidth={3} />
                     </Link>
                 </div>
-                {/* Decorative Elements - Vibrant Sapphire Glow */}
-                <div style={{
-                    position: 'absolute', right: '-60px', bottom: '-60px',
-                    opacity: 0.1, color: 'var(--sapphire)', transform: 'rotate(-10deg)'
-                }}>
-                    <Zap size={300} strokeWidth={1} />
-                </div>
+                {/* Visual Accent */}
+                <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '250px', height: '250px', background: 'var(--violet)', filter: 'blur(100px)', opacity: 0.3 }} />
             </div>
 
             {/* Market Analytics - Global Velocity */}
@@ -220,41 +226,45 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Referral Executive Card - Vibrant Emerald */}
-            <div className="glass-panel" style={{
-                padding: '40px',
-                background: 'linear-gradient(135deg, #064e3b 0%, #000 80%)',
-                border: '1px solid var(--emerald)',
-                borderRadius: '8px',
+            {/* Referral Executive Card - Extreme Emerald */}
+            <div className="glass-panel glass-vibrant" style={{
+                padding: '48px',
+                background: 'linear-gradient(135deg, #065f46 0%, #1e40af 100%)',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                borderRadius: '24px',
+                marginBottom: '40px',
                 position: 'relative',
-                boxShadow: '0 20px 40px rgba(16, 185, 129, 0.1)'
+                overflow: 'hidden',
+                zIndex: 1,
+                boxShadow: '0 30px 60px rgba(16, 185, 129, 0.2)'
             }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
                     <div className="flex-between" style={{ marginBottom: '24px' }}>
-                        <div className="flex-center" style={{ gap: '12px' }}>
-                            <div style={{ padding: '8px', borderRadius: '6px', background: 'var(--emerald-glow)' }}>
-                                <Users size={20} color="var(--emerald)" fill="currentColor" strokeWidth={1} />
+                        <div className="flex-center" style={{ gap: '16px' }}>
+                            <div style={{ padding: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                                <Users size={24} color="#fff" />
                             </div>
-                            <h4 style={{ fontWeight: '900', fontSize: '0.8rem', letterSpacing: '2px', color: '#fff' }}>NETWORK GROWTH</h4>
+                            <h4 style={{ fontWeight: '950', fontSize: '1rem', letterSpacing: '4px', color: '#fff' }}>NETWORK SCALE</h4>
                         </div>
-                        <span style={{ color: 'var(--emerald)', fontWeight: '900', fontSize: '0.7rem', letterSpacing: '2px' }}>+100 FLOW</span>
+                        <span style={{ color: 'var(--gold)', fontWeight: '950', fontSize: '0.8rem', letterSpacing: '2px' }}>+100 FLOW</span>
                     </div>
-                    <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '32px', lineHeight: '1.6' }}>
-                        Scale the EarnFlow ecosystem. Disburse assets instantly to your portfolio for every successfully verified onboarding.
+                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', marginBottom: '40px', lineHeight: '1.6', fontWeight: '600' }}>
+                        Scale the ecosystem by onboarding high-value nodes. <br />
+                        <span style={{ color: 'var(--gold)' }}>ACQUIRE PREMIUM BONUSES INSTANTLY.</span>
                     </p>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{
                             flex: 1,
                             background: 'rgba(0,0,0,0.5)',
-                            border: '1px solid #065f46',
-                            borderRadius: '4px',
-                            padding: '16px',
-                            fontSize: '1.2rem',
-                            fontFamily: 'var(--font-outfit)',
-                            fontWeight: '900',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            fontSize: '1.75rem',
+                            fontWeight: '950',
                             color: '#fff',
-                            letterSpacing: '6px',
-                            textAlign: 'center'
+                            letterSpacing: '10px',
+                            textAlign: 'center',
+                            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
                         }}>
                             {user.referral_code}
                         </div>
@@ -264,20 +274,14 @@ export default function Dashboard() {
                                 showToast("REFERRAL CODE COPIED", "success");
                             }}
                             className="btn"
-                            style={{
-                                width: 'auto',
-                                padding: '0 32px',
-                                background: 'var(--emerald)',
-                                color: '#000',
-                                border: 'none'
-                            }}
+                            style={{ width: '80px', background: '#fff', color: '#000', borderRadius: '16px' }}
                         >
-                            COPY
+                            <Copy size={28} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
-                {/* Decorative Pattern */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+                {/* Visual Accent */}
+                <div style={{ position: 'absolute', bottom: '-20%', left: '-10%', width: '150px', height: '150px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.3 }} />
             </div>
         </div>
     );
