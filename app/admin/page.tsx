@@ -100,7 +100,14 @@ export default function AdminPage() {
         if (amount) adjustCoinsMutation.mutate({ userId, amount });
     };
 
-    if (!user) return <div className="flex-center" style={{ minHeight: '80vh' }}>ACCESS DENIED.</div>;
+    if (!user || !user.is_admin) return (
+        <div className="flex-center" style={{ minHeight: '80vh', flexDirection: 'column', gap: '20px' }}>
+            <ShieldAlert size={48} color="var(--error)" />
+            <h2 style={{ fontWeight: '900', color: 'var(--error)' }}>UNAUTHORIZED ACCESS</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Admin privileges required.</p>
+            <Link href="/dashboard" className="btn" style={{ background: 'var(--bg-secondary)', color: '#fff' }}>BACK TO DASHBOARD</Link>
+        </div>
+    );
 
     return (
         <div className="animate-fade-in" style={{ padding: '24px 20px', minHeight: '90vh' }}>

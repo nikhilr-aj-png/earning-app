@@ -56,7 +56,8 @@ export async function POST(req: Request) {
             id: user.id,
             email: user.email,
             name: finalProfile.name,
-            coins: finalProfile.coins
+            coins: finalProfile.coins,
+            is_admin: finalProfile.is_admin || false
         });
 
     } catch (error: any) {
