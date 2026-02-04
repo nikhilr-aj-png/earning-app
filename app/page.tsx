@@ -6,29 +6,47 @@ import { useRouter } from 'next/navigation';
 import { LogIn, UserPlus, Zap, Rocket, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
-  const { user, sendOtp, verifyOtp, loading } = useUser();
+  const { user, login, register, verifyOtp, loading } = useUser();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [name, setName] = useState('');
-  const [refCode, setRefCode] = useState('');
   const [step, setStep] = useState<'email' | 'otp'>('email');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [refCode, setRefCode] = useState("");
+  const [otp, setOtp] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (user && !loading) {
-      router.push('/dashboard');
+      if (user.is_admin) {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     }
   }, [user, loading, router]);
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsSubmitting(true);
+    setError("");
     try {
-      await sendOtp(email);
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await register(email, password, name, refCode);
       setStep('otp');
     } catch (err: any) {
       setError(err.message);
@@ -39,10 +57,10 @@ export default function Home() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsSubmitting(true);
+    setError("");
     try {
-      await verifyOtp(email, otp, isLogin ? undefined : name, isLogin ? undefined : refCode);
+      await verifyOtp(email, otp);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -95,7 +113,7 @@ export default function Home() {
                 </button>
               </div>
 
-              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <form onSubmit={isLogin ? handleLogin : handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {!isLogin && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px' }}>IDENTITY NAME</label>
@@ -120,6 +138,19 @@ export default function Home() {
                     required
                   />
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px' }}>SECRET PASSKEY</label>
+                  <input
+                    type="password" placeholder="••••••••"
+                    value={password} onChange={(e) => setPassword(e.target.value)}
+                    style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '4px', color: '#fff', outline: 'none', transition: '0.3s', fontSize: '0.85rem' }}
+                    onFocus={(e) => e.target.style.borderColor = '#fff'}
+                    onBlur={(e) => e.target.style.borderColor = '#333'}
+                    required
+                  />
+                </div>
+
                 {!isLogin && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px' }}>INVITATION CODE</label>
@@ -136,7 +167,7 @@ export default function Home() {
                 {error && <div style={{ color: '#fff', fontSize: '0.75rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>{error}</div>}
 
                 <button className="btn" type="submit" disabled={isSubmitting} style={{ marginTop: '12px' }}>
-                  {isSubmitting ? 'AUTHORIZING...' : 'REQUEST ACCESS CODE'}
+                  {isSubmitting ? 'AUTHORIZING...' : (isLogin ? 'ENTER FLOW' : 'REQUEST ACCESS')}
                   <Rocket size={16} strokeWidth={3} />
                 </button>
               </form>

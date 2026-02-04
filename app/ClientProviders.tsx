@@ -4,6 +4,8 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UserProvider } from "@/context/UserContext";
 
+import { ToastProvider } from "@/context/ToastContext";
+
 export default function ClientProviders({
     children,
 }: {
@@ -20,9 +22,11 @@ export default function ClientProviders({
 
     return (
         <QueryClientProvider client={queryClient}>
-            <UserProvider>
-                {children}
-            </UserProvider>
+            <ToastProvider>
+                <UserProvider>
+                    {children}
+                </UserProvider>
+            </ToastProvider>
         </QueryClientProvider>
     );
 }

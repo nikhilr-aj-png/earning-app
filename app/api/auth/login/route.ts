@@ -1,38 +1,38 @@
 import { NextResponse } from 'next/server';
 import { supabaseMain } from '@/lib/supabase';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
     try {
-        const { email, password } = await request.json();
+        const { email, password } = await req.json();
 
-        if (!email || !password) {
-            return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
-        }
-
-        // 1. Supabase Auth Login
+        // 1. Sign In with Password
         const { data: authData, error: authError } = await supabaseMain.auth.signInWithPassword({
             email,
-            password,
+            password
         });
 
-        if (authError || !authData.user) {
-            return NextResponse.json({ error: authError?.message || 'Invalid credentials' }, { status: 401 });
-        }
+        if (authError) throw authError;
 
-        // 2. Fetch User Profile
-        const { data: profile, error: profileError } = await supabaseMain
+        const user = authData.user;
+        if (!user) throw new Error("Login failed");
+
+        // 2. Fetch Profile
+        const { data: profile, error: pError } = await supabaseMain
             .from('profiles')
             .select('*')
-            .eq('id', authData.user.id)
+            .eq('id', user.id)
             .single();
 
-        if (profileError) {
-            return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-        }
+        if (pError || !profile) throw new Error("Profile not found");
 
-        return NextResponse.json(profile);
-    } catch (error) {
-        console.error('Login Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({
+            id: user.id,
+            email: user.email,
+            name: profile.name,
+            coins: profile.coins,
+            is_admin: profile.is_admin || false
+        });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
     }
 }

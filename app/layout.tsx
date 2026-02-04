@@ -15,11 +15,26 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "EarnFlow | Premium Earning Platform",
-  description: "The next-generation platform to earn virtual coins with style and ease.",
+  title: "EarnFlow | The Executive Earning Portfolio",
+  description: "Secure, high-fidelity earning platform for professional asset acquisition. Join the elite network of Flow Credit managers.",
+  keywords: ["earning", "flow credits", "professional assets", "secure earning", "executive portfolio"],
+  authors: [{ name: "EarnFlow Global" }],
   icons: {
     icon: "/icon.png",
-  }
+  },
+  openGraph: {
+    title: "EarnFlow | Executive Earning Portfolio",
+    description: "The elite standard in digital asset acquisition.",
+    url: "https://earning-app.vercel.app",
+    siteName: "EarnFlow",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EarnFlow | Executive Earning Portfolio",
+    description: "Transitioning to a new era of secure digital earning.",
+  },
 };
 
 export const viewport = {
@@ -29,6 +44,8 @@ export const viewport = {
   userScalable: false,
 };
 
+import Footer from "@/components/Footer";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,12 +53,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${outfit.variable}`}>
+      <body className={`${inter.variable} ${outfit.variable} antialiased`}>
         <ClientProviders>
-          <main>
-            {children}
-          </main>
-          <BottomNav />
+          <div className="min-h-screen" style={{ display: 'flex', flexDirection: 'column' }}>
+            <main style={{ flex: 1 }}>
+              {children}
+            </main>
+            <Footer />
+            <BottomNav />
+          </div>
         </ClientProviders>
       </body>
     </html>

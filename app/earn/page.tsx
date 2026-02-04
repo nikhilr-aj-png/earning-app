@@ -68,42 +68,45 @@ export default function EarnPage() {
     return (
         <div className="animate-fade-in" style={{ padding: '24px 20px' }}>
             {/* Header Section */}
-            <div style={{ marginBottom: '32px' }}>
-                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                    <Zap size={18} color="var(--primary)" fill="var(--primary)" fillOpacity={0.2} />
-                    <span style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '1px' }}>EARNING OPPORTUNITIES</span>
+            <div style={{ marginBottom: '48px' }}>
+                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+                    <Target size={18} color="#fff" strokeWidth={1} />
+                    <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>OPERATIONAL TASKS</span>
                 </div>
-                <h1 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '8px' }}>Flow Hub</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                    Maximize your balance by completing premium tasks and verified campaigns.
+                <h1 className="font-heading" style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px', marginBottom: '8px' }}>Flow Center</h1>
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', letterSpacing: '1px', lineHeight: '1.6' }}>
+                    Execute high-priority missions to acquire verified Flow Credits.
                 </p>
             </div>
 
             {/* Task Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '48px' }}>
                 {tasks.map((task: Task) => (
-                    <div key={task.id} className="glass-panel" style={{ padding: '16px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                        <div className="flex-between" style={{ marginBottom: '16px', alignItems: 'flex-start' }}>
-                            <div className="flex" style={{ gap: '16px' }}>
-                                <div style={{
-                                    background: 'var(--bg-secondary)',
-                                    width: '48px', height: '48px',
-                                    borderRadius: '14px',
-                                    border: '1px solid var(--glass-border)',
-                                    color: 'var(--primary)',
-                                    flexShrink: 0
-                                }} className="flex-center">
-                                    {task.type === "ad" && <PlayCircle size={24} />}
-                                    {task.type === "visit" && <ExternalLink size={24} />}
-                                    {task.type === "checkin" && <CheckCircle2 size={24} />}
-                                    {task.type === "quiz" && <Clock size={24} />}
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '2px' }}>{task.title}</h3>
-                                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '6px' }}>
-                                        <Coins size={12} color="var(--success)" />
-                                        <span style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: '800' }}>+{task.reward} FLOW</span>
-                                    </div>
+                    <div key={task.id} className="glass-panel" style={{
+                        padding: '32px',
+                        border: '1px solid #222',
+                        borderRadius: '4px',
+                        background: '#000',
+                        display: 'flex', flexDirection: 'column', gap: '24px'
+                    }}>
+                        <div className="flex" style={{ gap: '24px', alignItems: 'center' }}>
+                            <div style={{
+                                width: '56px', height: '56px',
+                                borderRadius: '2px',
+                                border: '1px solid #333',
+                                color: '#fff',
+                                flexShrink: 0
+                            }} className="flex-center">
+                                {task.type === "ad" && <PlayCircle size={28} strokeWidth={1} />}
+                                {task.type === "visit" && <ExternalLink size={28} strokeWidth={1} />}
+                                {task.type === "checkin" && <CheckCircle2 size={28} strokeWidth={1} />}
+                                {task.type === "quiz" && <Clock size={28} strokeWidth={1} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '4px', letterSpacing: '1px' }}>{task.title.toUpperCase()}</h3>
+                                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <span style={{ color: '#fff', fontSize: '1rem', fontWeight: '900' }}>{task.reward}</span>
+                                    <span style={{ color: 'var(--text-dim)', fontSize: '0.6rem', fontWeight: '900', letterSpacing: '2px' }}>FLOW</span>
                                 </div>
                             </div>
                         </div>
@@ -112,28 +115,37 @@ export default function EarnPage() {
                             onClick={() => completeTask(task.id)}
                             disabled={completingId === task.id}
                             className="btn"
-                            style={{ width: '100%', padding: '14px 0', fontSize: '0.85rem', borderRadius: '14px' }}
+                            style={{
+                                width: '100%',
+                                height: '56px',
+                                fontSize: '0.75rem',
+                                borderRadius: '2px',
+                                background: '#fff',
+                                color: '#000',
+                                fontWeight: '900',
+                                letterSpacing: '2px'
+                            }}
                         >
-                            {completingId === task.id ? "SYCHRONIZING..." : "START EARNING"}
+                            {completingId === task.id ? "EXECUTING MISSION..." : "START OPERATION"}
                         </button>
                     </div>
                 ))}
             </div>
 
-            {/* Help Section */}
+            {/* Platform Information */}
             <div className="glass-panel" style={{
-                padding: '28px',
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px dashed var(--glass-border)',
+                padding: '48px',
+                background: 'rgba(255,255,255,0.01)',
+                border: '1px solid #222',
                 textAlign: 'center',
-                marginBottom: '40px'
+                borderRadius: '4px'
             }}>
-                <Info size={24} color="var(--text-muted)" style={{ marginBottom: '12px' }} />
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '16px' }}>
-                    New tasks are added every 24 hours. Check back soon for more rewards!
+                <Info size={32} color="var(--text-dim)" strokeWidth={1} style={{ marginBottom: '24px' }} />
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px', marginBottom: '24px' }}>
+                    MISSION PARAMETERS REFRESH AT 00:00 UTC.
                 </p>
-                <div style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    LEARN MORE ABOUT REWARDS <ChevronRight size={14} />
+                <div style={{ color: '#fff', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', letterSpacing: '2px' }}>
+                    REVIEW OPERATION GUIDELINES <ChevronRight size={14} />
                 </div>
             </div>
         </div>

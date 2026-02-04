@@ -5,11 +5,11 @@ export async function POST(req: Request) {
     try {
         const { email, token, name, referralCode } = await req.json();
 
-        // 1. Verify OTP
+        // 1. Verify OTP for Signup
         const { data: authData, error: authError } = await supabaseMain.auth.verifyOtp({
             email,
             token,
-            type: 'email',
+            type: 'signup', // Change to signup for password-based verification
         });
 
         if (authError) throw authError;
@@ -27,14 +27,17 @@ export async function POST(req: Request) {
         let finalProfile = profile;
 
         if (!profile) {
+            // Get metadata sent during signup
+            const metadata = user.user_metadata || {};
+
             // New user registration
             const { data: newProfile, error: insError } = await supabaseMain
                 .from('profiles')
                 .insert({
                     id: user.id,
                     email: user.email,
-                    name: name || user.email?.split('@')[0],
-                    referred_by: referralCode,
+                    name: metadata.full_name || user.email?.split('@')[0],
+                    referred_by: metadata.referral_code,
                     coins: 100 // Welcome bonus
                 })
                 .select()

@@ -9,10 +9,11 @@ export default function BottomNav() {
     const { user } = useUser();
     const pathname = usePathname();
 
-    if (!user) return null;
+    if (!user || user.is_admin) return null;
 
     const navItems = [
         { name: 'HOME', href: '/dashboard', icon: Home },
+        { name: 'TASKS', href: '/earn', icon: CheckSquare },
         { name: 'PREDICT', href: '/predictions', icon: TrendingUp },
         { name: 'PLAY', href: '/game', icon: Trophy },
         { name: 'WALLET', href: '/wallet', icon: Wallet },

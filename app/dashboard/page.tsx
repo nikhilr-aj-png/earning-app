@@ -2,11 +2,13 @@
 
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
 
 export default function Dashboard() {
     const { user, logout, refreshUser } = useUser();
+    const router = useRouter();
     const [greeting] = useState(() => {
         const hour = new Date().getHours();
         if (hour < 12) return "Good Morning";
@@ -16,7 +18,11 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (user) {
-            refreshUser();
+            if (user.is_admin) {
+                router.push('/admin');
+            } else {
+                refreshUser();
+            }
         }
     }, [user, refreshUser]);
 
