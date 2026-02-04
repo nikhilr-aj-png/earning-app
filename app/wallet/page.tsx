@@ -47,39 +47,49 @@ export default function WalletPage() {
                 <div style={{ width: '40px' }} />
             </div>
 
-            {/* Capital Balance Module */}
-            <div className="glass-panel" style={{
-                padding: '48px 24px',
-                background: '#000',
-                border: '1px solid #fff',
+            {/* Capital Balance Module - Vibrant Sapphire */}
+            <div className="glass-panel glass-vibrant" style={{
+                padding: '60px 32px',
+                background: 'linear-gradient(135deg, #001f3f 0%, #000 100%)',
+                border: '1px solid var(--sapphire)',
                 marginBottom: '40px',
                 textAlign: 'center',
-                borderRadius: '4px'
+                borderRadius: '12px',
+                boxShadow: '0 30px 60px rgba(0, 112, 243, 0.2)',
+                position: 'relative',
+                overflow: 'hidden'
             }}>
-                <div className="flex-center" style={{
-                    width: '64px', height: '64px', borderRadius: '4px',
-                    background: 'transparent', border: '1px solid #fff',
-                    margin: '0 auto 24px', color: '#fff'
-                }}>
-                    <WalletIcon size={28} strokeWidth={1} />
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                    <div className="flex-center" style={{
+                        width: '72px', height: '72px', borderRadius: '12px',
+                        background: 'var(--sapphire-glow)', border: '1px solid var(--sapphire)',
+                        margin: '0 auto 24px', color: 'var(--sapphire)'
+                    }}>
+                        <WalletIcon size={32} strokeWidth={1.5} fill="currentColor" />
+                    </div>
+                    <div className="flex-center" style={{ gap: '8px', marginBottom: '12px' }}>
+                        <div className="badge-gold" style={{ fontSize: '0.55rem', padding: '2px 8px', borderRadius: '4px' }}>EXECUTIVE RESERVE</div>
+                    </div>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '8px' }}>
+                        CURRENT LIQUIDITY
+                    </p>
+                    <div className="flex-center" style={{ gap: '12px' }}>
+                        <h2 style={{ fontSize: '4.2rem', fontWeight: '950', color: '#fff', letterSpacing: '-4px', fontFamily: 'var(--font-outfit)' }}>
+                            {user?.coins.toLocaleString()}
+                        </h2>
+                        <span style={{ color: 'var(--sapphire)', fontWeight: '900', fontSize: '0.9rem', marginTop: '24px', letterSpacing: '2px' }}>FLOW</span>
+                    </div>
                 </div>
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '8px' }}>
-                    LIQUIDITY RESERVE
-                </p>
-                <div className="flex-center" style={{ gap: '12px' }}>
-                    <h2 style={{ fontSize: '3.5rem', fontWeight: '900', color: '#fff', letterSpacing: '-3px', fontFamily: 'var(--font-outfit)' }}>
-                        {user?.coins.toLocaleString()}
-                    </h2>
-                    <span style={{ color: 'var(--text-dim)', fontWeight: '900', fontSize: '0.8rem', marginTop: '16px', letterSpacing: '2px' }}>FLOW</span>
-                </div>
+                {/* Visual Depth */}
+                <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '150px', height: '150px', background: 'var(--sapphire)', filter: 'blur(100px)', opacity: 0.2 }} />
             </div>
 
-            {/* Quick Actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '48px' }}>
-                <button className="btn" style={{ padding: '20px' }}>
+            {/* Quick Actions - Pro Palette */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '48px' }}>
+                <button className="btn" style={{ padding: '20px', background: 'var(--sapphire)', color: '#fff', border: 'none' }}>
                     WITHDRAWAL
                 </button>
-                <button className="btn btn-secondary" style={{ padding: '20px', borderRadius: '4px', border: '1px solid #333' }}>
+                <button className="btn btn-secondary" style={{ padding: '20px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
                     TRANSFER
                 </button>
             </div>
@@ -100,27 +110,31 @@ export default function WalletPage() {
                         </div>
                     ) : (
                         transactions.map((tx: Transaction) => (
-                            <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
+                            <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)' }}>
                                 <div className="flex-center" style={{ gap: '20px' }}>
                                     <div style={{
-                                        padding: '12px', borderRadius: '2px',
-                                        background: 'transparent',
-                                        border: '1px solid #444',
-                                        color: '#fff'
+                                        padding: '12px', borderRadius: '8px',
+                                        background: tx.amount > 0 ? 'var(--emerald-glow)' : 'var(--glass-bg)',
+                                        border: tx.amount > 0 ? '1px solid var(--emerald)' : '1px solid var(--glass-border)',
+                                        color: tx.amount > 0 ? 'var(--emerald)' : '#fff',
+                                        boxShadow: tx.amount > 0 ? '0 0 15px rgba(16, 185, 129, 0.1)' : 'none'
                                     }}>
-                                        {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={1} /> : <ArrowUpRight size={20} strokeWidth={1} />}
+                                        {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={2} /> : <ArrowUpRight size={20} strokeWidth={2} />}
                                     </div>
                                     <div>
-                                        <h4 style={{ fontSize: '0.8rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px' }}>{tx.description.toUpperCase()}</h4>
-                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.createdAt)}</p>
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px', color: '#fff' }}>{tx.description.toUpperCase()}</h4>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.createdAt)}</p>
                                     </div>
                                 </div>
-                                <span style={{
-                                    fontSize: '1.1rem', fontWeight: '900',
-                                    color: '#fff', letterSpacing: '-1px'
-                                }}>
-                                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
-                                </span>
+                                <div style={{ textAlign: 'right' }}>
+                                    <span style={{
+                                        fontSize: '1.25rem', fontWeight: '950',
+                                        color: tx.amount > 0 ? 'var(--emerald)' : '#fff', letterSpacing: '-1px'
+                                    }}>
+                                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                    </span>
+                                    <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: '900', marginTop: '2px' }}>CREDITED</p>
+                                </div>
                             </div>
                         ))
                     )}

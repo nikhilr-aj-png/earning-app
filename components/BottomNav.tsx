@@ -47,22 +47,27 @@ export default function BottomNav() {
                             href={item.href}
                             style={{
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-                                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                                color: isActive ? '#fff' : 'var(--text-muted)',
                                 textDecoration: 'none',
-                                transition: 'all 0.3s ease'
+                                transition: 'all 0.4s var(--transition)',
+                                transform: isActive ? 'scale(1.05)' : 'scale(1)'
                             }}
                         >
                             <div style={{
-                                padding: '8px 16px', borderRadius: '14px',
-                                background: isActive ? 'var(--primary-glow)' : 'transparent',
-                                transition: 'all 0.3s ease'
+                                padding: '10px 20px', borderRadius: '12px',
+                                background: isActive ? 'var(--sapphire-glow)' : 'transparent',
+                                border: isActive ? '1px solid var(--sapphire)' : '1px solid transparent',
+                                transition: 'all 0.4s var(--transition)',
+                                color: isActive ? 'var(--sapphire)' : 'currentColor',
+                                boxShadow: isActive ? '0 0 20px rgba(0, 112, 243, 0.2)' : 'none'
                             }}>
-                                <Icon size={22} color={isActive ? 'var(--primary)' : 'currentColor'} />
+                                <Icon size={22} color={isActive ? 'var(--sapphire)' : 'currentColor'} strokeWidth={isActive ? 2.5 : 2} />
                             </div>
                             <span style={{
-                                fontSize: '0.6rem', fontWeight: '800',
-                                letterSpacing: '0.08em',
-                                opacity: isActive ? 1 : 0.6
+                                fontSize: '0.6rem', fontWeight: '950',
+                                letterSpacing: '1.5px',
+                                opacity: isActive ? 1 : 0.5,
+                                color: isActive ? '#fff' : 'inherit'
                             }}>{item.name}</span>
                         </Link>
                     );

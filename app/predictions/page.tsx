@@ -13,8 +13,11 @@ interface ProboEvent {
     status: string;
 }
 
+import { useToast } from "@/context/ToastContext";
+
 export default function PredictionsPage() {
     const { user, refreshUser } = useUser();
+    const { showToast } = useToast();
     const queryClient = useQueryClient();
     const [selectedEvent, setSelectedEvent] = useState<ProboEvent | null>(null);
     const [tradeChoice, setTradeChoice] = useState<'yes' | 'no' | null>(null);
@@ -45,13 +48,13 @@ export default function PredictionsPage() {
             return res.json();
         },
         onSuccess: () => {
-            alert("TRADE EXECUTED SUCCESSFULLY!");
+            showToast("TRADE EXECUTED SUCCESSFULLY", "success");
             refreshUser();
             setSelectedEvent(null);
             setTradeChoice(null);
         },
         onError: (err: any) => {
-            alert(err.message);
+            showToast(err.message, "error");
         }
     });
 
@@ -74,27 +77,32 @@ export default function PredictionsPage() {
     );
 
     return (
-        <div className="animate-fade-in" style={{ padding: '24px 20px', minHeight: '90vh' }}>
-            {/* Header */}
-            <div style={{ marginBottom: '40px' }}>
-                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '12px' }}>
-                    <TrendingUp size={18} color="#fff" strokeWidth={1} />
-                    <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>OPINION MARKETS</span>
+        <div className="animate-fade-in" style={{ padding: '24px 20px', minHeight: '90vh', paddingBottom: '120px' }}>
+            {/* Header Section */}
+            <div style={{ marginBottom: '40px', position: 'relative' }}>
+                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '16px' }}>
+                    <div style={{ padding: '4px', borderRadius: '4px', background: 'var(--gold-glow)' }}>
+                        <TrendingUp size={18} color="var(--gold)" strokeWidth={1.5} />
+                    </div>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '4px' }}>INSIGHT TERMINAL</span>
                 </div>
-                <h1 className="font-heading" style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px', marginBottom: '8px' }}>Predict & Control</h1>
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', letterSpacing: '1px' }}>High-fidelity market sentiment and community intelligence.</p>
+                <h1 className="font-heading" style={{ fontSize: '3.2rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '8px', lineHeight: 1.1 }}>Market Intelligence</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.5px' }}>Leverage high-fidelity community intelligence to scale your assets.</p>
+                {/* Visual Depth */}
+                <div style={{ position: 'absolute', top: '0', right: '0', width: '250px', height: '100px', background: 'var(--gold)', filter: 'blur(120px)', opacity: 0.1 }} />
             </div>
 
             {/* Categories */}
-            <div className="flex" style={{ gap: '8px', overflowX: 'auto', marginBottom: '40px', paddingBottom: '4px' }}>
+            <div className="flex" style={{ gap: '10px', overflowX: 'auto', marginBottom: '40px', paddingBottom: '12px' }}>
                 {['All', 'Finance', 'Crypto', 'Gaming', 'News'].map((cat) => (
                     <button key={cat} className="glass-panel" style={{
-                        padding: '10px 24px', fontSize: '0.7rem', fontWeight: '900',
-                        whiteSpace: 'nowrap', borderRadius: '2px',
-                        border: cat === 'All' ? '1px solid #fff' : '1px solid #222',
-                        background: cat === 'All' ? '#fff' : 'transparent',
+                        padding: '12px 28px', fontSize: '0.75rem', fontWeight: '950',
+                        whiteSpace: 'nowrap', borderRadius: '8px',
+                        border: cat === 'All' ? '1px solid var(--gold)' : '1px solid #111',
+                        background: cat === 'All' ? 'var(--gold)' : 'rgba(255,255,255,0.01)',
                         color: cat === 'All' ? '#000' : 'var(--text-dim)',
-                        letterSpacing: '1px'
+                        letterSpacing: '2px',
+                        transition: 'all 0.3s var(--transition)'
                     }}>
                         {cat.toUpperCase()}
                     </button>
@@ -102,47 +110,59 @@ export default function PredictionsPage() {
             </div>
 
             {/* Events List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {events.length === 0 ? (
-                    <div className="glass-panel flex-center" style={{ padding: '80px', flexDirection: 'column', gap: '20px', border: '1px solid #222', borderRadius: '4px' }}>
-                        <AlertCircle size={32} color="var(--text-dim)" strokeWidth={1} />
-                        <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1px' }}>NO ACTIVE MARKETS DETECTED.</p>
+                    <div className="glass-panel flex-center" style={{ padding: '80px', flexDirection: 'column', gap: '20px', border: '1px solid #111', borderRadius: '12px' }}>
+                        <div style={{ padding: '16px', borderRadius: '50%', background: 'var(--gold-glow)' }}>
+                            <AlertCircle size={32} color="var(--gold)" strokeWidth={1} />
+                        </div>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: '900', letterSpacing: '2px' }}>NO ACTIVE MARKETS DETECTED.</p>
                     </div>
                 ) : events.map((event) => (
-                    <div key={event.id} className="glass-panel" style={{ padding: '32px', border: '1px solid #222', borderRadius: '4px' }}>
-                        <div className="flex-between" style={{ marginBottom: '20px' }}>
-                            <span style={{ fontSize: '0.6rem', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '2px' }}>
-                                {event.category}
-                            </span>
-                            <div className="flex-center" style={{ gap: '8px', fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900' }}>
-                                <Clock size={12} strokeWidth={1} />
+                    <div key={event.id} className="glass-panel" style={{
+                        padding: '40px',
+                        border: '1px solid #111',
+                        borderRadius: '12px',
+                        background: 'rgba(5,5,5,0.8)',
+                        transition: '0.5s',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        <div className="flex-between" style={{ marginBottom: '24px', position: 'relative', zIndex: 2 }}>
+                            <div className="badge-gold" style={{ fontSize: '0.6rem', padding: '2px 10px', borderRadius: '4px', fontWeight: '950', letterSpacing: '2px' }}>
+                                {event.category.toUpperCase()}
+                            </div>
+                            <div className="flex-center" style={{ gap: '8px', fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '950' }}>
+                                <Clock size={14} strokeWidth={1.5} />
                                 <span style={{ letterSpacing: '1px' }}>EXPIRY: {new Date(event.end_time).toLocaleDateString()}</span>
                             </div>
                         </div>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '32px', lineHeight: '1.4', letterSpacing: '1px' }}>{event.question.toUpperCase()}</h2>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: '950', marginBottom: '40px', lineHeight: '1.3', letterSpacing: '0.5px', color: '#fff' }}>{event.question.toUpperCase()}</h2>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <button
                                 onClick={() => { setSelectedEvent(event); setTradeChoice('yes'); }}
-                                className="glass-panel flex-center"
+                                className="btn"
                                 style={{
-                                    padding: '16px', borderRadius: '2px', gap: '12px',
-                                    border: '1px solid #fff', background: '#fff',
-                                    color: '#000', fontWeight: '900', fontSize: '0.75rem', letterSpacing: '2px'
+                                    height: '60px', borderRadius: '8px', gap: '12px',
+                                    border: 'none', background: 'var(--sapphire)',
+                                    color: '#fff', fontWeight: '950', fontSize: '0.85rem', letterSpacing: '3px',
+                                    boxShadow: '0 10px 30px rgba(0, 112, 243, 0.2)'
                                 }}
                             >
-                                <TrendingUp size={18} strokeWidth={2} /> BUY YES
+                                <TrendingUp size={20} strokeWidth={2} /> BUY YES
                             </button>
                             <button
                                 onClick={() => { setSelectedEvent(event); setTradeChoice('no'); }}
-                                className="glass-panel flex-center"
+                                className="btn btn-secondary"
                                 style={{
-                                    padding: '16px', borderRadius: '2px', gap: '12px',
-                                    border: '1px solid #fff', background: 'transparent',
-                                    color: '#fff', fontWeight: '900', fontSize: '0.75rem', letterSpacing: '2px'
+                                    height: '60px', borderRadius: '8px', gap: '12px',
+                                    border: '1.5px solid var(--rose)', background: 'transparent',
+                                    color: 'var(--rose)', fontWeight: '950', fontSize: '0.85rem', letterSpacing: '3px',
+                                    boxShadow: '0 10px 30px rgba(239, 68, 68, 0.1)'
                                 }}
                             >
-                                <TrendingDown size={18} strokeWidth={1} /> BUY NO
+                                <TrendingDown size={20} strokeWidth={2} /> BUY NO
                             </button>
                         </div>
                     </div>
