@@ -106,7 +106,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-                    <Link href="/premium" className="btn" style={{
+                    <Link href="/elite" className="btn" style={{
                         width: '100%', height: '56px', background: 'var(--gold)', color: '#000',
                         border: 'none', marginTop: '24px', fontWeight: '950', fontSize: '0.8rem',
                         letterSpacing: '2px', borderRadius: '12px'
