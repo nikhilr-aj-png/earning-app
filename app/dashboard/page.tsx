@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/context/ToastContext";
 
 export default function Dashboard() {
     const { user, logout, refreshUser } = useUser();
+    const { showToast } = useToast();
     const router = useRouter();
     const [greeting] = useState(() => {
         const hour = new Date().getHours();
@@ -160,49 +162,58 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Referral Professional Card */}
+            {/* Referral Executive Card */}
             <div className="glass-panel" style={{
-                padding: '24px',
-                background: 'linear-gradient(90deg, #1a1e2e 0%, #151926 100%)',
-                border: '1px solid rgba(0, 242, 255, 0.1)'
+                padding: '40px',
+                background: '#000',
+                border: '1px solid #222',
+                borderRadius: '2px',
+                position: 'relative'
             }}>
-                <div className="flex-between" style={{ marginBottom: '16px' }}>
-                    <div className="flex-center" style={{ gap: '10px' }}>
-                        <Users size={20} color="var(--primary)" />
-                        <h4 style={{ fontWeight: '700', fontSize: '1rem' }}>Invite Friends</h4>
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                    <div className="flex-between" style={{ marginBottom: '24px' }}>
+                        <div className="flex-center" style={{ gap: '12px' }}>
+                            <Users size={20} color="#fff" strokeWidth={1} />
+                            <h4 style={{ fontWeight: '900', fontSize: '0.8rem', letterSpacing: '2px', color: '#fff' }}>NETWORK EXPANSION</h4>
+                        </div>
+                        <span style={{ color: '#fff', fontWeight: '900', fontSize: '0.7rem', letterSpacing: '1px' }}>REWARD: 100 FLOW</span>
                     </div>
-                    <span style={{ color: 'var(--primary)', fontWeight: '800', fontSize: '0.85rem' }}>GET +100</span>
-                </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '20px', lineHeight: '1.4' }}>
-                    Grow your network and earn passive coins for every verified referral.
-                </p>
-                <div className="flex" style={{ gap: '10px' }}>
-                    <div style={{
-                        flex: 1,
-                        background: 'rgba(0,0,0,0.3)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '12px',
-                        fontSize: '0.75rem',
-                        fontFamily: 'monospace',
-                        color: 'var(--text-dim)',
-                        textAlign: 'center'
-                    }}>
-                        {user.referral_code}
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '32px', lineHeight: '1.6', letterSpacing: '0.5px' }}>
+                        Onboard verified partners to the elite EarnFlow network. Portfolio credits are disbursed instantly upon successful activation.
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{
+                            flex: 1,
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px solid #333',
+                            borderRadius: '2px',
+                            padding: '16px',
+                            fontSize: '1.2rem',
+                            fontFamily: 'var(--font-outfit)',
+                            fontWeight: '900',
+                            color: '#fff',
+                            letterSpacing: '6px',
+                            textAlign: 'center'
+                        }}>
+                            {user.referral_code}
+                        </div>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(user.referral_code);
+                                showToast("REFERRAL CODE COPIED", "success");
+                            }}
+                            className="btn"
+                            style={{
+                                width: 'auto',
+                                padding: '0 32px',
+                                background: '#fff',
+                                color: '#000',
+                                borderRadius: '2px'
+                            }}
+                        >
+                            COPY
+                        </button>
                     </div>
-                    <button
-                        onClick={() => {
-                            navigator.clipboard.writeText(user.referral_code);
-                            alert("Code copied!");
-                        }}
-                        style={{
-                            background: 'var(--primary)', color: '#000',
-                            border: 'none', borderRadius: '12px', padding: '0 20px',
-                            fontWeight: '800', fontSize: '0.75rem', cursor: 'pointer'
-                        }}
-                    >
-                        COPY
-                    </button>
                 </div>
             </div>
         </div>

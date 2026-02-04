@@ -224,22 +224,27 @@ export default function ArcadePage() {
 
             {/* Color Trading Implementation */}
             {gameTab === 'color' && (
-                <div className="animate-fade-in">
-                    <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                            <button onClick={() => placeBet('green')} className="btn" style={{ background: 'var(--success)', color: '#000' }}>GREEN</button>
-                            <button onClick={() => placeBet('red')} className="btn" style={{ background: 'var(--error)', color: '#000' }}>RED</button>
-                            <button onClick={() => placeBet('violet')} className="btn" style={{ background: '#a855f7', color: '#fff' }}>VIOLET</button>
+                <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <div className="glass-panel" style={{ padding: '40px', marginBottom: '32px', border: '1px solid #222', borderRadius: '4px' }}>
+                        <p style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)', textAlign: 'center', marginBottom: '32px', letterSpacing: '4px' }}>SPECTRUM ALLOCATION</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                            <button onClick={() => placeBet('green')} className="btn" style={{ background: '#fff', color: '#000', border: '1px solid #fff' }}>GREEN</button>
+                            <button onClick={() => placeBet('red')} className="btn" style={{ background: 'transparent', color: '#fff', border: '1px solid #fff' }}>RED</button>
+                            <button onClick={() => placeBet('violet')} className="btn" style={{ background: 'transparent', color: '#fff', border: '1px solid #444' }}>VIOLET</button>
                         </div>
                     </div>
-                    <div className="glass-panel" style={{ padding: '20px' }}>
-                        <h4 style={{ fontSize: '0.75rem', fontWeight: '900', marginBottom: '16px' }}>ROUND HISTORY</h4>
-                        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #111', borderRadius: '4px' }}>
+                        <h4 style={{ fontSize: '0.7rem', fontWeight: '900', marginBottom: '24px', letterSpacing: '2px' }}>OPERATIONAL HISTORY</h4>
+                        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px' }}>
                             {[1, 2, 3, 4, 5, 6, 7, 8].map(h => (
                                 <div key={h} style={{
-                                    minWidth: '24px', height: '24px', borderRadius: '50%',
-                                    background: h % 2 === 0 ? 'var(--success)' : 'var(--error)'
-                                }} />
+                                    minWidth: '32px', height: '32px', borderRadius: '2px',
+                                    border: '1px solid #333',
+                                    background: h % 2 === 0 ? '#fff' : 'transparent',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: h % 2 === 0 ? '#000' : '#fff' }} />
+                                </div>
                             ))}
                         </div>
                     </div>

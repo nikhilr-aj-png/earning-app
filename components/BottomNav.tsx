@@ -22,18 +22,20 @@ export default function BottomNav() {
 
     return (
         <nav style={{
-            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-            width: '100%', maxWidth: 'var(--max-width)',
-            background: '#000',
-            borderTop: '1px solid #222',
-            borderRadius: '0',
-            zIndex: 100,
-            display: 'flex', justifyContent: 'center'
+            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+            width: 'calc(100% - 32px)', maxWidth: '600px',
+            background: 'rgba(5, 5, 5, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 'var(--radius-md)',
+            zIndex: 1000,
+            display: 'flex', justifyContent: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
         }}>
             <div style={{
-                width: '100%', maxWidth: 'var(--max-width)',
+                width: '100%',
                 display: 'flex', justifyContent: 'space-around',
-                padding: '12px 10px 24px'
+                padding: '12px 10px'
             }}>
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
