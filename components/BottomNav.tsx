@@ -17,6 +17,7 @@ export default function BottomNav() {
         { name: 'PREDICT', href: '/predictions', icon: TrendingUp },
         { name: 'PLAY', href: '/game', icon: Trophy },
         { name: 'WALLET', href: '/wallet', icon: Wallet },
+        { name: 'PROFILE', href: '/profile', icon: User },
     ];
 
     return (
