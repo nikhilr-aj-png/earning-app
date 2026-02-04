@@ -101,14 +101,33 @@ export default function Dashboard() {
                             </span>
                         </div>
                         {user.is_premium ? (
-                            <div className="badge-gold flex-center" style={{ gap: '8px', padding: '8px 16px', borderRadius: '12px' }}>
+                            <div className="badge-gold flex-center" style={{ gap: '8px', padding: '10px 20px', borderRadius: '14px', boxShadow: '0 8px 16px rgba(234, 179, 8, 0.2)' }}>
                                 <Crown size={14} fill="currentColor" />
-                                <span style={{ fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>PREMIUM ELITE</span>
+                                <span style={{ fontSize: '0.7rem', fontWeight: '950', letterSpacing: '2px' }}>PREMIUM ELITE</span>
                             </div>
                         ) : (
-                            <Link href="/premium" className="glass-panel flex-center" style={{ gap: '8px', padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)' }}>
-                                <span style={{ fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px', color: '#fff', opacity: 0.6 }}>FREE TIER</span>
-                                <span style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '1px' }}>UPGRADE</span>
+                            <Link href="/premium" className="flex-center" style={{
+                                gap: '12px',
+                                padding: '8px 4px 8px 16px',
+                                borderRadius: '14px',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                background: 'rgba(255,255,255,0.1)',
+                                backdropFilter: 'blur(10px)',
+                                cursor: 'pointer',
+                                textDecoration: 'none'
+                            }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px', color: '#fff', opacity: 0.7 }}>FREE TIER</span>
+                                <div style={{
+                                    background: 'var(--gold)',
+                                    color: '#000',
+                                    padding: '6px 14px',
+                                    borderRadius: '10px',
+                                    fontSize: '0.65rem',
+                                    fontWeight: '950',
+                                    letterSpacing: '1px'
+                                }}>
+                                    UPGRADE
+                                </div>
                             </Link>
                         )}
                     </div>

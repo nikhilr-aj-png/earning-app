@@ -14,29 +14,27 @@ export default function PremiumPage() {
     const handleUpgrade = async () => {
         setIsProcessing(true);
         try {
-            // Simulated payment/upgrade logic
-            // In a real app, this would call a payment gateway and then update the DB
-            const res = await fetch("/api/wallet/deposit", {
+            showToast("INITIATING ELITE PROTOCOL...", "info");
+
+            const res = await fetch("/api/premium/upgrade", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "x-user-id": user?.id || ""
-                },
-                body: JSON.stringify({ amountRupees: 999 }), // Simulate premium cost
+                }
             });
 
-            // For now, let's just simulate the DB update if successful
-            // In a real app, we'd have a separate /api/premium/upgrade
-            // Here we'll just show the concept
-            showToast("PROCESSING SECURE TRANSACTION...", "info");
+            const data = await res.json();
 
-            setTimeout(() => {
-                showToast("UPGRADE FAILED: PAYMENT GATEWAY NOT CONFIGURED.", "error");
-                setIsProcessing(false);
-            }, 2000);
-
-        } catch (err) {
-            showToast("PROTOCOL ERROR", "error");
+            if (res.ok) {
+                showToast("UPGRADE SECURED. WELCOME ELITE.", "success");
+                refreshUser();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (err: any) {
+            showToast(err.message || "PROTOCOL ERROR", "error");
+        } finally {
             setIsProcessing(false);
         }
     };
