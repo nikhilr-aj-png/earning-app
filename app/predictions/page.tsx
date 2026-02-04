@@ -186,7 +186,7 @@ export default function PredictionsPage() {
                                     border: '1px solid #fff', color: tradeChoice === 'yes' ? '#000' : '#fff',
                                     borderRadius: '2px'
                                 }}>
-                                {tradeMutation.isPending ? 'PROCESSING...' : `PLACE ${tradeChoice.toUpperCase()}`}
+                                {tradeMutation.isPending ? 'PROCESSING...' : `PLACE ${tradeChoice?.toUpperCase() || ''}`}
                             </button>
                         </div>
                     </div>
