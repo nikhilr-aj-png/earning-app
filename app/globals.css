@@ -6,16 +6,22 @@
   --primary: #ffffff;
   --primary-glow: rgba(255, 255, 255, 0.08);
 
-  --secondary: #a1a1aa;
-  --secondary-glow: rgba(161, 161, 170, 0.05);
-
   --text-main: #ffffff;
-  --text-dim: #71717a;
-  --text-muted: #3f3f46;
+  --text-dim: #94a3b8;
+  --text-muted: #475569;
+
+  /* Vibrant Executive Accents */
+  --gold: #d4af37;
+  --gold-glow: rgba(212, 175, 55, 0.15);
+  --emerald: #10b981;
+  --emerald-glow: rgba(16, 185, 129, 0.15);
+  --sapphire: #0070f3;
+  --sapphire-glow: rgba(0, 112, 243, 0.15);
+  --rose: #ef4444;
 
   /* Executive Design Language */
-  --glass-bg: rgba(255, 255, 255, 0.01);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: blur(24px);
 
   --radius-xs: 2px;
@@ -240,6 +246,38 @@ a {
       rgba(255, 255, 255, 0) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ticker-item {
+  display: inline-block;
+  animation: ticker 20s linear infinite;
+}
+
+.glass-vibrant {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.badge-gold {
+  background: linear-gradient(135deg, #d4af37 0%, #9a7b0c 100%);
+  color: #000;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.2);
 }
 
 /* Card Flip Implementation Refined */

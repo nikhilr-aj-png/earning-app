@@ -4,9 +4,11 @@ import { useUser } from "@/context/UserContext";
 import { useState, useEffect } from "react";
 import { Coins, Trophy, Zap, Clock, ShieldCheck, Activity, Plane, Palette, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/context/ToastContext";
 
 export default function ArcadePage() {
     const { user, refreshUser } = useUser();
+    const { showToast } = useToast();
     const queryClient = useQueryClient();
     const [gameTab, setGameTab] = useState<'aviator' | 'color'>('aviator');
     const [betAmount, setBetAmount] = useState(10);
@@ -67,7 +69,7 @@ export default function ArcadePage() {
     };
 
     const placeBet = (choice: string) => {
-        if (!user || user.coins < betAmount) return alert("INSUFFICIENT BALANCE!");
+        if (!user || user.coins < betAmount) return showToast("INSUFFICIENT CAPITAL FOR ALLOCATION", "error");
         setIsBetting(true);
         betMutation.mutate({ roundId: round.id, choice, amount: betAmount });
     };
