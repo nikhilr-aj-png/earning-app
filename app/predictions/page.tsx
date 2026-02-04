@@ -169,46 +169,74 @@ export default function PredictionsPage() {
                 ))}
             </div>
 
-            {/* Trading Modal Overlay */}
+            {/* Trading Modal Overlay - Vibrant Executive */}
             {selectedEvent && (
-                <div className="flex-center" style={{
+                <div className="flex-center animate-fade-in" style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 100, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(10px)',
+                    zIndex: 100, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)',
                     padding: '24px'
                 }}>
-                    <div className="glass-panel" style={{
-                        width: '100%', maxWidth: '400px', padding: '40px',
-                        border: '1px solid #fff', borderRadius: '4px', background: '#000'
+                    <div className="glass-panel glass-vibrant" style={{
+                        width: '100%', maxWidth: '440px', padding: '48px',
+                        border: '1px solid var(--sapphire)', borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #001f3f 0%, #000 100%)',
+                        boxShadow: '0 40px 80px rgba(0, 112, 243, 0.3)',
+                        position: 'relative',
+                        overflow: 'hidden'
                     }}>
-                        <h3 style={{ fontSize: '0.65rem', fontWeight: '900', color: 'var(--text-dim)', marginBottom: '20px', letterSpacing: '2px' }}>
-                            CONFIRM TRADE EXECUTION
-                        </h3>
-                        <p style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '40px', letterSpacing: '1px', lineHeight: '1.4' }}>{selectedEvent.question.toUpperCase()}</p>
+                        <div style={{ position: 'relative', zIndex: 2 }}>
+                            <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '16px' }}>
+                                <div className="badge-gold" style={{ fontSize: '0.6rem', padding: '2px 8px', borderRadius: '4px' }}>EXECUTION PROTOCOL</div>
+                            </div>
+                            <h3 style={{ fontSize: '0.7rem', fontWeight: '950', color: 'var(--text-muted)', marginBottom: '12px', letterSpacing: '3px' }}>
+                                CONFIRM TRADE
+                            </h3>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: '950', marginBottom: '40px', letterSpacing: '0.5px', lineHeight: '1.4', color: '#fff' }}>
+                                {selectedEvent.question.toUpperCase()}
+                            </h2>
 
-                        <div style={{ marginBottom: '40px' }}>
-                            <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginBottom: '16px', fontWeight: '900', letterSpacing: '2px' }}>WAGER ALLOCATION</p>
-                            <div className="flex-between" style={{ background: '#0a0a0a', padding: '20px', border: '1px solid #222' }}>
-                                <button onClick={() => setTradeAmount(Math.max(10, tradeAmount - 10))} style={{ background: 'none', border: 'none', color: '#fff', fontWeight: '900', fontSize: '1.2rem' }}>-</button>
-                                <span style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '2px' }}>{tradeAmount} FLOW</span>
-                                <button onClick={() => setTradeAmount(tradeAmount + 10)} style={{ background: 'none', border: 'none', color: '#fff', fontWeight: '900', fontSize: '1.2rem' }}>+</button>
+                            <div style={{ marginBottom: '48px' }}>
+                                <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '3px' }}>WAGER ALLOCATION</p>
+                                    <span style={{ fontSize: '0.7rem', color: tradeChoice === 'yes' ? 'var(--sapphire)' : 'var(--rose)', fontWeight: '950', letterSpacing: '1px' }}>
+                                        POSITION: {tradeChoice?.toUpperCase()}
+                                    </span>
+                                </div>
+                                <div className="flex-between" style={{ background: 'rgba(0,0,0,0.5)', padding: '24px', border: '1px solid #111', borderRadius: '8px' }}>
+                                    <button onClick={() => setTradeAmount(Math.max(10, tradeAmount - 10))} className="flex-center" style={{ width: '40px', height: '40px', background: 'transparent', border: '1px solid #222', color: '#fff', borderRadius: '50%', fontSize: '1.5rem', transition: '0.3s' }}>-</button>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <span style={{ fontSize: '2.2rem', fontWeight: '950', letterSpacing: '-2px', color: '#fff' }}>{tradeAmount}</span>
+                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '2px' }}>FLOW CREDIT</p>
+                                    </div>
+                                    <button onClick={() => setTradeAmount(tradeAmount + 10)} className="flex-center" style={{ width: '40px', height: '40px', background: 'transparent', border: '1px solid #222', color: '#fff', borderRadius: '50%', fontSize: '1.5rem', transition: '0.3s' }}>+</button>
+                                </div>
+                            </div>
+
+                            <div className="flex" style={{ gap: '16px' }}>
+                                <button
+                                    onClick={() => setSelectedEvent(null)}
+                                    className="btn btn-secondary" style={{ flex: 1, borderRadius: '8px', border: '1.5px solid #111', height: '64px', fontSize: '0.75rem' }}>CANCEL</button>
+                                <button
+                                    onClick={handleTrade}
+                                    disabled={tradeMutation.isPending}
+                                    className="btn" style={{
+                                        flex: 2,
+                                        background: tradeChoice === 'yes' ? 'var(--sapphire)' : 'var(--rose)',
+                                        border: 'none',
+                                        color: '#fff',
+                                        borderRadius: '8px',
+                                        height: '64px',
+                                        fontWeight: '950',
+                                        fontSize: '0.85rem',
+                                        letterSpacing: '3px',
+                                        boxShadow: tradeChoice === 'yes' ? '0 10px 30px rgba(0, 112, 243, 0.4)' : '0 10px 30px rgba(239, 68, 68, 0.4)'
+                                    }}>
+                                    {tradeMutation.isPending ? 'PROCESSING...' : `DEPLOY ${tradeChoice?.toUpperCase() || ''}`}
+                                </button>
                             </div>
                         </div>
-
-                        <div className="flex" style={{ gap: '16px' }}>
-                            <button
-                                onClick={() => setSelectedEvent(null)}
-                                className="btn btn-secondary" style={{ flex: 1, borderRadius: '2px' }}>CANCEL</button>
-                            <button
-                                onClick={handleTrade}
-                                disabled={tradeMutation.isPending}
-                                className="btn" style={{
-                                    flex: 2, background: tradeChoice === 'yes' ? '#fff' : 'transparent',
-                                    border: '1px solid #fff', color: tradeChoice === 'yes' ? '#000' : '#fff',
-                                    borderRadius: '2px'
-                                }}>
-                                {tradeMutation.isPending ? 'PROCESSING...' : `PLACE ${tradeChoice?.toUpperCase() || ''}`}
-                            </button>
-                        </div>
+                        {/* Background Visual */}
+                        <div style={{ position: 'absolute', bottom: '-20%', right: '-20%', width: '150px', height: '150px', background: tradeChoice === 'yes' ? 'var(--sapphire)' : 'var(--rose)', filter: 'blur(100px)', opacity: 0.15 }} />
                     </div>
                 </div>
             )}
