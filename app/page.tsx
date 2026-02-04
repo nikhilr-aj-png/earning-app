@@ -54,127 +54,127 @@ export default function Home() {
 
   return (
     <div className="animate-fade-in" style={{ padding: '40px 24px' }}>
-      <div className="flex-center" style={{ flexDirection: 'column', marginBottom: '40px' }}>
-        <div className="glass-panel flex-center" style={{ width: '70px', height: '70px', borderRadius: '24px', marginBottom: '20px', border: '1px solid var(--primary)', background: 'var(--primary-glow)' }}>
-          <Zap size={36} color="#000" fill="#000" />
+      <div className="flex-center" style={{ flexDirection: 'column', marginBottom: '60px' }}>
+        <div className="glass-panel flex-center" style={{ width: '80px', height: '80px', borderRadius: '14px', marginBottom: '24px', border: '1px solid #fff', background: 'transparent' }}>
+          <Zap size={40} color="#fff" strokeWidth={1} />
         </div>
-        <h1 className="text-gradient" style={{ fontSize: '2.8rem', marginBottom: '4px', textAlign: 'center' }}>EarnFlow</h1>
-        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '1rem', maxWidth: '280px' }}>
-          Ultra-Secure Passwordless Earning
+        <h1 className="font-heading" style={{ fontSize: '3.5rem', marginBottom: '8px', textAlign: 'center', fontWeight: '900', letterSpacing: '-2px' }}>EARNFLOW</h1>
+        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem', maxWidth: '300px', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: '600' }}>
+          THE EXECUTIVE PORTFOLIO
         </p>
       </div>
 
       <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-        <div className="glass-panel" style={{ marginBottom: '32px' }}>
+        <div className="glass-panel" style={{ marginBottom: '48px', border: '1px solid rgba(255,255,255,0.05)' }}>
           {step === 'email' ? (
             <>
-              <div className="flex-between" style={{ marginBottom: '24px', background: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '14px' }}>
+              <div className="flex-between" style={{ marginBottom: '32px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
                 <button
                   onClick={() => setIsLogin(true)}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: '10px',
-                    background: isLogin ? 'var(--primary)' : 'transparent',
+                    flex: 1, padding: '14px', borderRadius: '6px',
+                    background: isLogin ? '#fff' : 'transparent',
                     color: isLogin ? '#000' : 'var(--text-dim)',
-                    border: 'none', fontWeight: '800', transition: 'all 0.4s var(--transition)',
-                    fontSize: '0.9rem'
+                    border: 'none', fontWeight: '900', transition: 'all 0.4s var(--transition)',
+                    fontSize: '0.75rem', letterSpacing: '2px'
                   }}
                 >
-                  LOGIN
+                  SIGN IN
                 </button>
                 <button
                   onClick={() => setIsLogin(false)}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: '10px',
-                    background: !isLogin ? 'var(--primary)' : 'transparent',
+                    flex: 1, padding: '14px', borderRadius: '6px',
+                    background: !isLogin ? '#fff' : 'transparent',
                     color: !isLogin ? '#000' : 'var(--text-dim)',
-                    border: 'none', fontWeight: '800', transition: 'all 0.4s var(--transition)',
-                    fontSize: '0.9rem'
+                    border: 'none', fontWeight: '900', transition: 'all 0.4s var(--transition)',
+                    fontSize: '0.75rem', letterSpacing: '2px'
                   }}
                 >
-                  REGISTER
+                  JOIN CLUB
                 </button>
               </div>
 
-              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {!isLogin && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px' }}>IDENTITY NAME</label>
                     <input
-                      type="text" placeholder="John Doe"
+                      type="text" placeholder="ENTER FULL NAME"
                       value={name} onChange={(e) => setName(e.target.value)}
-                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', padding: '14px', borderRadius: '12px', color: '#fff', outline: 'none', transition: '0.3s' }}
-                      onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                      onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
+                      style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '4px', color: '#fff', outline: 'none', transition: '0.3s', fontSize: '0.85rem' }}
+                      onFocus={(e) => e.target.style.borderColor = '#fff'}
+                      onBlur={(e) => e.target.style.borderColor = '#333'}
                       required
                     />
                   </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
+                  <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px' }}>EMAIL ADDRESS</label>
                   <input
-                    type="email" placeholder="email@example.com"
+                    type="email" placeholder="ADDRESS@DOMAIN.COM"
                     value={email} onChange={(e) => setEmail(e.target.value)}
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', padding: '14px', borderRadius: '12px', color: '#fff', outline: 'none', transition: '0.3s' }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                    onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
+                    style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '4px', color: '#fff', outline: 'none', transition: '0.3s', fontSize: '0.85rem' }}
+                    onFocus={(e) => e.target.style.borderColor = '#fff'}
+                    onBlur={(e) => e.target.style.borderColor = '#333'}
                     required
                   />
                 </div>
                 {!isLogin && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Referral Code (Optional)</label>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px' }}>INVITATION CODE</label>
                     <input
-                      type="text" placeholder="CODE123"
+                      type="text" placeholder="OPTIONAL CODE"
                       value={refCode} onChange={(e) => setRefCode(e.target.value)}
-                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', padding: '14px', borderRadius: '12px', color: '#fff', outline: 'none', transition: '0.3s' }}
-                      onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                      onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
+                      style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '4px', color: '#fff', outline: 'none', transition: '0.3s', fontSize: '0.85rem' }}
+                      onFocus={(e) => e.target.style.borderColor = '#fff'}
+                      onBlur={(e) => e.target.style.borderColor = '#333'}
                     />
                   </div>
                 )}
 
-                {error && <div style={{ color: 'var(--error)', fontSize: '0.85rem', textAlign: 'center', background: 'rgba(255,77,77,0.1)', padding: '8px', borderRadius: '8px' }}>{error}</div>}
+                {error && <div style={{ color: '#fff', fontSize: '0.75rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>{error}</div>}
 
-                <button className="btn" type="submit" disabled={isSubmitting} style={{ marginTop: '10px' }}>
-                  {isSubmitting ? 'SENDING OTP...' : 'GET SECURE OTP'}
-                  <Rocket size={18} />
+                <button className="btn" type="submit" disabled={isSubmitting} style={{ marginTop: '12px' }}>
+                  {isSubmitting ? 'AUTHORIZING...' : 'REQUEST ACCESS CODE'}
+                  <Rocket size={16} strokeWidth={3} />
                 </button>
               </form>
             </>
           ) : (
             <>
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '8px' }}>VERIFY IDENTITY</h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>OTP sent to <b>{email}</b></p>
+              <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '900', marginBottom: '8px', letterSpacing: '4px' }}>VERIFY IDENTITY</h3>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>CODE TRANSMITTED TO <b>{email.toUpperCase()}</b></p>
               </div>
 
-              <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Enter 6-Digit Code</label>
+              <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <label style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>ENTER 6-DIGIT PASSCODE</label>
                   <input
-                    type="text" placeholder="123456" maxLength={6}
+                    type="text" placeholder="000000" maxLength={6}
                     value={otp} onChange={(e) => setOtp(e.target.value)}
                     style={{
-                      background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)',
-                      padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none',
-                      fontSize: '1.5rem', fontWeight: '900', letterSpacing: '0.5em', textAlign: 'center'
+                      background: '#000', border: '1px solid #333',
+                      padding: '24px', borderRadius: '4px', color: '#fff', outline: 'none',
+                      fontSize: '2rem', fontWeight: '900', letterSpacing: '0.6em', textAlign: 'center'
                     }}
                     required
                   />
                 </div>
 
-                {error && <div style={{ color: 'var(--error)', fontSize: '0.85rem', textAlign: 'center', background: 'rgba(255,77,77,0.1)', padding: '8px', borderRadius: '8px' }}>{error}</div>}
+                {error && <div style={{ color: '#fff', fontSize: '0.75rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>{error}</div>}
 
                 <button className="btn" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'VERIFYING...' : 'CONFIRM & LOGIN'}
-                  <ShieldCheck size={18} />
+                  {isSubmitting ? 'VALIDATING...' : 'CONFIRM IDENTITY'}
+                  <ShieldCheck size={16} strokeWidth={3} />
                 </button>
 
                 <button
                   type="button" onClick={() => setStep('email')}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', letterSpacing: '1px' }}
                 >
-                  CHANGE EMAIL ADDRESS
+                  RESET EMAIL ADDRESS
                 </button>
               </form>
             </>

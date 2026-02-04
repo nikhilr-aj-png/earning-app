@@ -47,77 +47,79 @@ export default function WalletPage() {
                 <div style={{ width: '40px' }} />
             </div>
 
-            {/* Premium Balance Module */}
+            {/* Capital Balance Module */}
             <div className="glass-panel" style={{
-                padding: '32px 24px',
-                background: 'linear-gradient(180deg, rgba(0, 242, 255, 0.05) 0%, transparent 100%)',
-                border: '1px solid var(--glass-border)',
-                marginBottom: '32px',
-                textAlign: 'center'
+                padding: '48px 24px',
+                background: '#000',
+                border: '1px solid #fff',
+                marginBottom: '40px',
+                textAlign: 'center',
+                borderRadius: '4px'
             }}>
                 <div className="flex-center" style={{
-                    width: '56px', height: '56px', borderRadius: '18px',
-                    background: 'var(--primary-glow)', border: '1px solid var(--primary)',
-                    margin: '0 auto 16px', color: '#000'
+                    width: '64px', height: '64px', borderRadius: '4px',
+                    background: 'transparent', border: '1px solid #fff',
+                    margin: '0 auto 24px', color: '#fff'
                 }}>
-                    <WalletIcon size={28} />
+                    <WalletIcon size={28} strokeWidth={1} />
                 </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '8px' }}>
-                    Available Credits
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '8px' }}>
+                    LIQUIDITY RESERVE
                 </p>
-                <div className="flex-center" style={{ gap: '10px' }}>
-                    <h2 style={{ fontSize: '2.8rem', fontWeight: '900', color: 'var(--text-main)', letterSpacing: '-0.02em', fontFamily: 'var(--font-outfit)' }}>
+                <div className="flex-center" style={{ gap: '12px' }}>
+                    <h2 style={{ fontSize: '3.5rem', fontWeight: '900', color: '#fff', letterSpacing: '-3px', fontFamily: 'var(--font-outfit)' }}>
                         {user?.coins.toLocaleString()}
                     </h2>
-                    <span style={{ color: 'var(--primary)', fontWeight: '800', fontSize: '0.9rem', marginTop: '12px' }}>FLOW</span>
+                    <span style={{ color: 'var(--text-dim)', fontWeight: '900', fontSize: '0.8rem', marginTop: '16px', letterSpacing: '2px' }}>FLOW</span>
                 </div>
             </div>
 
             {/* Quick Actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '40px' }}>
-                <button className="btn" style={{ padding: '16px' }} onClick={() => alert("Withdrawals require account verification.")}>
-                    WITHDRAW
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '48px' }}>
+                <button className="btn" style={{ padding: '20px' }}>
+                    WITHDRAWAL
                 </button>
-                <button className="btn btn-secondary" style={{ padding: '16px' }} onClick={() => alert("P2P transfers are disabled.")}>
+                <button className="btn btn-secondary" style={{ padding: '20px', borderRadius: '4px', border: '1px solid #333' }}>
                     TRANSFER
                 </button>
             </div>
 
             {/* Transaction Ledger */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <div className="flex-between">
-                    <div className="flex-center" style={{ gap: '10px' }}>
-                        <History size={20} color="var(--primary)" />
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: '800', letterSpacing: '2px' }}>ACTIVITY LOG</h3>
+                    <div className="flex-center" style={{ gap: '12px' }}>
+                        <History size={20} color="#fff" strokeWidth={1} />
+                        <h3 style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '4px' }}>LEDGER ACTIVITY</h3>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {transactions.length === 0 ? (
-                        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', borderStyle: 'dashed' }}>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No financial activity detected.</p>
+                        <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', border: '1px solid #222', borderRadius: '4px' }}>
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT OPERATIONS DETECTED.</p>
                         </div>
                     ) : (
                         transactions.map((tx: Transaction) => (
-                            <div key={tx.id} className="glass-panel flex-between" style={{ padding: '16px 20px' }}>
-                                <div className="flex-center" style={{ gap: '16px' }}>
+                            <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
+                                <div className="flex-center" style={{ gap: '20px' }}>
                                     <div style={{
-                                        padding: '10px', borderRadius: '12px',
-                                        background: tx.amount > 0 ? 'rgba(0, 255, 163, 0.1)' : 'rgba(255, 77, 77, 0.1)',
-                                        color: tx.amount > 0 ? 'var(--success)' : 'var(--error)'
+                                        padding: '12px', borderRadius: '2px',
+                                        background: 'transparent',
+                                        border: '1px solid #444',
+                                        color: '#fff'
                                     }}>
-                                        {tx.amount > 0 ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                                        {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={1} /> : <ArrowUpRight size={20} strokeWidth={1} />}
                                     </div>
                                     <div>
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '2px' }}>{tx.description}</h4>
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>{formatDate(tx.createdAt)}</p>
+                                        <h4 style={{ fontSize: '0.8rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px' }}>{tx.description.toUpperCase()}</h4>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.createdAt)}</p>
                                     </div>
                                 </div>
                                 <span style={{
-                                    fontSize: '1rem', fontWeight: '900',
-                                    color: tx.amount > 0 ? 'var(--success)' : 'var(--error)'
+                                    fontSize: '1.1rem', fontWeight: '900',
+                                    color: '#fff', letterSpacing: '-1px'
                                 }}>
-                                    {tx.amount > 0 ? '+' : ''}{tx.amount}
+                                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
                                 </span>
                             </div>
                         ))

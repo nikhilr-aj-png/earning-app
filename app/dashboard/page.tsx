@@ -52,107 +52,103 @@ export default function Dashboard() {
                 </button>
             </div>
 
-            {/* Premium Balance Card */}
+            {/* Executive Balance Card */}
             <div className="glass-panel" style={{
-                padding: '28px',
-                background: 'linear-gradient(135deg, var(--bg-secondary) 0%, #1a1f26 100%)',
-                border: '1px solid var(--glass-border)',
-                marginBottom: '32px',
+                padding: '32px',
+                background: '#000',
+                border: '1px solid #fff',
+                marginBottom: '40px',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                borderRadius: '4px'
             }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                    <div className="flex-between" style={{ marginBottom: '12px' }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                            Available Credits
+                    <div className="flex-between" style={{ marginBottom: '16px' }}>
+                        <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px' }}>
+                            CREDIT BALANCE
                         </span>
-                        <Zap size={18} color="var(--primary)" />
+                        <Zap size={18} color="#fff" strokeWidth={1} />
                     </div>
-                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{
-                            background: 'var(--primary)',
-                            borderRadius: '12px',
-                            width: '32px', height: '32px'
-                        }} className="flex-center">
-                            <Coins size={18} color="#000" />
-                        </div>
-                        <span style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-0.02em', fontFamily: 'var(--font-outfit)' }}>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '32px' }}>
+                        <span style={{ fontSize: '3.5rem', fontWeight: '900', letterSpacing: '-3px', fontFamily: 'var(--font-outfit)', color: '#fff' }}>
                             {user.coins.toLocaleString()}
                         </span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '900', color: 'var(--text-dim)', marginTop: '12px', letterSpacing: '2px' }}>FLOW</span>
                     </div>
-                    <Link href="/wallet" className="btn" style={{ width: '100%', fontSize: '0.85rem', padding: '12px' }}>
-                        MANAGE WALLET <ChevronRight size={16} />
+                    <Link href="/wallet" className="btn" style={{ width: '100%', fontSize: '0.75rem', padding: '16px' }}>
+                        EXECUTIVE WALLET <ChevronRight size={16} strokeWidth={3} />
                     </Link>
                 </div>
-                {/* Decorative Elements */}
+                {/* Decorative Elements - Subtle Wireframe */}
                 <div style={{
-                    position: 'absolute', right: '-20px', bottom: '-20px',
-                    opacity: 0.05, color: 'var(--primary)', transform: 'rotate(-15deg)'
+                    position: 'absolute', right: '-40px', bottom: '-40px',
+                    opacity: 0.03, color: '#fff', transform: 'rotate(-10deg)'
                 }}>
-                    <Coins size={160} />
+                    <Coins size={240} strokeWidth={0.5} />
                 </div>
             </div>
 
-            {/* Dashboard Sections Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                {/* Quick Actions Grid */}
+            {/* Portfolio Sections Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '40px' }}>
+                {/* Performance Metrics */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="glass-panel" style={{ padding: '20px' }}>
-                        <div style={{ color: 'var(--primary)', marginBottom: '12px' }}>
-                            <Flame size={24} />
+                    <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
+                        <div style={{ color: '#fff', marginBottom: '16px' }}>
+                            <Flame size={24} strokeWidth={1} />
                         </div>
-                        <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '4px' }}>Streak</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Active 2 days</p>
+                        <h3 style={{ fontSize: '0.75rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px' }}>STREAK</h3>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '1.2rem', fontWeight: '900' }}>2 DAYS</p>
                     </div>
-                    <div className="glass-panel" style={{ padding: '20px' }}>
-                        <div style={{ color: 'var(--secondary)', marginBottom: '12px' }}>
-                            <TrendingUp size={24} />
+                    <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
+                        <div style={{ color: '#fff', marginBottom: '16px' }}>
+                            <TrendingUp size={24} strokeWidth={1} />
                         </div>
-                        <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '4px' }}>Rank</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Gold Tier</p>
+                        <h3 style={{ fontSize: '0.75rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px' }}>RANK</h3>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '1.2rem', fontWeight: '900' }}>ELITE</p>
                     </div>
                 </div>
 
-                {/* Main Menu Sections */}
+                {/* Operations Menu */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <Link href="/game" className="glass-panel flex-between" style={{ padding: '18px 20px', textDecoration: 'none' }}>
-                        <div className="flex-center" style={{ gap: '16px' }}>
+                    <Link href="/game" className="glass-panel flex-between" style={{ padding: '24px', textDecoration: 'none', borderRadius: '4px', border: '1px solid #222' }}>
+                        <div className="flex-center" style={{ gap: '20px' }}>
                             <div style={{
-                                background: 'rgba(189, 0, 255, 0.1)',
-                                color: 'var(--secondary)',
-                                padding: '12px', borderRadius: '14px'
+                                background: 'transparent',
+                                border: '1px solid #444',
+                                color: '#fff',
+                                padding: '14px', borderRadius: '4px'
                             }}>
-                                <Trophy size={24} />
+                                <Trophy size={24} strokeWidth={1} />
                             </div>
                             <div>
-                                <h4 style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>Elite 2-Card</h4>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Win up to 10k coins</p>
+                                <h4 style={{ fontWeight: '900', fontSize: '0.9rem', color: '#fff', letterSpacing: '1px' }}>ARENA OPERATIONS</h4>
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>King & Queen Elite</p>
                             </div>
                         </div>
                         <span style={{
-                            background: 'rgba(189, 0, 255, 0.2)', color: 'var(--secondary)',
-                            fontSize: '0.65rem', fontWeight: '800',
-                            padding: '4px 8px', borderRadius: '6px'
-                        }}>HOT</span>
+                            border: '1px solid #fff', color: '#fff',
+                            fontSize: '0.6rem', fontWeight: '900',
+                            padding: '4px 8px', borderRadius: '2px', letterSpacing: '1px'
+                        }}>LIVE</span>
                     </Link>
 
-                    <Link href="/earn" className="glass-panel flex-between" style={{ padding: '18px 20px', textDecoration: 'none' }}>
-                        <div className="flex-center" style={{ gap: '16px' }}>
+                    <Link href="/earn" className="glass-panel flex-between" style={{ padding: '24px', textDecoration: 'none', borderRadius: '4px', border: '1px solid #222' }}>
+                        <div className="flex-center" style={{ gap: '20px' }}>
                             <div style={{
-                                background: 'rgba(0, 242, 255, 0.1)',
-                                color: 'var(--primary)',
-                                padding: '12px', borderRadius: '14px'
+                                background: 'transparent',
+                                border: '1px solid #444',
+                                color: '#fff',
+                                padding: '14px', borderRadius: '4px'
                             }}>
-                                <Target size={24} />
+                                <Target size={24} strokeWidth={1} />
                             </div>
                             <div>
-                                <h4 style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>Task Hub</h4>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>New tasks added</p>
+                                <h4 style={{ fontWeight: '900', fontSize: '0.9rem', color: '#fff', letterSpacing: '1px' }}>ASSET AQUISITION</h4>
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Tasks & Missions</p>
                             </div>
                         </div>
-                        <div className="flex-center" style={{ gap: '4px', color: 'var(--primary)' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>Explore</span>
-                            <ChevronRight size={14} />
+                        <div className="flex-center" style={{ gap: '4px', color: '#fff' }}>
+                            <ChevronRight size={20} strokeWidth={1} />
                         </div>
                     </Link>
                 </div>

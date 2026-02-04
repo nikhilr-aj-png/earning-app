@@ -112,28 +112,29 @@ export default function AdminPage() {
     return (
         <div className="animate-fade-in" style={{ padding: '24px 20px', minHeight: '90vh' }}>
             {/* Header */}
-            <div className="flex-between" style={{ marginBottom: '32px' }}>
-                <Link href="/dashboard" className="glass-panel flex-center" style={{ width: '40px', height: '40px', padding: '0', borderRadius: '12px' }}>
-                    <ChevronLeft size={20} />
+            <div className="flex-between" style={{ marginBottom: '48px' }}>
+                <Link href="/dashboard" className="glass-panel flex-center" style={{ width: '44px', height: '44px', padding: '0', borderRadius: '4px', border: '1px solid #fff' }}>
+                    <ChevronLeft size={20} color="#fff" />
                 </Link>
                 <div style={{ textAlign: 'center' }}>
-                    <h1 className="font-heading" style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '2px' }}>EXECUTIVE CONTROL</h1>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: '900', letterSpacing: '0.1em' }}>PRIVILEGED ACCESS</span>
+                    <h1 className="font-heading" style={{ fontSize: '1.2rem', fontWeight: '900', letterSpacing: '6px' }}>EXECUTIVE CONTROL</h1>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '2px' }}>V2.0 PRIVILEGED ACCESS</span>
                 </div>
-                <div className="glass-panel flex-center" style={{ width: '40px', height: '40px', padding: '0', borderRadius: '12px', borderColor: 'var(--accent)' }}>
-                    <ShieldAlert size={20} color="var(--accent)" />
+                <div className="glass-panel flex-center" style={{ width: '44px', height: '44px', padding: '0', borderRadius: '4px', border: '1px solid #fff' }}>
+                    <ShieldAlert size={20} color="#fff" />
                 </div>
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '32px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
                 {['stats', 'users', 'tasks', 'probo', 'casino'].map((t) => (
                     <button
                         key={t} onClick={() => setView(t as any)}
                         style={{
-                            padding: '10px 4px', borderRadius: '10px', border: 'none', fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase',
-                            background: view === t ? 'var(--primary)' : 'transparent',
-                            color: view === t ? '#00' : 'var(--text-muted)'
+                            padding: '14px 2px', borderRadius: '2px', border: 'none', fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px',
+                            background: view === t ? '#fff' : 'transparent',
+                            color: view === t ? '#000' : 'var(--text-dim)',
+                            transition: '0.3s'
                         }}
                     >
                         {t}
@@ -143,31 +144,31 @@ export default function AdminPage() {
 
             {/* Views */}
             {view === 'stats' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-                        <Users size={28} color="var(--primary)" style={{ marginBottom: '12px' }} />
-                        <h2 style={{ fontSize: '1.8rem', fontWeight: '900' }}>{adminStats?.totalUsers || 0}</h2>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '800' }}>USERS</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', border: '1px solid #222' }}>
+                        <Users size={24} color="#fff" strokeWidth={1} style={{ marginBottom: '16px' }} />
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px' }}>{adminStats?.totalUsers || 0}</h2>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '2px' }}>TOTAL USERS</p>
                     </div>
-                    <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-                        <Database size={28} color="var(--secondary)" style={{ marginBottom: '12px' }} />
-                        <h2 style={{ fontSize: '1.8rem', fontWeight: '900' }}>{adminStats?.totalCoinsDistributed || 0}</h2>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '800' }}>COINS</p>
+                    <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', border: '1px solid #222' }}>
+                        <Database size={24} color="#fff" strokeWidth={1} style={{ marginBottom: '16px' }} />
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px' }}>{adminStats?.totalCoinsDistributed || 0}</h2>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '2px' }}>DISTRIBUTED CREDITS</p>
                     </div>
                 </div>
             )}
 
             {view === 'users' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {usersLoading ? <p>Loading Users...</p> : adminUsers.map((u: any) => (
-                        <div key={u.id} className="glass-panel flex-between" style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {usersLoading ? <p>Loading Operators...</p> : adminUsers.map((u: any) => (
+                        <div key={u.id} className="glass-panel flex-between" style={{ padding: '20px', borderRadius: '2px', border: '1px solid #222' }}>
                             <div>
-                                <h4 style={{ fontSize: '0.85rem', fontWeight: '800' }}>{u.name}</h4>
-                                <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '900' }}>{u.coins.toLocaleString()} FLOW</p>
+                                <h4 style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '1px' }}>{u.name.toUpperCase()}</h4>
+                                <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '900', letterSpacing: '1px' }}>{u.coins.toLocaleString()} FLOW</p>
                             </div>
-                            <div className="flex-center" style={{ gap: '12px' }}>
-                                <button onClick={() => handleAdjustCoins(u.id)} style={{ background: 'none', border: 'none', color: 'var(--success)' }}><Plus size={20} /></button>
-                                <Settings size={18} color="var(--text-dim)" />
+                            <div className="flex-center" style={{ gap: '16px' }}>
+                                <button onClick={() => handleAdjustCoins(u.id)} style={{ background: '#fff', border: 'none', color: '#000', padding: '6px 12px', borderRadius: '2px', fontSize: '0.6rem', fontWeight: '900' }}>ADJUST</button>
+                                <Settings size={18} color="var(--text-dim)" strokeWidth={1} />
                             </div>
                         </div>
                     ))}
@@ -175,16 +176,16 @@ export default function AdminPage() {
             )}
 
             {view === 'probo' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <button onClick={handleCreateProbo} className="btn" style={{ background: 'var(--primary)', color: '#000' }}>
-                        <Plus size={18} /> CREATE EVENT
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <button onClick={handleCreateProbo} className="btn" style={{ background: '#fff', color: '#000' }}>
+                        NEW PREDICTION EVENT
                     </button>
                     {proboEvents.map((e: any) => (
-                        <div key={e.id} className="glass-panel" style={{ padding: '20px' }}>
-                            <h4 style={{ fontWeight: '800', marginBottom: '16px' }}>{e.question}</h4>
+                        <div key={e.id} className="glass-panel" style={{ padding: '32px', border: '1px solid #222' }}>
+                            <h4 style={{ fontWeight: '900', marginBottom: '24px', fontSize: '0.9rem', letterSpacing: '1px', lineHeight: '1.4' }}>{e.question.toUpperCase()}</h4>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <button onClick={() => handleResolveProbo(e.id, 'yes')} className="btn" style={{ background: 'var(--success)', fontSize: '0.65rem' }}>RESOLVE YES</button>
-                                <button onClick={() => handleResolveProbo(e.id, 'no')} className="btn" style={{ background: 'var(--error)', fontSize: '0.65rem' }}>RESOLVE NO</button>
+                                <button onClick={() => handleResolveProbo(e.id, 'yes')} className="btn" style={{ background: '#333', color: '#fff', fontSize: '0.65rem', border: '1px solid #444' }}>RESOLVE YES</button>
+                                <button onClick={() => handleResolveProbo(e.id, 'no')} className="btn" style={{ background: 'transparent', color: '#fff', fontSize: '0.65rem', border: '1px solid #fff' }}>RESOLVE NO</button>
                             </div>
                         </div>
                     ))}
@@ -192,12 +193,12 @@ export default function AdminPage() {
             )}
 
             {view === 'casino' && (
-                <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-                    <Activity size={32} color="var(--primary)" style={{ marginBottom: '16px' }} />
-                    <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '16px' }}>LIVE ARENA MONITOR</h3>
-                    <p style={{ color: 'var(--success)', fontSize: '0.7rem', fontWeight: '800' }}>PROFIT LOGIC ACTIVE: LEAST BET SIDE WINS</p>
-                    <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Real-time betting totals are polled from Project 2.</p>
+                <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', border: '1px solid #fff', borderRadius: '4px' }}>
+                    <Activity size={32} color="#fff" strokeWidth={1} style={{ marginBottom: '24px' }} />
+                    <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '1px' }}>ALGORITHM: LOW-DENSITY VECTOR SELECTION</p>
+                    <div style={{ marginTop: '32px', padding: '24px', border: '1px solid #222', background: 'transparent' }}>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>REAL-TIME DATA STREAM SYNCHRONIZED WITH PROJECT 2.</p>
                     </div>
                 </div>
             )}

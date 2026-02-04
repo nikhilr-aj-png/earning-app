@@ -75,61 +75,61 @@ export default function ArcadePage() {
     return (
         <div className="animate-fade-in" style={{ padding: '24px 20px', minHeight: '90vh' }}>
             {/* Arcade Header */}
-            <div className="flex-between" style={{ marginBottom: '32px' }}>
+            <div className="flex-between" style={{ marginBottom: '40px' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.03em' }}>ARENA</h1>
-                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '6px' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }} />
-                        <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)' }}>LIVE ROUNDS ACTIVE</span>
+                    <h1 className="font-heading" style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '4px' }}>ARENA</h1>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff' }} />
+                        <span style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)', letterSpacing: '2px' }}>OPERATIONS LIVE</span>
                     </div>
                 </div>
-                <div className="glass-panel flex-center" style={{ padding: '8px 16px', gap: '8px', borderRadius: '12px' }}>
-                    <Clock size={16} color="var(--primary)" />
-                    <span style={{ fontSize: '0.9rem', fontWeight: '900', fontFamily: 'monospace' }}>00:{timeLeft.toString().padStart(2, '0')}</span>
+                <div className="glass-panel flex-center" style={{ padding: '12px 24px', gap: '10px', borderRadius: '4px', border: '1px solid #fff' }}>
+                    <Clock size={16} color="#fff" strokeWidth={1} />
+                    <span style={{ fontSize: '1.1rem', fontWeight: '900', letterSpacing: '2px' }}>00:{timeLeft.toString().padStart(2, '0')}</span>
                 </div>
             </div>
 
             {/* Game Selection Tabs */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
                 <button
                     onClick={() => setGameTab('aviator')}
                     style={{
-                        flex: 1, padding: '12px', borderRadius: '12px', border: 'none', gap: '8px',
+                        flex: 1, padding: '16px', borderRadius: '2px', border: 'none', gap: '12px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: gameTab === 'aviator' ? 'var(--primary)' : 'transparent',
+                        background: gameTab === 'aviator' ? '#fff' : 'transparent',
                         color: gameTab === 'aviator' ? '#000' : 'var(--text-dim)',
-                        transition: '0.3s'
+                        transition: '0.4s var(--transition)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px'
                     }}
                 >
-                    <Plane size={18} /> <span style={{ fontSize: '0.75rem', fontWeight: '800' }}>KING & QUEEN</span>
+                    KING & QUEEN
                 </button>
                 <button
                     onClick={() => setGameTab('color')}
                     style={{
-                        flex: 1, padding: '12px', borderRadius: '12px', border: 'none', gap: '8px',
+                        flex: 1, padding: '16px', borderRadius: '2px', border: 'none', gap: '12px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: gameTab === 'color' ? 'var(--secondary)' : 'transparent',
+                        background: gameTab === 'color' ? '#fff' : 'transparent',
                         color: gameTab === 'color' ? '#000' : 'var(--text-dim)',
-                        transition: '0.3s'
+                        transition: '0.4s var(--transition)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px'
                     }}
                 >
-                    <Palette size={18} /> <span style={{ fontSize: '0.75rem', fontWeight: '800' }}>LUCKY COLOR</span>
+                    LUCKY COLOR
                 </button>
             </div>
 
             {/* Bet Multiplier Controls */}
-            <div className="glass-panel" style={{ padding: '20px', marginBottom: '32px', textAlign: 'center' }}>
-                <p style={{ fontSize: '0.65rem', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '16px', letterSpacing: '2px' }}>SELECT WAGER</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div className="glass-panel" style={{ padding: '32px', marginBottom: '40px', textAlign: 'center', borderRadius: '4px', border: '1px solid #222' }}>
+                <p style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)', marginBottom: '24px', letterSpacing: '4px' }}>OPERATIONAL WAGER</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                     {[10, 50, 100, 500].map(amt => (
                         <button
                             key={amt}
                             onClick={() => setBetAmount(amt)}
                             style={{
-                                padding: '12px 0', borderRadius: '12px', border: '1px solid var(--glass-border)',
-                                background: betAmount === amt ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
-                                color: betAmount === amt ? '#000' : 'var(--text-main)',
-                                fontSize: '0.8rem', fontWeight: '800'
+                                padding: '16px 0', borderRadius: '2px', border: '1px solid #333',
+                                background: betAmount === amt ? '#fff' : 'transparent',
+                                color: betAmount === amt ? '#000' : '#fff',
+                                fontSize: '0.8rem', fontWeight: '900', letterSpacing: '1px'
                             }}
                         >
                             {amt}
@@ -141,7 +141,7 @@ export default function ArcadePage() {
             {/* King & Queen Implementation */}
             {gameTab === 'aviator' && (
                 <div className="animate-fade-in">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '40px' }}>
                         {[
                             { id: 'A', name: 'KING', img: '/assets/king.png' },
                             { id: 'B', name: 'QUEEN', img: '/assets/queen.png' }
@@ -152,92 +152,67 @@ export default function ArcadePage() {
                             return (
                                 <div key={card.id} className="glass-panel" style={{
                                     padding: '0', overflow: 'hidden', textAlign: 'center', position: 'relative',
-                                    border: isHeavier ? '1px solid rgba(255, 77, 77, 0.2)' : '1px solid rgba(0, 255, 163, 0.4)',
-                                    boxShadow: isHeavier ? 'none' : '0 10px 40px rgba(0, 255, 163, 0.15)',
-                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    border: isHeavier ? '1px solid #333' : '1px solid #fff',
+                                    borderRadius: '4px', background: '#000',
+                                    transition: 'all 0.6s var(--transition)',
                                     transform: isBetting ? 'scale(0.98)' : 'scale(1)'
                                 }}>
-                                    {/* Professional Character Image with Face Framing */}
-                                    <div style={{ position: 'relative', width: '100%', height: '320px', overflow: 'hidden', background: '#000' }}>
+                                    <div style={{ position: 'relative', width: '100%', height: '360px', overflow: 'hidden' }}>
                                         <img
                                             src={card.img}
                                             alt={card.name}
                                             style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                objectPosition: 'top center', // Focus on faces
-                                                opacity: 1, // Full opacity for clarity
-                                                filter: 'contrast(1.1) brightness(1.05) saturate(1.1) contrast(1.05)', // Sharpening
-                                                imageRendering: '-webkit-optimize-contrast', // High-fidelity rendering
-                                                transition: '0.6s'
+                                                width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center',
+                                                filter: 'grayscale(100%) contrast(1.2) brightness(0.8)', // Monochrome Premium
+                                                transition: '0.8s'
                                             }}
                                         />
                                         <div style={{
                                             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                                            background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(5, 7, 10, 0.9) 100%)',
+                                            background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%)',
                                         }} />
 
                                         <div style={{
-                                            position: 'absolute', top: '15px', right: '15px',
-                                            background: isHeavier ? 'rgba(255, 77, 77, 0.2)' : 'rgba(0, 255, 163, 0.2)',
-                                            padding: '4px 12px', borderRadius: '20px', backdropFilter: 'blur(4px)',
-                                            border: `1px solid ${isHeavier ? 'rgba(255, 77, 77, 0.3)' : 'rgba(0, 255, 163, 0.3)'}`
+                                            position: 'absolute', top: '20px', left: '20px',
+                                            padding: '4px 12px', border: '1px solid #fff', background: '#000'
                                         }}>
-                                            <span style={{ fontSize: '0.6rem', fontWeight: '900', color: isHeavier ? '#ff4d4d' : '#00ffa3', letterSpacing: '1px' }}>
-                                                CARD {card.id}
+                                            <span style={{ fontSize: '0.6rem', fontWeight: '900', color: '#fff', letterSpacing: '2px' }}>
+                                                ASSET {card.id}
                                             </span>
                                         </div>
 
                                         <h2 style={{
                                             position: 'absolute', bottom: '40px', left: '0', right: '0',
-                                            fontSize: '1.5rem', fontWeight: '900', color: '#fff',
-                                            textShadow: '0 4px 20px rgba(0,0,0,0.5)', letterSpacing: '4px'
+                                            fontSize: '1.8rem', fontWeight: '900', color: '#fff', letterSpacing: '8px'
                                         }}>{card.name}</h2>
                                     </div>
 
-                                    <div style={{ padding: '24px', position: 'relative', zIndex: 1, marginTop: '-30px', background: 'var(--bg-main)' }}>
-                                        <div style={{ marginBottom: '20px' }}>
-                                            <div style={{
-                                                fontSize: '2.5rem', fontWeight: '900',
-                                                color: isHeavier ? 'var(--error)' : 'var(--success)',
-                                                letterSpacing: '-1px',
-                                                textShadow: !isHeavier ? '0 0 15px rgba(0, 255, 163, 0.4)' : 'none'
-                                            }}>
+                                    <div style={{ padding: '32px', background: '#000' }}>
+                                        <div style={{ marginBottom: '24px' }}>
+                                            <div style={{ fontSize: '3rem', fontWeight: '900', color: '#fff', letterSpacing: '-2px' }}>
                                                 {total?.toLocaleString() || 0}
                                             </div>
-                                            <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '2px' }}>VOTED COINS</p>
+                                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '4px' }}>VOLUME</p>
                                         </div>
 
                                         <button
                                             onClick={() => placeBet(card.id)}
                                             disabled={isBetting}
                                             className="btn" style={{
-                                                width: '100%',
-                                                height: '54px',
-                                                borderRadius: '16px',
-                                                background: isHeavier ? 'rgba(255,255,255,0.03)' : 'linear-gradient(45deg, var(--primary), #00d4ff)',
-                                                border: 'none',
-                                                boxShadow: isHeavier ? '0 0 0 rgba(0,0,0,0)' : '0 10px 20px rgba(0, 242, 255, 0.2)',
-                                                color: isHeavier ? 'var(--text-dim)' : '#000',
-                                                fontWeight: '900',
-                                                fontSize: '0.9rem',
-                                                letterSpacing: '1px'
+                                                width: '100%', height: '60px', borderRadius: '2px',
+                                                background: isHeavier ? 'transparent' : '#fff',
+                                                border: '1px solid #fff',
+                                                color: isHeavier ? '#fff' : '#000',
+                                                fontWeight: '900', fontSize: '0.8rem', letterSpacing: '2px'
                                             }}
                                         >
-                                            {isBetting ? 'LOCKING...' : `CHOOSE ${card.id}`}
+                                            {isBetting ? 'EXECUTING...' : `SELECT ${card.id}`}
                                         </button>
 
-                                        <div style={{ marginTop: '16px' }}>
-                                            {isHeavier ? (
-                                                <div className="flex-center" style={{ gap: '6px', color: 'var(--error)', fontSize: '0.6rem', fontWeight: '900' }}>
-                                                    <AlertTriangle size={12} /> DANGER: HIGH STAKE
-                                                </div>
-                                            ) : (
-                                                <div className="flex-center" style={{ gap: '6px', color: 'var(--success)', fontSize: '0.6rem', fontWeight: '900' }}>
-                                                    <ShieldCheck size={12} /> SAFE ZONE: PROFIT SIDE
-                                                </div>
-                                            )}
+                                        <div style={{ marginTop: '20px' }}>
+                                            <div className="flex-center" style={{ gap: '8px', color: isHeavier ? 'var(--text-dim)' : '#fff', fontSize: '0.6rem', fontWeight: '900', letterSpacing: '2px' }}>
+                                                {isHeavier ? 'HIGH RISK SECTOR' : 'OPTIMIZED PROFIT ZONE'}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

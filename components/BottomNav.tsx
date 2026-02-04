@@ -22,13 +22,9 @@ export default function BottomNav() {
         <nav style={{
             position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
             width: '100%', maxWidth: 'var(--max-width)',
-            background: 'rgba(5, 7, 10, 0.85)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderTop: '1px solid var(--glass-border)',
-            borderLeft: '1px solid var(--glass-border)',
-            borderRight: '1px solid var(--glass-border)',
-            borderRadius: '24px 24px 0 0',
+            background: '#000',
+            borderTop: '1px solid #222',
+            borderRadius: '0',
             zIndex: 100,
             display: 'flex', justifyContent: 'center'
         }}>
