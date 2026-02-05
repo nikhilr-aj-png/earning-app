@@ -3,12 +3,12 @@
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity, Copy, Crown } from "lucide-react";
+import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity, Copy, Crown, History } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/context/ToastContext";
 
 export default function Dashboard() {
-    const { user, logout, refreshUser } = useUser();
+    const { user, logout, refreshUser, loading } = useUser(); // Added loading
     const { showToast } = useToast();
     const router = useRouter();
     const [greeting] = useState(() => {
@@ -19,16 +19,18 @@ export default function Dashboard() {
     });
 
     useEffect(() => {
-        if (user) {
+        if (!loading && !user) {
+            router.push('/');
+        } else if (user) {
             if (user.is_admin) {
                 router.push('/admin');
             } else {
                 refreshUser();
             }
         }
-    }, [user, refreshUser]);
+    }, [user, loading, refreshUser, router]); // Added dependencies
 
-    if (!user) {
+    if (loading || !user) { // Show loading if loading OR user is not yet present (but redirect will happen if !loading && !user)
         return (
             <div className="flex-center" style={{ minHeight: '80vh', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ color: 'var(--primary)', animation: 'pulse-glow 2s infinite' }}>
@@ -69,18 +71,11 @@ export default function Dashboard() {
                         {user.name.toUpperCase()}
                     </h1>
                 </div>
-                <button
-                    onClick={logout}
-                    className="glass-panel flex-center"
-                    style={{ padding: '12px', borderRadius: '16px', color: 'var(--text-dim)', border: '1px solid var(--glass-border)', background: 'var(--bg-secondary)' }}
-                >
-                    <LogOut size={20} strokeWidth={2.5} />
-                </button>
             </div>
 
             {/* Executive Balance Card - Extreme Vibrant */}
             <div className="glass-panel glass-vibrant" style={{
-                padding: '60px 40px',
+                padding: 'clamp(24px, 5vw, 60px) clamp(20px, 4vw, 40px)',
                 background: 'linear-gradient(135deg, #1e40af 0%, #7e22ce 50%, #020617 100%)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 marginBottom: '40px',
@@ -91,48 +86,8 @@ export default function Dashboard() {
                 zIndex: 1
             }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                    <div className="flex-between" style={{ marginBottom: '24px' }}>
-                        <div className="flex-center" style={{ gap: '16px' }}>
-                            <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
-                                <Zap size={24} color="#fff" fill="currentColor" />
-                            </div>
-                            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>
-                                ASSET CONTROL
-                            </span>
-                        </div>
-                        {user.is_premium ? (
-                            <div className="badge-gold flex-center" style={{ gap: '8px', padding: '10px 20px', borderRadius: '14px', boxShadow: '0 8px 16px rgba(234, 179, 8, 0.2)' }}>
-                                <Crown size={14} fill="currentColor" />
-                                <span style={{ fontSize: '0.7rem', fontWeight: '950', letterSpacing: '2px' }}>PREMIUM ELITE</span>
-                            </div>
-                        ) : (
-                            <Link href="/premium" className="flex-center" style={{
-                                gap: '12px',
-                                padding: '8px 4px 8px 16px',
-                                borderRadius: '14px',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                background: 'rgba(255,255,255,0.1)',
-                                backdropFilter: 'blur(10px)',
-                                cursor: 'pointer',
-                                textDecoration: 'none'
-                            }}>
-                                <span style={{ fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px', color: '#fff', opacity: 0.7 }}>FREE TIER</span>
-                                <div style={{
-                                    background: 'var(--gold)',
-                                    color: '#000',
-                                    padding: '6px 14px',
-                                    borderRadius: '10px',
-                                    fontSize: '0.65rem',
-                                    fontWeight: '950',
-                                    letterSpacing: '1px'
-                                }}>
-                                    UPGRADE
-                                </div>
-                            </Link>
-                        )}
-                    </div>
-                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '48px' }}>
-                        <span style={{ fontSize: '5rem', fontWeight: '950', letterSpacing: '-6px', lineHeight: 1, color: '#fff' }}>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '48px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 'clamp(3rem, 12vw, 5rem)', fontWeight: '950', letterSpacing: '-2px', lineHeight: 1, color: '#fff' }}>
                             {user.coins.toLocaleString()}
                         </span>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
@@ -150,53 +105,18 @@ export default function Dashboard() {
                 <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '250px', height: '250px', background: 'var(--violet)', filter: 'blur(100px)', opacity: 0.3 }} />
             </div>
 
-            {/* Market Analytics - Global Velocity */}
-            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #111', marginBottom: '40px', borderRadius: '4px' }}>
-                <div className="flex-between" style={{ marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '2px', color: 'var(--text-dim)' }}>PORTFOLIO VELOCITY</h3>
-                    <Activity size={16} color="var(--emerald)" />
-                </div>
-                <div style={{ height: '80px', width: '100%', position: 'relative' }}>
-                    <svg viewBox="0 0 400 100" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                        <path
-                            d="M0,80 Q50,20 100,50 T200,30 T300,70 T400,10"
-                            fill="none"
-                            stroke="var(--emerald)"
-                            strokeWidth="3"
-                            style={{ filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))' }}
-                        />
-                        <path
-                            d="M0,80 Q50,20 100,50 T200,30 T300,70 T400,10 L400,100 L0,100 Z"
-                            fill="url(#goldGradient)"
-                            opacity="0.1"
-                        />
-                        <defs>
-                            <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="var(--emerald)" />
-                                <stop offset="100%" stopColor="transparent" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-            </div>
 
             {/* Portfolio Sections Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '40px' }}>
                 {/* Performance Metrics */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
-                        <div style={{ color: 'var(--rose)', marginBottom: '16px' }}>
-                            <Flame size={24} strokeWidth={1} />
-                        </div>
-                        <h3 style={{ fontSize: '0.75rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px' }}>STREAK</h3>
-                        <p style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '900' }}>2 DAYS</p>
+                {/* Recent Activity Log */}
+                <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
+                    <div className="flex-between" style={{ marginBottom: '16px' }}>
+                        <h3 style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '2px', color: 'var(--text-dim)' }}>RECENT ACTIVITY</h3>
+                        <History size={20} color="var(--text-dim)" />
                     </div>
-                    <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
-                        <div style={{ color: 'var(--gold)', marginBottom: '16px' }}>
-                            <Trophy size={24} strokeWidth={1} />
-                        </div>
-                        <h3 style={{ fontSize: '0.75rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px' }}>RANK</h3>
-                        <p style={{ color: 'var(--gold)', fontSize: '1.2rem', fontWeight: '900' }}>GOLD</p>
+                    <div style={{ textAlign: 'center', padding: '20px 0', opacity: 0.5 }}>
+                        <p style={{ fontSize: '0.7rem', fontWeight: '600' }}>NO ACTIVITY DETECTED</p>
                     </div>
                 </div>
 

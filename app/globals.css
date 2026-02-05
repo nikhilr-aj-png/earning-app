@@ -237,23 +237,6 @@ a {
   align-items: center;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.8s var(--transition) forwards;
-}
-
 @keyframes ticker {
   0% {
     transform: translateX(100%);
@@ -327,4 +310,11 @@ a {
 
 .card-back {
   transform: rotateY(180deg);
+}
+
+/* Responsive Nav Label Logic */
+@media (max-width: 380px) {
+  .nav-label {
+    display: none !important;
+  }
 }

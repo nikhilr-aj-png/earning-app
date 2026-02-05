@@ -172,7 +172,7 @@ export default function Home() {
           <div className="badge-gold" style={{ marginBottom: '24px', padding: '8px 20px', borderRadius: '12px', fontSize: '0.7rem' }}>
             THE DIGITAL CAPITAL PROTOCOL IS ACTIVE
           </div>
-          <h1 style={{ fontSize: '4.5rem', fontWeight: '950', letterSpacing: '-4px', lineHeight: 1, color: '#fff', marginBottom: '32px' }}>
+          <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: '950', letterSpacing: '-2px', lineHeight: 1.1, color: '#fff', marginBottom: '32px' }}>
             Accelerate Your <br />
             <span className="text-gradient" style={{ background: 'var(--grad-vibrant)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Financial Velocity</span>
           </h1>
@@ -200,7 +200,7 @@ export default function Home() {
           <div className="flex-between" style={{ gap: '80px', flexWrap: 'wrap-reverse' }}>
             <div style={{ flex: 1, minWidth: '300px' }}>
               <div className="badge-gold" style={{ marginBottom: '24px' }}>OPERATIONAL INTELLIGENCE</div>
-              <h2 style={{ fontSize: '3rem', fontWeight: '950', color: '#fff', marginBottom: '24px', letterSpacing: '-2px' }}>
+              <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: '950', color: '#fff', marginBottom: '24px', letterSpacing: '-1px' }}>
                 Advanced Data <br /> Synchronicity
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '32px' }}>
@@ -229,7 +229,7 @@ export default function Home() {
             </div>
             <div style={{ flex: 1, minWidth: '300px' }}>
               <div className="badge-emerald" style={{ marginBottom: '24px', background: 'var(--emerald)', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900' }}>HIGH VELOCITY ARENA</div>
-              <h2 style={{ fontSize: '3rem', fontWeight: '950', color: '#fff', marginBottom: '24px', letterSpacing: '-2px' }}>
+              <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: '950', color: '#fff', marginBottom: '24px', letterSpacing: '-1px' }}>
                 Capital Deployment <br /> Redefined
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '32px' }}>
