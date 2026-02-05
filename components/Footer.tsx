@@ -102,6 +102,9 @@ export default function Footer() {
                     </div>
                 </div>
 
+                <div style={{ textAlign: "center", marginTop: "80px", color: "var(--text-dim)", fontSize: "0.7rem", letterSpacing: "1px", opacity: 0.5 }}>
+                    <p>© 2026 EARNFLOW. ALL RIGHTS RESERVED. v2.0 Live</p>
+                </div>
             </div>
         </footer>
     );
