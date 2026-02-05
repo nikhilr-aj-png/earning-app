@@ -36,6 +36,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: 'earn-flow-user',
+            partialize: (state) => ({ user: state.user, coins: state.user?.coins }), // Only persist user data
         }
     )
 );
