@@ -5,7 +5,16 @@ export const dynamic = 'force-dynamic';
 import { useUser } from "@/context/UserContext";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Task } from "@/lib/db";
+
+export interface Task {
+    id: string;
+    title: string;
+    reward: number;
+    type: 'visit' | 'ad' | 'quiz' | 'checkin';
+    url?: string;
+    cooldown?: number;
+}
+
 import { CheckCircle2, Clock, ExternalLink, PlayCircle, Zap, ChevronRight, Info, Target, Coins } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 

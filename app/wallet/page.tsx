@@ -3,7 +3,16 @@
 export const dynamic = 'force-dynamic';
 
 import { useUser } from "@/context/UserContext";
-import { Transaction } from "@/lib/db";
+
+export interface Transaction {
+    id: string;
+    userId: string;
+    amount: number;
+    type: 'earn' | 'game_win' | 'game_loss' | 'withdraw' | 'bonus';
+    description: string;
+    createdAt: string;
+}
+
 import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap } from "lucide-react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
