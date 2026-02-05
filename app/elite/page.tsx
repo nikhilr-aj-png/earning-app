@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useUser } from "@/context/UserContext";
 import { Crown, Zap, Shield, TrendingUp, ChevronLeft, CheckCircle2, Star } from "lucide-react";
 import Link from "next/link";
