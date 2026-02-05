@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { ShieldAlert, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 

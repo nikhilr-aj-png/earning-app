@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { Zap, ChevronLeft, Target, Shield, Users } from "lucide-react";
 import Link from "next/link";
 

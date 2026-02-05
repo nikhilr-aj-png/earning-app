@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { Mail, MessageSquare, Info, ChevronLeft, Zap, ExternalLink } from "lucide-react";
 import Link from "next/link";
 

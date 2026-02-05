@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useUser } from "@/context/UserContext";
 import { useState, useEffect } from "react";
 import { Users, Settings, Database, ChevronLeft, ShieldAlert, BarChart3, Plus, Trash2, Activity, Zap, TrendingUp, Gamepad2, AlertCircle, CheckCircle2 } from "lucide-react";

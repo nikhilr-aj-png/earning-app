@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useUser } from "@/context/UserContext";
 import { Transaction } from "@/lib/db";
 import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap } from "lucide-react";

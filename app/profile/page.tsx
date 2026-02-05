@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useUser } from "@/context/UserContext";
 import { User, Mail, Shield, Copy, LogOut, ChevronRight, Zap, Users, TrendingUp, Crown, Star } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
