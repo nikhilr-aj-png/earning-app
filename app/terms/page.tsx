@@ -35,7 +35,7 @@ export default function TermsPage() {
                         </p>
                         <div className="glass-panel" style={{ padding: '24px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                                "We treat fair play seriously. Play fair, earn fair."
+                                &quot;We treat fair play seriously. Play fair, earn fair.&quot;
                             </p>
                         </div>
                     </section>
@@ -52,7 +52,7 @@ export default function TermsPage() {
                             </li>
                             <li style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '12px', display: 'flex', gap: '12px' }}>
                                 <div style={{ minWidth: '8px', height: '8px', background: 'var(--gold)', borderRadius: '50%', marginTop: '8px' }} />
-                                Incorrect payment details are the user's responsibility.
+                                Incorrect payment details are the user&apos;s responsibility.
                             </li>
                         </ul>
                     </section>

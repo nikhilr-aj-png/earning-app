@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Zap, Shield, Twitter, Github, Mail, ExternalLink } from "lucide-react";
+import { Zap, Shield, Mail, ExternalLink } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function Footer() {

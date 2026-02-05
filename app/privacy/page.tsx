@@ -42,7 +42,7 @@ export default function PrivacyPage() {
                         </p>
                         <div className="glass-panel" style={{ padding: '24px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                                "Your earning history and personal details are private."
+                                &quot;Your earning history and personal details are private.&quot;
                             </p>
                         </div>
                     </section>

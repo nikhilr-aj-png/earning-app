@@ -15,7 +15,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (user) refreshUser();
-    }, []);
+    }, [user, refreshUser]);
 
     // Queries
     const { data: adminStats } = useQuery({
@@ -109,7 +109,7 @@ export default function AdminPage() {
                     <h1 className="font-heading" style={{ fontSize: '1.2rem', fontWeight: '900', letterSpacing: '6px', margin: 0 }}>EXECUTIVE CONTROL</h1>
                     <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ fontSize: '0.65rem', color: '#fff', fontWeight: '950', letterSpacing: '2px', opacity: 0.9 }}>
-                            ADMIN: {user.name.toUpperCase()}
+                            ADMIN: {user?.name?.toUpperCase()}
                         </span>
                         <span style={{ fontSize: '0.55rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px' }}>
                             IDENTITY ID: {user.id.substring(0, 8).toUpperCase()}

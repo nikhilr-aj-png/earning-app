@@ -3,7 +3,7 @@
 import { useUser } from "@/context/UserContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Gamepad2, Wallet, CheckSquare, Zap, Trophy, Coins, User, TrendingUp } from "lucide-react";
+import { Home, Wallet, CheckSquare, Trophy, User } from "lucide-react";
 
 export default function BottomNav() {
     const { user } = useUser();

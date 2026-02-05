@@ -5,8 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/useUserStore';
 import { useToast } from './ToastContext';
 
+interface User {
+    id: string;
+    email: string;
+    name?: string;
+    coins: number;
+    is_admin: boolean;
+    is_premium: boolean;
+    [key: string]: any;
+}
+
 interface UserContextType {
-    user: any;
+    user: User | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, name?: string, refCode?: string) => Promise<void>;
@@ -122,7 +132,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                 // Profile missing or unauthorized - terminated session
                 logout();
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Failed to refresh user", err);
         }
     };

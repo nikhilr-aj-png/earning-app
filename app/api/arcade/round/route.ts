@@ -4,11 +4,13 @@ import { supabaseGame } from '@/lib/supabase';
 export async function GET() {
     try {
         // Find the active round
-        let { data: round, error } = await supabaseGame
+        const { data: initialRound, error } = await supabaseGame
             .from('game_rounds')
             .select('*')
             .eq('status', 'open')
             .single();
+
+        let round = initialRound;
 
         // If no round, create one (simplification for MVP)
         if (!round) {

@@ -204,7 +204,7 @@ export default function Home() {
                 Simple Actions, <br /> Instant Returns
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '32px' }}>
-                Maximize your earnings by completing verified tasks from top global brands. Whether it's testing apps, answering surveys, or watching videos, every action adds to your balance.
+                Maximize your earnings by completing verified tasks from top global brands. Whether it&apos;s testing apps, answering surveys, or watching videos, every action adds to your balance.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <div>
@@ -368,7 +368,7 @@ export default function Home() {
                 </button>
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: '900', letterSpacing: '1px' }}>
-                    DIDN'T RECEIVE CODE?{' '}
+                    DIDN&apos;T RECEIVE CODE?{' '}
                     <span
                       onClick={handleResend}
                       style={{

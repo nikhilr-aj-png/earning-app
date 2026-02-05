@@ -66,7 +66,7 @@ export default function AboutPage() {
                     <section className="glass-panel" style={{ padding: '60px', borderRadius: '40px', background: 'var(--grad-sapphire)', border: 'none', textAlign: 'center' }}>
                         <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: "#fff", marginBottom: '24px', letterSpacing: '-2px' }}>Start Earning Today</h2>
                         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem', maxWidth: '800px', margin: '0 auto', lineHeight: '1.8' }}>
-                            Join EarnFlow now and turn your free time into cash. It's free, fair, and fun.
+                            Join EarnFlow now and turn your free time into cash. It&apos;s free, fair, and fun.
                         </p>
                     </section>
                 </div>

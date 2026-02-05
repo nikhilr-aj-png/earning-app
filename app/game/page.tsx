@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Coins, Trophy, Zap, Clock, ShieldCheck, Activity, Plane, Palette, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,17 +17,8 @@ export default function ArcadePage() {
     const [isBetting, setIsBetting] = useState(false);
     const [timeLeft, setTimeLeft] = useState(30);
 
-    // Auth Protection
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/');
-        }
-    }, [user, loading, router]);
-
-    if (loading || !user) return null; // Prevent flicker
-
     // Fetch Current Round
-    const { data: round, refetch: refetchRound } = useQuery({
+    const { data: round } = useQuery({
         queryKey: ['arcade-round'],
         queryFn: async () => {
             const res = await fetch("/api/arcade/round");
@@ -35,21 +26,6 @@ export default function ArcadePage() {
         },
         refetchInterval: 2000 // Poll every 2s for live totals
     });
-
-    // Timer Logic
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    // Resolve round when timer hits 0 (Simplified: Client triggers resolution for demo)
-                    if (round?.id) handleResolve(round.id);
-                    return 30;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [round]);
 
     const betMutation = useMutation({
         mutationFn: async (payload: { roundId: string, choice: string, amount: number }) => {
@@ -68,7 +44,7 @@ export default function ArcadePage() {
         }
     });
 
-    const handleResolve = async (id: string) => {
+    const handleResolve = useCallback(async (id: string) => {
         const res = await fetch("/api/arcade/resolve", {
             method: "POST",
             body: JSON.stringify({ roundId: id })
@@ -77,12 +53,35 @@ export default function ArcadePage() {
             queryClient.invalidateQueries({ queryKey: ['arcade-round'] });
             refreshUser();
         }
-    };
+    }, [queryClient, refreshUser]);
+
+    // Auth Protection
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/');
+        }
+    }, [user, loading, router]);
+
+    // Timer Logic
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    if (round?.id) handleResolve(round.id);
+                    return 30;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [round, handleResolve]);
+
+    if (loading || !user) return null; // Prevent flicker
 
     const placeBet = (choice: string) => {
         if (!user || user.coins < betAmount) return showToast("INSUFFICIENT CAPITAL FOR ALLOCATION", "error");
         setIsBetting(true);
-        betMutation.mutate({ roundId: round.id, choice, amount: betAmount });
+        betMutation.mutate({ roundId: round?.id, choice, amount: betAmount });
     };
 
     return (
