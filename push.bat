@@ -16,8 +16,9 @@ git commit -m "%commit_msg%"
 
 :: Push to remote
 echo.
-echo [3/3] Pushing to GitHub...
-git push
+echo [3/3] Pushing to GitHub (Main & Master)...
+git push origin main
+git push origin master
 
 echo.
 echo ==========================================
