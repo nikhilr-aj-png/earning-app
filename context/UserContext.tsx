@@ -67,7 +67,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
-            showToast("VERIFICATION CODE TRANSMITTED.", "info");
+            showToast("OTP SENT.", "info");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Signup failed';
             showToast(message.toUpperCase(), "error");
@@ -136,7 +136,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            showToast("RECOVERY CODE TRANSMITTED.", "info");
+            showToast("OTP SENT.", "info");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Recovery request failed';
             showToast(message.toUpperCase(), "error");
@@ -175,7 +175,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            showToast("VERIFICATION PROTOCOL RE-TRANSMITTED.", "info");
+            showToast("OTP RESENT.", "info");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Resend failed';
             showToast(message.toUpperCase(), "error");

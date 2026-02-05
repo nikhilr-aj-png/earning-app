@@ -2,18 +2,29 @@
 
 import { useUser } from "@/context/UserContext";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Coins, Trophy, Zap, Clock, ShieldCheck, Activity, Plane, Palette, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/context/ToastContext";
 
 export default function ArcadePage() {
-    const { user, refreshUser } = useUser();
+    const { user, refreshUser, loading } = useUser();
+    const router = useRouter();
     const { showToast } = useToast();
     const queryClient = useQueryClient();
     const [gameTab, setGameTab] = useState<'aviator' | 'color'>('aviator');
     const [betAmount, setBetAmount] = useState(10);
     const [isBetting, setIsBetting] = useState(false);
     const [timeLeft, setTimeLeft] = useState(30);
+
+    // Auth Protection
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/');
+        }
+    }, [user, loading, router]);
+
+    if (loading || !user) return null; // Prevent flicker
 
     // Fetch Current Round
     const { data: round, refetch: refetchRound } = useQuery({

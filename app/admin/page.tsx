@@ -322,35 +322,35 @@ function UserEditModal({ user, onClose, onSave, onDelete, isSaving }: { user: an
 
     return (
         <div className="modal-overlay flex-center" style={{ zIndex: 1000 }}>
-            <div className="glass-panel animate-scale-up" style={{ width: '90%', maxWidth: '500px', padding: '48px', border: '1px solid #333', background: '#000', borderRadius: '16px' }}>
-                <div className="flex-between" style={{ marginBottom: '40px' }}>
+            <div className="glass-panel animate-scale-up" style={{ width: '90%', maxWidth: '420px', padding: '32px', border: '1px solid #333', background: '#000', borderRadius: '16px' }}>
+                <div className="flex-between" style={{ marginBottom: '24px' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '4px' }}>EDIT IDENTITY</h2>
                     <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)' }}>
                         <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* Name */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '12px' }}>DISPLAY NAME</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>DISPLAY NAME</label>
                         <input
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="glass-panel"
-                            style={{ width: '100%', padding: '18px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '8px', color: '#fff', fontWeight: '700' }}
+                            style={{ width: '100%', padding: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '8px', color: '#fff', fontWeight: '700' }}
                         />
                     </div>
 
                     {/* Coins */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '12px' }}>COIN BALANCE (FLOW)</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>COIN BALANCE (FLOW)</label>
                         <input
                             type="number"
                             value={formData.coins}
                             onChange={(e) => setFormData({ ...formData, coins: parseInt(e.target.value) || 0 })}
                             className="glass-panel"
-                            style={{ width: '100%', padding: '18px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '8px', color: '#fff', fontWeight: '700' }}
+                            style={{ width: '100%', padding: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '8px', color: '#fff', fontWeight: '700' }}
                         />
                     </div>
 

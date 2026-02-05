@@ -1,7 +1,8 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Task } from "@/lib/db";
 import { CheckCircle2, Clock, ExternalLink, PlayCircle, Zap, ChevronRight, Info, Target, Coins } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,10 +10,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/context/ToastContext";
 
 export default function EarnPage() {
-    const { user, refreshUser } = useUser();
+    const { user, refreshUser, loading } = useUser();
+    const router = useRouter();
     const { showToast } = useToast();
     const queryClient = useQueryClient();
     const [completingId, setCompletingId] = useState<string | null>(null);
+
+    // Auth Protection
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/');
+        }
+    }, [user, loading, router]);
 
     const { data: tasks = [], isLoading } = useQuery<Task[]>({
         queryKey: ['tasks', user?.id],
@@ -59,12 +68,12 @@ export default function EarnPage() {
         });
     };
 
-    if (isLoading) return (
+    if (loading || !user) return (
         <div className="flex-center" style={{ minHeight: '80vh', flexDirection: 'column', gap: '16px' }}>
             <div style={{ color: 'var(--primary)', animation: 'pulse-glow 2s infinite' }}>
                 <Target size={40} />
             </div>
-            <p style={{ color: 'var(--text-dim)', fontWeight: '600', letterSpacing: '0.05em' }}>LOADING ASSETS...</p>
+            <p style={{ color: 'var(--text-dim)', fontWeight: '600', letterSpacing: '0.05em' }}>VERIFYING CREDENTIALS...</p>
         </div>
     );
 

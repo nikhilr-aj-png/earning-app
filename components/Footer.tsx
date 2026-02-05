@@ -27,18 +27,13 @@ export default function Footer() {
                             <span style={{ fontWeight: "900", letterSpacing: "2px", fontSize: "1.2rem" }}>EARNFLOW</span>
                         </div>
                         <p style={{ color: "var(--text-dim)", fontSize: "0.80rem", lineHeight: "1.8", letterSpacing: "1px" }}>
-                            The elite standard in high-fidelity digital asset acquisition. Built for precision, security, and exponential growth.
+                            The #1 platform for daily earnings. Play games, complete tasks, and withdraw instant cash rewards.
                         </p>
-                        <div style={{ display: "flex", gap: "16px" }}>
-                            <Link href="#" style={{ color: "var(--text-dim)", transition: "0.3s" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-dim)"}><Twitter size={18} /></Link>
-                            <Link href="#" style={{ color: "var(--text-dim)", transition: "0.3s" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-dim)"}><Github size={18} /></Link>
-                            <Link href="#" style={{ color: "var(--text-dim)", transition: "0.3s" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-dim)"}><Mail size={18} /></Link>
-                        </div>
                     </div>
 
                     {/* Navigation Section */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", color: 'var(--primary)' }}>OPERATIONS</h4>
+                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", color: 'var(--primary)' }}>EARN</h4>
                         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
                             <li>
                                 <Link href="/dashboard" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
@@ -69,7 +64,7 @@ export default function Footer() {
 
                     {/* Support Section */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", color: 'var(--violet)' }}>EXECUTIVE SUPPORT</h4>
+                        <h4 style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", color: 'var(--violet)' }}>SUPPORT</h4>
                         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
                             <li>
                                 <Link href="/support" className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", transition: "0.3s" }}>
@@ -84,7 +79,7 @@ export default function Footer() {
                                     <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)' }}>
                                         <Shield size={14} color="var(--primary)" />
                                     </div>
-                                    About Identity
+                                    About Us
                                 </Link>
                             </li>
                             <li>
@@ -100,25 +95,13 @@ export default function Footer() {
                                     <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(244, 63, 94, 0.1)' }}>
                                         <Shield size={14} color="var(--rose)" />
                                     </div>
-                                    Privacy Protocol
+                                    Privacy Policy
                                 </Link>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Bottom Disclaimer */}
-                <div style={{ borderTop: "1px solid #222", paddingTop: "40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "24px" }}>
-                    <p style={{ color: "var(--text-dim)", fontSize: "0.65rem", fontWeight: "900", letterSpacing: "1px" }}>
-                        &copy; 2026 EARNFLOW GLOBAL PORTFOLIO. ALL SYSTEMS OPERATIONAL.
-                    </p>
-                    <div className="flex-center" style={{ gap: "24px" }}>
-                        <div className="flex-center" style={{ gap: "8px", color: "var(--success)" }}>
-                            <Shield size={14} />
-                            <span style={{ fontSize: "0.6rem", fontWeight: "900", letterSpacing: "1px" }}>SECURED BY AES-256</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </footer>
     );

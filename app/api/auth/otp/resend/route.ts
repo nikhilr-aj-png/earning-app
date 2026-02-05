@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
         if (error) throw error;
 
-        return NextResponse.json({ success: true, message: "Verification protocol re-transmitted." });
+        return NextResponse.json({ success: true, message: "OTP RESENT." });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }

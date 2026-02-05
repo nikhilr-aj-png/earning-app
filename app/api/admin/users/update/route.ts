@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
@@ -34,10 +34,30 @@ export async function POST(req: Request) {
         // 3. PERFORM PROTECTED OPERATIONS
 
         // Handle ACCOUNT PURGE (Delete)
+        // Handle ACCOUNT PURGE (Delete)
         if (action === 'delete') {
+            // DEBUG: Check Service Role Key presence
+            if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+                console.error("FATAL: SUPABASE_SERVICE_ROLE_KEY is missing in server environment.");
+                return NextResponse.json({ error: 'Server Misconfiguration: Missing SUPABASE_SERVICE_ROLE_KEY' }, { status: 500 });
+            }
+
+            // Delete from Supabase Auth using Admin Client
+            const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+            if (authDeleteError) {
+                console.error("Auth Deletion Failed:", authDeleteError);
+                return NextResponse.json({
+                    error: `Auth Deletion Failed: ${authDeleteError.message}`,
+                    details: authDeleteError
+                }, { status: 500 });
+            }
+
+            // Delete from profiles (application database)
             const { error: pDeleteError } = await supabaseMain.from('profiles').delete().eq('id', userId);
             if (pDeleteError) throw pDeleteError;
-            return NextResponse.json({ success: true, message: 'USER IDENTITY PURGED FROM DATABASE' });
+
+            return NextResponse.json({ success: true, message: 'USER IDENTITY PURGED (AUTH + DB)' });
         }
 
         // Handle METADATA UPDATES (Name, Coins, Premium, Blocked)

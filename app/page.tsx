@@ -37,7 +37,7 @@ export default function Home() {
     if (resendTimer > 0) return;
     try {
       await resendOtp(email, step === 'otp' ? 'signup' : 'recovery');
-      setResendTimer(30);
+      setResendTimer(60);
     } catch (err) {
       console.error(err);
     }
@@ -170,14 +170,14 @@ export default function Home() {
       <main style={{ position: 'relative', zIndex: 5, padding: '80px 24px', textAlign: 'center' }}>
         <div className="animate-fade-in">
           <div className="badge-gold" style={{ marginBottom: '24px', padding: '8px 20px', borderRadius: '12px', fontSize: '0.7rem' }}>
-            THE DIGITAL CAPITAL PROTOCOL IS ACTIVE
+            START EARNING REAL CASH TODAY
           </div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: '950', letterSpacing: '-2px', lineHeight: 1.1, color: '#fff', marginBottom: '32px' }}>
-            Accelerate Your <br />
-            <span className="text-gradient" style={{ background: 'var(--grad-vibrant)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Financial Velocity</span>
+            Complete Tasks & <br />
+            <span className="text-gradient" style={{ background: 'var(--grad-vibrant)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Earn Daily Rewards</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem', width: '90%', maxWidth: 'var(--max-width)', margin: '0 auto 48px', lineHeight: '1.6', fontWeight: '500' }}>
-            EarnFlow is a state-of-the-art ecosystem for asset management, opinion trading, and competitive arena operations.
+            The ultimate platform to earn money by completing simple tasks, playing games, and inviting friends. Instant withdrawals to your wallet.
           </p>
 
           <div className="flex-center" style={{ gap: '20px' }}>
@@ -199,21 +199,21 @@ export default function Home() {
           {/* Section 1: Market Signal Analysis */}
           <div className="flex-between" style={{ gap: '80px', flexWrap: 'wrap-reverse' }}>
             <div style={{ flex: 1, minWidth: '300px' }}>
-              <div className="badge-gold" style={{ marginBottom: '24px' }}>OPERATIONAL INTELLIGENCE</div>
+              <div className="badge-gold" style={{ marginBottom: '24px' }}>DAILY TASKS</div>
               <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: '950', color: '#fff', marginBottom: '24px', letterSpacing: '-1px' }}>
-                Advanced Data <br /> Synchronicity
+                Simple Actions, <br /> Instant Returns
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '32px' }}>
-                Our proprietary signal streams aggregate real-time market data across global endpoints. Experience zero-latency updates and high-fidelity analytics designed for the modern executor.
+                Maximize your earnings by completing verified tasks from top global brands. Whether it's testing apps, answering surveys, or watching videos, every action adds to your balance.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <div>
-                  <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '900', marginBottom: '8px' }}>REAL-TIME FEED</h4>
-                  <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Instantaneous data transmission across all protocols.</p>
+                  <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '900', marginBottom: '8px' }}>VARIETY OF OFFERS</h4>
+                  <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>New tasks added daily to keep your earning flow active.</p>
                 </div>
                 <div>
-                  <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '900', marginBottom: '8px' }}>PREDICTIVE EDGE</h4>
-                  <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Algorithmic forecasting for superior decision making.</p>
+                  <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '900', marginBottom: '8px' }}>INSTANT PAYOUTS</h4>
+                  <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Redeem your coins for real cash instantly.</p>
                 </div>
               </div>
             </div>
@@ -228,22 +228,22 @@ export default function Home() {
               <Trophy size={120} color="#fff" strokeWidth={1} style={{ opacity: 0.5 }} />
             </div>
             <div style={{ flex: 1, minWidth: '300px' }}>
-              <div className="badge-emerald" style={{ marginBottom: '24px', background: 'var(--emerald)', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900' }}>HIGH VELOCITY ARENA</div>
+              <div className="badge-emerald" style={{ marginBottom: '24px', background: 'var(--emerald)', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900' }}>GAME ZONE</div>
               <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: '950', color: '#fff', marginBottom: '24px', letterSpacing: '-1px' }}>
-                Capital Deployment <br /> Redefined
+                Play, Compete <br /> & Win Big
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '32px' }}>
-                Engage in high-stakes arena operations where precision meets performance. Our platform handles millions of micro-transactions per second with absolute integrity and speed.
+                Enter the Arena to challenge others in skill-based games. Participate in Lucky Color prediction or King & Queen tournaments to multiply your earnings exponentially.
               </p>
               <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <li style={{ color: '#fff', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <ShieldCheck size={20} color="var(--emerald)" /> Instant Liquidity Settlement
+                  <ShieldCheck size={20} color="var(--emerald)" /> Fair-Play Guaranteed
                 </li>
                 <li style={{ color: '#fff', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <ShieldCheck size={20} color="var(--emerald)" /> Immutable Round History
+                  <ShieldCheck size={20} color="var(--emerald)" /> Live Multiplayer Action
                 </li>
                 <li style={{ color: '#fff', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <ShieldCheck size={20} color="var(--emerald)" /> Fair-Play Algorithmic Verification
+                  <ShieldCheck size={20} color="var(--emerald)" /> 24/7 Tournaments
                 </li>
               </ul>
             </div>
@@ -270,7 +270,7 @@ export default function Home() {
 
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <Zap size={40} color="var(--primary)" style={{ marginBottom: '16px' }} />
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>PROTOCOL ACCESS</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>EARNFLOW</h2>
             </div>
 
             {step === 'email' ? (
@@ -341,7 +341,7 @@ export default function Home() {
                   {error && <div style={{ color: 'var(--rose)', fontSize: '0.75rem', textAlign: 'center', fontWeight: '600' }}>{error}</div>}
 
                   <button className="btn" type="submit" disabled={isSubmitting} style={{ height: '64px', borderRadius: '16px', background: '#fff', color: '#000', fontSize: '0.9rem', marginTop: '12px' }}>
-                    {isSubmitting ? 'AUTHORIZING...' : (isLogin ? 'INITIALIZE PROTOCOL' : 'REQUEST JOIN')}
+                    {isSubmitting ? 'PROCESSING...' : (isLogin ? 'LOGIN' : 'SIGN UP')}
                     <ChevronRight size={20} strokeWidth={3} />
                   </button>
                 </form>
@@ -349,7 +349,7 @@ export default function Home() {
             ) : step === 'otp' ? (
               <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>CODE TRANSMITTED TO <br /><b style={{ color: '#fff' }}>{email.toUpperCase()}</b></p>
+                  <p style={{ fontSize: '0.9rem', color: '#fff', letterSpacing: '1px', fontWeight: 'bold' }}>OTP SENT TO {email}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <input
@@ -381,7 +381,7 @@ export default function Home() {
                     </span>
                   </p>
                 </div>
-                <button type="button" onClick={() => setStep('email')} style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '950', background: 'none', border: 'none', cursor: 'pointer' }}>RESET PROTOCOL</button>
+                <button type="button" onClick={() => setStep('email')} style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '950', background: 'none', border: 'none', cursor: 'pointer' }}>BACK TO LOGIN</button>
               </form>
             ) : step === 'forgot_email' ? (
               <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -445,7 +445,7 @@ export default function Home() {
                         textDecoration: 'underline'
                       }}
                     >
-                      {resendTimer > 0 ? `RE-TRANSMIT IN ${resendTimer}S` : 'RESEND'}
+                      {resendTimer > 0 ? `RESEND IN ${resendTimer}S` : 'RESEND'}
                     </span>
                   </p>
                 </div>

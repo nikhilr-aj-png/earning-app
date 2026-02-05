@@ -15,16 +15,16 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "EarnFlow | The Executive Earning Portfolio",
-  description: "Secure, high-fidelity earning platform for professional asset acquisition. Join the elite network of Flow Credit managers.",
-  keywords: ["earning", "flow credits", "professional assets", "secure earning", "executive portfolio"],
-  authors: [{ name: "EarnFlow Global" }],
+  title: "EarnFlow | Play Games & Earn Real Cash",
+  description: "The #1 platform to earn money by playing games, completing tasks, and inviting friends. Fast withdrawals and daily rewards.",
+  keywords: ["earning app", "play to earn", "make money online", "tasks", "rewards", "casual games"],
+  authors: [{ name: "EarnFlow Team" }],
   icons: {
     icon: "/icon.png",
   },
   openGraph: {
-    title: "EarnFlow | Executive Earning Portfolio",
-    description: "The elite standard in digital asset acquisition.",
+    title: "EarnFlow | Play Games & Earn Cash",
+    description: "Join millions earning daily rewards. Sign up now!",
     url: "https://earning-app.vercel.app",
     siteName: "EarnFlow",
     locale: "en_US",
@@ -32,8 +32,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "EarnFlow | Executive Earning Portfolio",
-    description: "Transitioning to a new era of secure digital earning.",
+    title: "EarnFlow | Play Games & Earn Cash",
+    description: "The easiest way to make money online. Start earning today.",
   },
 };
 

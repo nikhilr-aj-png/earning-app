@@ -7,7 +7,7 @@ export default function SupportPage() {
     return (
         <div className="animate-fade-in" style={{ padding: "40px 24px" }}>
             <Link href="/dashboard" style={{ color: "#fff", display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", marginBottom: "40px", fontSize: "0.8rem", fontWeight: "900", letterSpacing: "1px" }}>
-                <ChevronLeft size={16} /> RETURN TO DASHBOARD
+                <ChevronLeft size={16} /> BACK TO DASHBOARD
             </Link>
 
             <div style={{ width: '99%', maxWidth: "var(--max-width)", margin: "0 auto" }}>
@@ -16,8 +16,8 @@ export default function SupportPage() {
                         <MessageSquare size={32} color="#fff" strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h1 className="font-heading" style={{ fontSize: "2.5rem", fontWeight: "900", letterSpacing: "-1px", lineHeight: 1 }}>SUPPORT TERMINAL</h1>
-                        <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: '800', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px' }}>Executive Support Cluster</p>
+                        <h1 className="font-heading" style={{ fontSize: "2.5rem", fontWeight: "900", letterSpacing: "-1px", lineHeight: 1 }}>HELP CENTER</h1>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: '800', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px' }}>We are here to help you</p>
                     </div>
                 </div>
 
@@ -25,9 +25,9 @@ export default function SupportPage() {
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                         <Info size={24} color="var(--violet)" />
                         <div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>CRITICAL PROTOCOL</h3>
+                            <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>NEED QUICK HELP?</h3>
                             <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                                For immediate identity restoration or large-scale asset synchronization issues, please prioritize the **Secure Signal Bridge** (Telegram Hub). Our executive responders operate on prioritized latency channels.
+                                If you are facing payment issues or login problems, use our **Live Chat** option below for faster resolution. Our support team is online 24/7.
                             </p>
                         </div>
                     </div>
@@ -38,10 +38,10 @@ export default function SupportPage() {
                         <div style={{ padding: '12px', background: 'rgba(56, 189, 248, 0.1)', width: 'fit-content', borderRadius: '12px', marginBottom: '24px' }}>
                             <Mail size={24} color="var(--primary)" strokeWidth={1.5} />
                         </div>
-                        <h3 style={{ fontSize: "0.85rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "8px" }}>ENCRYPTED EMAIL</h3>
-                        <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: "32px", lineHeight: '1.6' }}>Formal documentation and asset verification disputes.</p>
-                        <a href="mailto:support@earnflow.global" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: "#fff", fontSize: "1rem", fontWeight: "800", textDecoration: "none" }}>
-                            support@earnflow.global <ExternalLink size={16} color="var(--primary)" />
+                        <h3 style={{ fontSize: "0.85rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "8px" }}>EMAIL SUPPORT</h3>
+                        <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: "32px", lineHeight: '1.6' }}>For account recovery and payment queries.</p>
+                        <a href="mailto:support@earnflow.com" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: "#fff", fontSize: "1rem", fontWeight: "800", textDecoration: "none" }}>
+                            support@earnflow.com <ExternalLink size={16} color="var(--primary)" />
                         </a>
                     </div>
 
@@ -49,36 +49,35 @@ export default function SupportPage() {
                         <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', width: 'fit-content', borderRadius: '12px', marginBottom: '24px' }}>
                             <Zap size={24} color="var(--emerald)" strokeWidth={1.5} />
                         </div>
-                        <h3 style={{ fontSize: "0.85rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "8px" }}>SIGNAL HUB</h3>
-                        <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: "32px", lineHeight: '1.6' }}>Instant-response community and operational bridging.</p>
+                        <h3 style={{ fontSize: "0.85rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "8px" }}>LIVE CHAT</h3>
+                        <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: "32px", lineHeight: '1.6' }}>Talk to our support agent instantly.</p>
                         <button className="btn" style={{ background: 'var(--grad-emerald)', border: 'none', color: '#fff', padding: '12px 24px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '900' }}>
-                            OPEN BRIDGE <ChevronLeft size={16} style={{ rotate: '180deg' }} />
+                            START CHAT <ChevronLeft size={16} style={{ rotate: '180deg' }} />
                         </button>
                     </div>
                 </div>
 
                 <section>
                     <div className="flex-between" style={{ marginBottom: '40px' }}>
-                        <h2 style={{ fontSize: "1rem", fontWeight: "900", letterSpacing: "4px", color: "#fff" }}>KNOWLEDGE BASE</h2>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '900' }}>REV 2.0.4</span>
+                        <h2 style={{ fontSize: "1rem", fontWeight: "900", letterSpacing: "4px", color: "#fff" }}>FREQUENTLY ASKED QUESTIONS</h2>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                         {[
                             {
-                                q: "How are Flow Credits valued?",
-                                a: "Flow Credits are internal platform assets representative of mission completion performance. They utilize a proprietary valuation algorithm calibrated against multi-source liquidity signals and ecosystem activity."
+                                q: "How do I withdraw my earnings?",
+                                a: "You can withdraw your earnings instantly once you reach the minimum balance. Go to the Wallet section and select your preferred payment method (UPI, PayPal, etc.)."
                             },
                             {
-                                q: "When are mission rewards settled?",
-                                a: "Standard settlement occurs instantaneously upon verified mission completion. High-volume acquisition missions may undergo a 12-to-24 hour executive audit to ensure protocol compliance and asset integrity."
+                                q: "When are tasks updated?",
+                                a: "New tasks are added daily. Check the 'Tasks' section every morning to find new high-paying offers from our partners."
                             },
                             {
-                                q: "Can I manage multiple identities?",
-                                a: "No. EarnFlow's security protocol strictly enforces a one-identity-per-executive policy. Cross-identity resource pooling is detected via biometric telemetry and results in immediate identity revocation."
+                                q: "Can I use multiple accounts?",
+                                a: "No. Using multiple accounts on the same device is strictly prohibited and will lead to a permanent ban to ensure fair play for everyone."
                             },
                             {
-                                q: "Is the Arena algorithmic performance verified?",
-                                a: "Yes. Every single round in the Arena is governed by a fair-play cryptographic checksum. Audit logs for individual performance cycles are available via the 'Round History' module."
+                                q: "Are the games fair?",
+                                a: "Yes! All our games use certified random number generators to ensure fairness. Every round is verifiable."
                             }
                         ].map((faq, i) => (
                             <div key={i} className="glass-panel" style={{ padding: "32px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: '16px' }}>

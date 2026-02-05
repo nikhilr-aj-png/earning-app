@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
         if (error) throw error;
 
-        return NextResponse.json({ success: true, message: "Recovery code transmitted." });
+        return NextResponse.json({ success: true, message: "OTP SENT." });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
