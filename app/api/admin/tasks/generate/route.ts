@@ -2,11 +2,16 @@ import { NextResponse } from 'next/server';
 import { supabaseMain } from '@/lib/supabase';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
 export async function POST(request: Request) {
     try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error("CRITICAL: GEMINI_API_KEY IS MISSING FROM ENVIRONMENT");
+            return NextResponse.json({ error: 'AI AUTH ERROR: Gemini API Key not configured on server.' }, { status: 500 });
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const userId = request.headers.get('x-user-id');
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
