@@ -4,13 +4,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request: Request) {
     try {
-        console.log("DEBUG: Checking API Key Existence...");
         const apiKey = process.env.GEMINI_API_KEY;
-        console.log("DEBUG: GEMINI_API_KEY Available?", !!apiKey);
 
         if (!apiKey) {
             console.error("CRITICAL: GEMINI_API_KEY IS MISSING FROM ENVIRONMENT");
-            console.log("DEBUG: Available Env Keys:", Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('SUPABASE')));
             return NextResponse.json({ error: 'AI AUTH ERROR: Gemini API Key not configured on server.' }, { status: 500 });
         }
 
