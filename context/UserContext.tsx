@@ -38,9 +38,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         // Initial hydration check
         const stored = localStorage.getItem('earn-flow-user');
-        if (!stored) {
-            setLoading(false);
-        }
+        // Always set loading to false after checking localStorage to allow the app to proceed
+        setLoading(false);
     }, [setLoading]);
 
     const login = async (email: string, password: string) => {

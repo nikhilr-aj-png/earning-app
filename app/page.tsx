@@ -155,17 +155,6 @@ export default function Home() {
           </div>
           <span style={{ fontSize: '1.5rem', fontWeight: '950', letterSpacing: '-1px', color: '#fff' }}>EARNFLOW</span>
         </div>
-        <div style={{ display: 'flex', gap: '24px' }}>
-          {user ? (
-            <Link href="/dashboard" className="btn" style={{ padding: '12px 24px', fontSize: '0.8rem', borderRadius: '12px', background: '#fff', color: '#000' }}>
-              START EARNING
-            </Link>
-          ) : (
-            <button onClick={() => setShowAuth(true)} className="btn" style={{ padding: '12px 24px', fontSize: '0.8rem', borderRadius: '12px', background: '#fff', color: '#000' }}>
-              LOGIN
-            </button>
-          )}
-        </div>
       </nav>
 
       {/* Hero Section */}

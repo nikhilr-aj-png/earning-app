@@ -33,6 +33,23 @@ export async function POST(request: Request) {
         }
 
         const isPremium = profile.is_premium === true;
+
+        // 2.5 Check for duplicate completion (within 24h or cooldown)
+        const cooldownHours = task.cooldown ? task.cooldown / 60 : 24;
+        const since = new Date(Date.now() - cooldownHours * 60 * 60 * 1000).toISOString();
+
+        const { data: existingTx } = await supabaseMain
+            .from('transactions')
+            .select('id')
+            .eq('user_id', userId)
+            .ilike('description', `%[CLAIMED:${taskId}]%`)
+            .gt('created_at', since)
+            .limit(1);
+
+        if (existingTx && existingTx.length > 0) {
+            return NextResponse.json({ error: 'MISSION ALREADY CLAIMED (COOLDOWN ACTIVE)' }, { status: 400 });
+        }
+
         const baseReward = task.reward;
         const booster = isPremium ? Math.floor(baseReward * 0.2) : 0;
         const totalReward = baseReward + booster;
@@ -46,7 +63,7 @@ export async function POST(request: Request) {
                     user_id: userId,
                     amount: totalReward,
                     type: 'earn',
-                    description: `Completed task: ${task.title} ${isPremium ? '(+20% PREMIUM BOOST)' : ''}`
+                    description: `[CLAIMED:${taskId}] Completed task: ${task.title} ${isPremium ? '(+20% PREMIUM BOOST)' : ''}`
                 }
             ]);
 
