@@ -2,19 +2,47 @@
 
 import { useUser } from "@/context/UserContext";
 import { useState, useEffect } from "react";
-import { Users, Settings, Database, ChevronLeft, ShieldAlert, BarChart3, Plus, Trash2, Activity, Zap, TrendingUp, Gamepad2, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+    Users,
+    Settings,
+    Trash2,
+    ExternalLink,
+    Search,
+    Filter,
+    MoreVertical,
+    Coins,
+    Zap,
+    Edit2,
+    Calendar,
+    Clock,
+    AlertCircle,
+    CheckCircle,
+    CheckCircle2,
+    Database,
+    ArrowUpRight,
+    Gamepad2,
+    ChevronLeft,
+    ShieldAlert,
+    BarChart3,
+    Plus,
+    Activity,
+    TrendingUp,
+    ShieldCheck
+} from 'lucide-react';
 import Link from "next/link";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 function AdminPage() {
     const { user, loading, refreshUser } = useUser();
-    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'casino'>('stats');
+    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'casino' | 'automation'>('stats');
     const [editingUser, setEditingUser] = useState<any>(null);
     const [userFilter, setUserFilter] = useState<'all' | 'free' | 'premium' | 'admin'>('all');
     const [editingTask, setEditingTask] = useState<any>(null);
     const [taskSearch, setTaskSearch] = useState('');
     const [taskAudienceFilter, setTaskAudienceFilter] = useState<'all' | 'free' | 'premium'>('all');
-    const [autoConfig, setAutoConfig] = useState({ count: 5, free_questions: 2, premium_questions: 4, free_reward: 50, premium_reward: 150, exp_h: '11', exp_m: '59', exp_p: 'PM' });
+    const [autoConfig, setAutoConfig] = useState({ count: 5, free_questions: 2, premium_questions: 4, free_reward: 50, premium_reward: 150, exp_h: '12', exp_m: '00', exp_p: 'AM' });
+    const [automationSettings, setAutomationSettings] = useState<any>(null);
+    const [countdown, setCountdown] = useState(30);
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -51,8 +79,97 @@ function AdminPage() {
             const data = await res.json();
             return data;
         },
-        enabled: !!user && view === 'tasks',
+        enabled: !!user && (view === 'tasks' || view === 'automation'),
     });
+
+    const { data: adminSettings, isLoading: settingsLoading } = useQuery({
+        queryKey: ['admin-automation'],
+        queryFn: async () => {
+            const res = await fetch('/api/admin/automation/config', { headers: { 'x-user-id': user?.id || '' } });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch settings');
+            return data;
+        },
+        enabled: !!user && (view === 'tasks' || view === 'automation'),
+    });
+
+    // Sync query data to local state when query finishes
+    useEffect(() => {
+        if (adminSettings) {
+            setAutomationSettings(adminSettings);
+        }
+    }, [adminSettings]);
+
+    const updateAutomationMutation = useMutation({
+        mutationFn: async (updates: any) => {
+            const res = await fetch('/api/admin/automation/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                body: JSON.stringify(updates)
+            });
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-automation'] });
+        },
+        onError: (err: any) => {
+            alert("SAVE FAILED: " + err.message);
+        }
+    });
+
+    const syncMutation = useMutation({
+        mutationFn: async ({ isManual, silent }: { isManual: boolean, silent: boolean }) => {
+            const res = await fetch('/api/admin/automation/sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': user?.id || ''
+                },
+                body: JSON.stringify({ isManual })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Sync service responded with error');
+            return { ...data, silent };
+        },
+        onSuccess: (data) => {
+            if (data.success) {
+                queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+                queryClient.invalidateQueries({ queryKey: ['admin-automation'] });
+                if (!data.silent) {
+                    alert("SUCCESS: AI ENGINE EXECUTED\nTasks generated/updated.");
+                }
+            } else if (data.message) {
+                if (!data.silent) {
+                    alert("INFO: " + data.message.toUpperCase());
+                }
+            } else if (!data.silent) {
+                alert("ALERT: ENGINE RUN FINISHED BUT NO CHANGES MADE.");
+            }
+        },
+        onError: (err: any, variables) => {
+            if (!variables.silent) {
+                alert("SYNC FAILED: " + err.message);
+            } else {
+                console.error("Silent Sync Failure:", err);
+            }
+        }
+    });
+
+    useEffect(() => {
+        if (!automationSettings?.is_enabled || (view !== 'tasks' && view !== 'automation')) return;
+
+        const interval = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    syncMutation.mutate({ isManual: false, silent: true });
+                    return 30;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [automationSettings?.is_enabled, view]);
 
 
     const userEditMutation = useMutation({
@@ -101,13 +218,20 @@ function AdminPage() {
 
     const deleteTaskMutation = useMutation({
         mutationFn: async (id: string) => {
-            await fetch(`/api/admin/tasks?id=${id}`, {
+            const res = await fetch(`/api/admin/tasks?id=${id}`, {
                 method: 'DELETE',
                 headers: { 'x-user-id': user?.id || '' }
             });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to terminate mission');
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+            alert("MISSION TERMINATED SUCCESSFULLY");
+        },
+        onError: (err: any) => {
+            alert("TERMINATION FAILED: " + err.message);
         }
     });
 
@@ -190,8 +314,8 @@ function AdminPage() {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
-                {['stats', 'users', 'tasks', 'casino'].map((t) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
+                {['stats', 'users', 'tasks', 'automation', 'casino'].map((t) => (
                     <button
                         key={t} onClick={() => setView(t as any)}
                         style={{
@@ -316,267 +440,96 @@ function AdminPage() {
                     <div className="flex-between" style={{ marginBottom: '32px' }}>
                         <div>
                             <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>MISSION DEPLOYMENT</h2>
-                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: '4px' }}>AI-DRIVEN OPERATIONAL CORE</p>
+                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: '4px' }}>MANUAL TASK OVERRIDE</p>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '8px 16px', borderRadius: '100px', border: '1px solid #222' }}>
-                            <Activity size={12} color="var(--primary)" />
-                            <span style={{ fontSize: '0.55rem', fontWeight: '900', color: 'var(--text-dim)', letterSpacing: '1px' }}>AI ENGINE ONLINE</span>
+                            <Database size={12} color="var(--primary)" />
+                            <span style={{ fontSize: '0.55rem', fontWeight: '900', color: 'var(--text-dim)', letterSpacing: '1px' }}>DATABASE STABLE</span>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div className="glass-panel" style={{
-                            padding: '40px',
-                            border: '1px solid #222',
-                            background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 100%)',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}>
-                            {/* AI Badge */}
-                            <div style={{ position: 'absolute', top: '24px', right: '40px', display: 'flex', gap: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(59, 130, 246, 0.1)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                    <Activity size={12} color="var(--primary)" />
-                                    <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--primary)', letterSpacing: '1px' }}>MODEL: GEMINI 2.0 FLASH</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--emerald)', animation: 'pulse-glow 2s infinite' }} />
-                                    <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '1px' }}>LATENCY VERIFIED</span>
-                                </div>
-                            </div>
-
-                            <div className="flex-between" style={{ marginBottom: '40px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', border: '1px solid #333' }}>
-                                        <Zap size={24} color="#fff" />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>MACRO HUB</h3>
-                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>AI-DRIVEN MISSION DEPLOYMENT COHORT</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <label style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>MISSION VOLUME (NODES)</label>
-                                        <input
-                                            type="number"
-                                            value={autoConfig.count}
-                                            onChange={(e) => setAutoConfig({ ...autoConfig, count: parseInt(e.target.value) || 0 })}
-                                            style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '18px 24px', borderRadius: '12px', color: '#fff', fontSize: '1.2rem', fontWeight: '950' }}
-                                        />
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <label style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>EXPIRY SYNCHRONIZATION</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                                            <select
-                                                value={autoConfig.exp_h}
-                                                onChange={(e) => setAutoConfig({ ...autoConfig, exp_h: e.target.value })}
-                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
-                                            >
-                                                {[...Array(12)].map((_, i) => (
-                                                    <option key={i + 1} value={(i + 1).toString().padStart(2, '0')}>{i + 1}</option>
-                                                ))}
-                                            </select>
-                                            <select
-                                                value={autoConfig.exp_m}
-                                                onChange={(e) => setAutoConfig({ ...autoConfig, exp_m: e.target.value })}
-                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
-                                            >
-                                                {[...Array(60)].map((_, i) => (
-                                                    <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
-                                                ))}
-                                            </select>
-                                            <select
-                                                value={autoConfig.exp_p}
-                                                onChange={(e) => setAutoConfig({ ...autoConfig, exp_p: e.target.value })}
-                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
-                                            >
-                                                <option value="AM">AM</option>
-                                                <option value="PM">PM</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    <div className="glass-panel" style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid #222', borderRadius: '16px' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px', marginBottom: '20px' }}>FREE TIER PROTOCOL</p>
-                                        <div style={{ display: 'grid', gap: '12px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>Q DENSITY</span>
-                                                <input
-                                                    type="number"
-                                                    value={autoConfig.free_questions}
-                                                    onChange={(e) => setAutoConfig({ ...autoConfig, free_questions: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
-                                                />
+                    <div className="flex" style={{ flexDirection: 'column', gap: '16px' }}>
+                        {adminTasks
+                            .filter((t: any) => {
+                                const matchesSearch = t.title.toLowerCase().includes(taskSearch.toLowerCase());
+                                const matchesAudience = taskAudienceFilter === 'all' || t.target_audience === taskAudienceFilter;
+                                return matchesSearch && matchesAudience;
+                            })
+                            .map((t: any) => {
+                                const expAt = t.expires_at ? new Date(t.expires_at) : null;
+                                const isExpired = expAt ? expAt < new Date() : false;
+                                return (
+                                    <div key={t.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', borderRadius: '12px', background: isExpired ? 'rgba(239, 68, 68, 0.02)' : 'rgba(255,255,255,0.01)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                            <div style={{ width: '48px', height: '48px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                <Zap size={20} color={t.id.startsWith('ai_') ? 'var(--primary)' : 'var(--text-dim)'} />
+                                                <div style={{ position: 'absolute', top: '-4px', right: '-4px', background: t.target_audience === 'premium' ? 'var(--gold)' : 'var(--sapphire)', width: '14px', height: '14px', borderRadius: '50%', border: '2px solid #000' }} />
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>REWARD (F)</span>
-                                                <input
-                                                    type="number"
-                                                    value={autoConfig.free_reward}
-                                                    onChange={(e) => setAutoConfig({ ...autoConfig, free_reward: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="glass-panel" style={{ padding: '24px', background: 'rgba(234, 179, 8, 0.02)', border: '1px solid rgba(234, 179, 8, 0.1)', borderRadius: '16px' }}>
-                                        <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px', marginBottom: '20px' }}>PREMIUM TIER PROTOCOL</p>
-                                        <div style={{ display: 'grid', gap: '12px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>Q DENSITY</span>
-                                                <input
-                                                    type="number"
-                                                    value={autoConfig.premium_questions}
-                                                    onChange={(e) => setAutoConfig({ ...autoConfig, premium_questions: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
-                                                />
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>REWARD (F)</span>
-                                                <input
-                                                    type="number"
-                                                    value={autoConfig.premium_reward}
-                                                    onChange={(e) => setAutoConfig({ ...autoConfig, premium_reward: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => {
-                                        if (window.confirm("EXECUTE BATCH DEPLOYMENT? THIS WILL SYNC GLOBAL MISSION STATE."))
-                                            generateMutation.mutate();
-                                    }}
-                                    disabled={generateMutation.isPending}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '16px',
-                                        background: '#fff',
-                                        color: '#000',
-                                        border: 'none',
-                                        padding: '24px',
-                                        fontSize: '1rem',
-                                        borderRadius: '16px',
-                                        fontWeight: '950',
-                                        letterSpacing: '4px',
-                                        boxShadow: '0 0 40px rgba(255,255,255,0.1)',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    {generateMutation.isPending ? 'SYNCHRONIZING GLOBAL STATE...' : 'DEPLOY MISSION MACRO'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ padding: '32px' }}>
-                        <div className="flex-between" style={{ marginBottom: '32px' }}>
-                            <div>
-                                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>MISSION LEDGER</h2>
-                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: '4px' }}>OPERATIONAL TASK REPOSITORY</p>
-                            </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <input
-                                    placeholder="SEARCH MISSIONS..."
-                                    value={taskSearch}
-                                    onChange={(e) => setTaskSearch(e.target.value)}
-                                    style={{ background: '#000', border: '1px solid #222', padding: '12px 24px', borderRadius: '8px', color: '#fff', fontSize: '0.7rem', width: '250px' }}
-                                />
-                                <select
-                                    value={taskAudienceFilter}
-                                    onChange={(e: any) => setTaskAudienceFilter(e.target.value)}
-                                    style={{ background: '#000', border: '1px solid #222', padding: '12px 24px', borderRadius: '8px', color: '#fff', fontSize: '0.7rem' }}
-                                >
-                                    <option value="all">ALL TARGETS</option>
-                                    <option value="free">FREE ONLY</option>
-                                    <option value="premium">PREMIUM ONLY</option>
-                                </select>
-                                <button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-tasks'] })} className="btn-stat" style={{ padding: '8px 16px', borderRadius: '8px' }}>
-                                    <Activity size={16} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex" style={{ flexDirection: 'column', gap: '16px' }}>
-                            {adminTasks
-                                .filter((t: any) => {
-                                    const matchesSearch = t.title.toLowerCase().includes(taskSearch.toLowerCase());
-                                    const matchesAudience = taskAudienceFilter === 'all' || t.target_audience === taskAudienceFilter;
-                                    return matchesSearch && matchesAudience;
-                                })
-                                .map((t: any) => {
-                                    const expAt = t.expires_at ? new Date(t.expires_at) : null;
-                                    const isExpired = expAt ? expAt < new Date() : false;
-                                    return (
-                                        <div key={t.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', borderRadius: '12px', background: isExpired ? 'rgba(239, 68, 68, 0.02)' : 'rgba(255,255,255,0.01)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                                <div style={{ width: '48px', height: '48px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                                    <Zap size={20} color={t.id.startsWith('ai_') ? 'var(--primary)' : 'var(--text-dim)'} />
-                                                    <div style={{ position: 'absolute', top: '-4px', right: '-4px', background: t.target_audience === 'premium' ? 'var(--gold)' : 'var(--sapphire)', width: '14px', height: '14px', borderRadius: '50%', border: '2px solid #000' }} />
+                                            <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff' }}>{t.title.toUpperCase()}</h4>
+                                                    <span style={{ fontSize: '0.5rem', fontWeight: '950', background: isExpired ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: isExpired ? 'var(--error)' : 'var(--emerald)', padding: '2px 8px', borderRadius: '100px', border: `1px solid ${isExpired ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}` }}>
+                                                        {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                                                    </span>
                                                 </div>
-                                                <div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff' }}>{t.title.toUpperCase()}</h4>
-                                                        <span style={{ fontSize: '0.5rem', fontWeight: '950', background: isExpired ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: isExpired ? 'var(--error)' : 'var(--emerald)', padding: '2px 8px', borderRadius: '100px', border: `1px solid ${isExpired ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}` }}>
-                                                            {isExpired ? 'EXPIRED' : 'ACTIVE'}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '6px' }}>
-                                                        <p style={{ fontSize: '0.65rem', color: 'var(--emerald)', fontWeight: '950' }}>{t.reward} FLOW</p>
-                                                        <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>•</span>
-                                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>{t.completion_count || 0} CLAIMS</p>
-                                                        <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>•</span>
-                                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>
-                                                            EXP: {t.expires_at ? new Date(t.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                                                        </p>
-                                                    </div>
+                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '6px' }}>
+                                                    <p style={{ fontSize: '0.65rem', color: 'var(--emerald)', fontWeight: '950' }}>{t.reward} FLOW</p>
+                                                    <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>•</span>
+                                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>{t.completion_count || 0} CLAIMS</p>
+                                                    <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>•</span>
+                                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>
+                                                        EXP: {t.expires_at ? new Date(t.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                                    </p>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '12px' }}>
-                                                <button
-                                                    onClick={() => {
-                                                        const expAtVal = t.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-                                                        const d = new Date(expAtVal);
-                                                        let h = d.getHours();
-                                                        const m = (d.getMinutes() || 0).toString().padStart(2, '0');
-                                                        const p = h >= 12 ? 'PM' : 'AM';
-                                                        if (h > 12) h -= 12;
-                                                        if (h === 0) h = 12;
-                                                        setEditingTask({
-                                                            ...t,
-                                                            exp_h: h.toString().padStart(2, '0'),
-                                                            exp_m: m,
-                                                            exp_p: p
-                                                        });
-                                                    }}
-                                                    className="btn-stat"
-                                                    style={{ padding: '10px' }}
-                                                >
-                                                    <Settings size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => { if (window.confirm("PURGE MISSION PROTOCOL?")) deleteTaskMutation.mutate(t.id); }}
-                                                    className="btn-stat"
-                                                    style={{ padding: '10px', color: 'var(--error)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
                                         </div>
-                                    );
-                                })}
-                        </div>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <button
+                                                onClick={() => {
+                                                    const expAtVal = t.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                                                    const d = new Date(expAtVal);
+                                                    let h = d.getHours();
+                                                    const m = (d.getMinutes() || 0).toString().padStart(2, '0');
+                                                    const p = h >= 12 ? 'PM' : 'AM';
+                                                    if (h > 12) h -= 12;
+                                                    if (h === 0) h = 12;
+                                                    setEditingTask({
+                                                        ...t,
+                                                        exp_h: h.toString().padStart(2, '0'),
+                                                        exp_m: m,
+                                                        exp_p: p
+                                                    });
+                                                }}
+                                                className="btn-stat"
+                                                style={{
+                                                    padding: '10px',
+                                                    background: 'rgba(255,255,255,0.05)',
+                                                    border: '1px solid #333'
+                                                }}
+                                                title="Edit Mission"
+                                            >
+                                                <Edit2 size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => { if (window.confirm("PURGE MISSION PROTOCOL?")) deleteTaskMutation.mutate(t.id); }}
+                                                className="btn-stat"
+                                                style={{
+                                                    padding: '10px',
+                                                    color: '#ff4444',
+                                                    background: 'rgba(255, 68, 68, 0.1)',
+                                                    border: '1px solid rgba(255, 68, 68, 0.3)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                title="Delete Mission"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                     </div>
                 </div>
             )}
@@ -601,14 +554,293 @@ function AdminPage() {
             )}
 
             {
-                view === 'casino' && (
-                    <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', border: '1px solid #fff', borderRadius: '4px' }}>
-                        <Activity size={32} color="#fff" strokeWidth={1} style={{ marginBottom: '24px' }} />
-                        <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
-                    </div>
-                )
-            }
+                view === 'automation' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                        <div className="flex-between" style={{ marginBottom: '32px' }}>
+                            <div>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '950', letterSpacing: '6px', color: '#fff' }}>AUTOMATION HUB</h2>
+                                <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '4px', fontWeight: '800', letterSpacing: '2px' }}>AI MISSION LIFECYCLE CONTROLLER</p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '12px 24px', borderRadius: '100px', border: '1px solid #222' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: automationSettings?.is_enabled ? 'var(--emerald)' : 'var(--error)', animation: automationSettings?.is_enabled ? 'pulse-glow 2s infinite' : 'none' }} />
+                                <span style={{ fontSize: '0.6rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>SYSTEM: {automationSettings?.is_enabled ? 'ACTIVE' : 'STANDBY'}</span>
+                            </div>
+                        </div>
 
+                        <div className="glass-panel" style={{
+                            padding: '48px',
+                            border: '1px solid #222',
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 100%)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            {/* Diagnostics Row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '48px', paddingBottom: '32px', borderBottom: '1px solid #111' }}>
+                                <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
+                                    <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>MISSION DENSITY</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: '950', color: '#fff' }}>{adminTasks?.filter((t: any) => t.target_audience === 'free').length || 0}</span>
+                                            <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '1px' }}>/ {automationSettings?.free_task_count || 0} FREE</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)' }}>{adminTasks?.filter((t: any) => t.target_audience === 'premium').length || 0}</span>
+                                            <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '1px' }}>/ {automationSettings?.premium_task_count || 0} PREMIUM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
+                                    <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>SYNC PULSE</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Activity size={14} color={automationSettings?.is_enabled ? 'var(--emerald)' : 'var(--text-dim)'} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: '950', color: '#fff' }}>{automationSettings?.is_enabled ? `${countdown}s` : 'IDLE'}</span>
+                                    </div>
+                                </div>
+                                <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
+                                    <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>SECURITY LAYER</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <ShieldCheck size={14} color="var(--primary)" />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: '950', color: '#fff' }}>RLS ACTIVE</span>
+                                    </div>
+                                </div>
+                                <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
+                                    <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>LAST CYCLE</p>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: '950', color: '#fff' }}>
+                                        {automationSettings?.last_sync ? new Date(automationSettings.last_sync).toLocaleTimeString() : 'NEVER'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Status Overlay & Core Controls */}
+                            <div className="flex-between" style={{ marginBottom: '40px' }}>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <button
+                                        onClick={() => updateAutomationMutation.mutate({ is_enabled: !automationSettings?.is_enabled })}
+                                        style={{
+                                            background: automationSettings?.is_enabled ? 'var(--emerald)' : 'rgba(255,0,0,0.1)',
+                                            color: automationSettings?.is_enabled ? '#000' : 'var(--error)',
+                                            border: `1px solid ${automationSettings?.is_enabled ? 'transparent' : 'var(--error)'}`,
+                                            padding: '12px 32px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '950',
+                                            letterSpacing: '2px',
+                                            cursor: 'pointer',
+                                            transition: '0.3s'
+                                        }}
+                                    >
+                                        {automationSettings?.is_enabled ? 'DEACTIVATE AI ENGINE' : 'ACTIVATE AI ENGINE'}
+                                    </button>
+                                </div>
+
+                                {automationSettings?.is_enabled && (
+                                    <div className="flex-center" style={{ gap: '12px', background: 'rgba(16, 185, 129, 0.05)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                                        <span className="spinner-small" />
+                                        <span style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '2px' }}>AI MONITORING ACTIVE</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {automationSettings ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' }}>
+                                        {/* Retention Policy */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                            <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
+                                                <Zap size={20} color="var(--primary)" />
+                                                <h3 style={{ fontSize: '0.75rem', fontWeight: '950', letterSpacing: '3px', color: '#fff' }}>RETENTION POLICY</h3>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                                <div className="glass-panel" style={{ padding: '24px', background: 'rgba(0,0,0,0.3)', border: '1px solid #333' }}>
+                                                    <p style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--sapphire)', marginBottom: '16px', letterSpacing: '2px' }}>FREE TARGET</p>
+                                                    <input
+                                                        type="number"
+                                                        value={automationSettings.free_task_count}
+                                                        onChange={(e) => setAutomationSettings({ ...automationSettings, free_task_count: parseInt(e.target.value) || 0 })}
+                                                        style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '2rem', fontWeight: '950', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div className="glass-panel" style={{ padding: '24px', background: 'rgba(0,0,0,0.3)', border: '1px solid #333' }}>
+                                                    <p style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--gold)', marginBottom: '16px', letterSpacing: '2px' }}>PREMIUM TARGET</p>
+                                                    <input
+                                                        type="number"
+                                                        value={automationSettings.premium_task_count}
+                                                        onChange={(e) => setAutomationSettings({ ...automationSettings, premium_task_count: parseInt(e.target.value) || 0 })}
+                                                        style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '2rem', fontWeight: '950', outline: 'none' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Synchronization */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                            <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
+                                                <Activity size={20} color="var(--primary)" />
+                                                <h3 style={{ fontSize: '0.75rem', fontWeight: '950', letterSpacing: '3px', color: '#fff' }}>CYCLE SYNCHRONIZATION</h3>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>HOUR</span>
+                                                    <select
+                                                        value={automationSettings.exp_h}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setAutomationSettings({ ...automationSettings, exp_h: val });
+                                                        }}
+                                                        style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
+                                                    >
+                                                        {[...Array(12)].map((_, i) => (
+                                                            <option key={i + 1} value={(i + 1).toString().padStart(2, '0')}>{i + 1}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>MINUTE</span>
+                                                    <select
+                                                        value={automationSettings.exp_m}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setAutomationSettings({ ...automationSettings, exp_m: val });
+                                                        }}
+                                                        style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
+                                                    >
+                                                        {[...Array(60)].map((_, i) => (
+                                                            <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>MERIDIEM</span>
+                                                    <select
+                                                        value={automationSettings.exp_p}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setAutomationSettings({ ...automationSettings, exp_p: val });
+                                                            updateAutomationMutation.mutate({ exp_p: val });
+                                                        }}
+                                                        style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
+                                                    >
+                                                        <option value="AM">AM</option>
+                                                        <option value="PM">PM</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Reward Protocols */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                        <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
+                                            <TrendingUp size={20} color="var(--primary)" />
+                                            <h3 style={{ fontSize: '0.75rem', fontWeight: '950', letterSpacing: '3px', color: '#fff' }}>REWARD PROTOCOLS</h3>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' }}>
+                                            <div className="glass-panel" style={{ padding: '32px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                                                <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                                    <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px' }}>FREE TIER FLOW</p>
+                                                    <Zap size={16} color="var(--sapphire)" />
+                                                </div>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={automationSettings.free_reward}
+                                                        onChange={(e) => setAutomationSettings({ ...automationSettings, free_reward: parseInt(e.target.value) || 0 })}
+                                                        onBlur={() => updateAutomationMutation.mutate({ free_reward: automationSettings.free_reward })}
+                                                        style={{ width: '100%', background: '#000', border: '1px solid #222', padding: '20px', borderRadius: '12px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', textAlign: 'right', paddingRight: '80px' }}
+                                                    />
+                                                    <span style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', fontWeight: '950', color: 'var(--text-dim)' }}>FLOW</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="glass-panel" style={{ padding: '32px', background: 'rgba(234, 179, 8, 0.05)', border: '1px solid rgba(234, 179, 8, 0.1)' }}>
+                                                <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                                    <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px' }}>PREMIUM TIER FLOW</p>
+                                                    <Zap size={16} color="var(--gold)" />
+                                                </div>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={automationSettings.premium_reward}
+                                                        onChange={(e) => setAutomationSettings({ ...automationSettings, premium_reward: parseInt(e.target.value) || 0 })}
+                                                        style={{ width: '100%', background: '#000', border: '1px solid #222', padding: '20px', borderRadius: '12px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', textAlign: 'right', paddingRight: '80px' }}
+                                                    />
+                                                    <span style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', fontWeight: '950', color: 'var(--text-dim)' }}>FLOW</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', paddingTop: '32px', borderTop: '1px solid #222' }}>
+                                        <button
+                                            onClick={() => updateAutomationMutation.mutate(automationSettings)}
+                                            disabled={updateAutomationMutation.isPending}
+                                            style={{
+                                                background: 'var(--primary)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                padding: '24px',
+                                                fontSize: '0.85rem',
+                                                borderRadius: '12px',
+                                                fontWeight: '950',
+                                                letterSpacing: '4px',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 10px 40px rgba(59, 130, 246, 0.2)'
+                                            }}
+                                        >
+                                            {updateAutomationMutation.isPending ? 'SAVING DATA...' : 'SAVE CONFIGURATION'}
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm("EXECUTE AI MISSION ENGINE?\nThis will PURGE ALL EXISTING QUIZZES and create a fresh batch based on your targets."))
+                                                    syncMutation.mutate({ isManual: true, silent: false });
+                                            }}
+                                            disabled={syncMutation.isPending}
+                                            style={{
+                                                background: '#fff',
+                                                color: '#000',
+                                                border: 'none',
+                                                padding: '24px',
+                                                fontSize: '1rem',
+                                                borderRadius: '12px',
+                                                fontWeight: '950',
+                                                letterSpacing: '6px',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 10px 40px rgba(255,255,255,0.1)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '16px'
+                                            }}
+                                        >
+                                            <Gamepad2 size={24} />
+                                            {syncMutation.isPending ? 'EXECUTING FRESH START...' : 'RUN AI ENGINE'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : settingsLoading ? (
+                                <div className="flex-center" style={{ minHeight: '400px', flexDirection: 'column', gap: '20px' }}>
+                                    <div className="spinner" />
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '2px' }}>INITIALIZING CORE SYSTEMS...</p>
+                                </div>
+                            ) : (
+                                <div className="flex-center" style={{ minHeight: '400px', flexDirection: 'column', gap: '20px' }}>
+                                    <AlertCircle size={48} color="var(--error)" />
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--error)', fontWeight: '900', letterSpacing: '2px' }}>CRITICAL: CONFIGURATION OFFLINE</p>
+                                    <button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-automation'] })} style={{ background: 'transparent', border: '1px solid #333', color: '#fff', padding: '10px 20px', borderRadius: '4px', fontSize: '0.6rem' }}>RE-ESTABLISH CONNECTION</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+            {view === 'casino' && (
+                <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', border: '1px solid #fff', borderRadius: '4px' }}>
+                    <Activity size={32} color="#fff" strokeWidth={1} style={{ marginBottom: '24px' }} />
+                    <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
+                </div>
+            )}
         </div>
     );
 }
@@ -778,7 +1010,7 @@ function TaskEditModal({ task, onClose, onSave, isSaving }: { task: any, onClose
                             <label style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>TARGET AUDIENCE</label>
                             <select
                                 value={t.target_audience}
-                                onChange={(e) => setT({ ...t, target_audience: e.target.value })}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setT({ ...t, target_audience: e.target.value })}
                                 style={{ background: '#111', border: '1px solid #222', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem' }}
                             >
                                 <option value="free">FREE (EVERYONE)</option>
@@ -807,38 +1039,40 @@ function TaskEditModal({ task, onClose, onSave, isSaving }: { task: any, onClose
                         </div>
                     </div>
 
-                    <div style={{ borderTop: '1px solid #222', paddingTop: '16px' }}>
-                        <h4 style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginBottom: '12px' }}>QUIZ QUESTIONS</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {t.questions?.map((q: any, qIdx: number) => (
-                                <div key={qIdx} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '8px' }}>
-                                    <input
-                                        value={q.question}
-                                        onChange={(e) => {
-                                            const qs = [...t.questions];
-                                            qs[qIdx].question = e.target.value;
-                                            setT({ ...t, questions: qs });
-                                        }}
-                                        style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', fontSize: '0.75rem', marginBottom: '8px' }}
-                                    />
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-                                        {q.options.map((opt: string, oIdx: number) => (
-                                            <input
-                                                key={oIdx}
-                                                value={opt}
-                                                onChange={(e) => {
-                                                    const qs = [...t.questions];
-                                                    qs[qIdx].options[oIdx] = e.target.value;
-                                                    setT({ ...t, questions: qs });
-                                                }}
-                                                style={{ background: q.answer === oIdx ? 'rgba(16, 185, 129, 0.1)' : '#000', border: '1px solid #222', padding: '6px', borderRadius: '4px', fontSize: '0.65rem', color: '#fff' }}
-                                            />
-                                        ))}
+                    {t.questions && t.questions.length > 0 && (
+                        <div style={{ borderTop: '1px solid #222', paddingTop: '16px' }}>
+                            <h4 style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginBottom: '12px' }}>QUIZ QUESTIONS</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {t.questions.map((q: any, qIdx: number) => (
+                                    <div key={qIdx} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: '8px' }}>
+                                        <input
+                                            value={q.question}
+                                            onChange={(e) => {
+                                                const qs = [...t.questions];
+                                                qs[qIdx].question = e.target.value;
+                                                setT({ ...t, questions: qs });
+                                            }}
+                                            style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', fontSize: '0.75rem', marginBottom: '8px' }}
+                                        />
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                                            {q.options.map((opt: string, oIdx: number) => (
+                                                <input
+                                                    key={oIdx}
+                                                    value={opt}
+                                                    onChange={(e) => {
+                                                        const qs = [...t.questions];
+                                                        qs[qIdx].options[oIdx] = e.target.value;
+                                                        setT({ ...t, questions: qs });
+                                                    }}
+                                                    style={{ background: q.answer === oIdx ? 'rgba(16, 185, 129, 0.1)' : '#000', border: '1px solid #222', padding: '6px', borderRadius: '4px', fontSize: '0.65rem', color: '#fff' }}
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <button
@@ -853,5 +1087,6 @@ function TaskEditModal({ task, onClose, onSave, isSaving }: { task: any, onClose
         </div>
     );
 }
+
 
 export default AdminPage;

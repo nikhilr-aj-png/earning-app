@@ -18,6 +18,8 @@ export interface Task {
     cooldown?: number;
     expires_at?: string;
     is_completed?: boolean;
+    is_locked?: boolean;
+    earned_amount?: number;
     questions?: Array<{
         question: string;
         options: string[];
@@ -53,14 +55,14 @@ export default function EarnPage() {
     });
 
     const completeTaskMutation = useMutation({
-        mutationFn: async (taskId: string) => {
+        mutationFn: async ({ taskId, correctCount, totalCount }: { taskId: string, correctCount?: number, totalCount?: number }) => {
             const res = await fetch("/api/tasks/complete", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "x-user-id": user?.id || "",
                 },
-                body: JSON.stringify({ taskId }),
+                body: JSON.stringify({ taskId, correctCount, totalCount }),
             });
             if (!res.ok) {
                 const data = await res.json();
@@ -79,11 +81,20 @@ export default function EarnPage() {
     });
 
     const handleExecute = (task: Task) => {
+        if (task.is_locked) {
+            showToast("PREMIUM STATUS REQUIRED FOR THIS MISSION", "error");
+            return;
+        }
+        if (task.is_completed) {
+            showToast("MISSION ALREADY COMPLETED", "info");
+            return;
+        }
+
         if (task.type === 'quiz' && task.questions && task.questions.length > 0) {
             setActiveQuiz(task);
         } else {
             setCompletingId(task.id);
-            completeTaskMutation.mutate(task.id, {
+            completeTaskMutation.mutate({ taskId: task.id }, {
                 onSettled: () => setCompletingId(null)
             });
         }
@@ -114,54 +125,68 @@ export default function EarnPage() {
                 <div style={{ position: 'absolute', top: '0', right: '0', width: '200px', height: '100px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.1 }} />
             </div>
 
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: '24px',
-                marginBottom: '48px'
-            }}>
-                {tasks.length > 0 ? tasks.map((task: Task) => (
-                    <MissionCard
-                        key={task.id}
-                        task={task}
-                        onExecute={handleExecute}
-                        isCompleting={completingId === task.id}
-                        isPremium={user?.is_premium}
-                    />
-                )) : (
-                    <div className="glass-panel flex-center" style={{ gridColumn: '1 / -1', padding: '80px 20px', flexDirection: 'column', gap: '24px', border: '1px solid #111', background: 'rgba(255,255,255,0.01)' }}>
-                        <div style={{ padding: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', color: 'var(--text-dim)' }}>
-                            <Activity size={48} strokeWidth={1} />
+            {/* Active Missions */}
+            <div style={{ marginBottom: '64px' }}>
+                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '24px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--emerald)', boxShadow: '0 0 10px var(--emerald)' }} />
+                    <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>ACTIVE PROTOCOLS</span>
+                </div>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '24px'
+                }}>
+                    {tasks.filter(t => !t.is_completed).length > 0 ? (
+                        tasks.filter(t => !t.is_completed).map((task: Task) => (
+                            <MissionCard
+                                key={task.id}
+                                task={task}
+                                onExecute={handleExecute}
+                                isCompleting={completingId === task.id}
+                                isPremium={user?.is_premium}
+                            />
+                        ))
+                    ) : (
+                        <div className="glass-panel flex-center" style={{ gridColumn: '1 / -1', padding: '60px 20px', flexDirection: 'column', gap: '20px', border: '1px solid #111' }}>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>NO ACTIVE PROTOCOLS AVAILABLE.</p>
                         </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', letterSpacing: '2px', marginBottom: '8px' }}>NO ACTIVE MISSIONS</h3>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>Global operational flow is currently optimized. Check back soon.</p>
-                        </div>
-                        <button
-                            onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
-                            style={{ background: 'transparent', border: '1px solid #333', color: '#fff', padding: '12px 32px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}
-                        >
-                            SYNCHRONIZE MANUALLY
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            <div className="glass-panel" style={{ padding: '48px', background: 'rgba(255,255,255,0.01)', border: '1px solid #222', textAlign: 'center', borderRadius: '4px' }}>
-                <Info size={32} color="var(--text-dim)" strokeWidth={1} style={{ marginBottom: '24px' }} />
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px', marginBottom: '24px' }}>
-                    MISSION PARAMETERS REFRESH AT 00:00 UTC.
-                </p>
-                <div style={{ color: '#fff', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', letterSpacing: '2px' }}>
-                    REVIEW OPERATION GUIDELINES <ChevronRight size={14} />
+                    )}
                 </div>
             </div>
+
+            {/* Completed Missions (The "Box" at the bottom) */}
+            {tasks.filter(t => t.is_completed).length > 0 && (
+                <div style={{ marginTop: '80px', padding: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid #111', borderRadius: '24px' }}>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '32px' }}>
+                        <CheckCircle2 size={16} color="var(--text-dim)" />
+                        <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>TERMINATED PROTOCOL LOGS</span>
+                    </div>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                        gap: '16px'
+                    }}>
+                        {tasks.filter(t => t.is_completed).map((task: Task) => (
+                            <div key={task.id} className="glass-panel" style={{ padding: '20px', background: 'rgba(0,0,0,0.2)', border: '1px solid #222', borderRadius: '12px', opacity: 0.6 }}>
+                                <div className="flex-between">
+                                    <div>
+                                        <h4 style={{ fontSize: '0.75rem', fontWeight: '900', color: '#fff', marginBottom: '4px' }}>{task.title.toUpperCase()}</h4>
+                                        <p style={{ fontSize: '0.6rem', color: 'var(--emerald)', fontWeight: '950' }}>{task.earned_amount?.toLocaleString() || 0} FLOW CLAIMED</p>
+                                    </div>
+                                    <CheckCircle2 size={20} color="var(--emerald)" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
 
             {activeQuiz && (
                 <QuizModal
                     task={activeQuiz}
                     onClose={() => setActiveQuiz(null)}
-                    onComplete={(id) => completeTaskMutation.mutate(id)}
+                    onComplete={(id, correct, total) => completeTaskMutation.mutate({ taskId: id, correctCount: correct, totalCount: total })}
                     isSubmitting={completeTaskMutation.isPending}
                 />
             )}
@@ -169,11 +194,12 @@ export default function EarnPage() {
     );
 }
 
-function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, onClose: () => void, onComplete: (id: string) => void, isSubmitting: boolean }) {
+function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, onClose: () => void, onComplete: (id: string, correct: number, total: number) => void, isSubmitting: boolean }) {
     const [currentIdx, setCurrentIdx] = useState(0);
     const [timeLeft, setTimeLeft] = useState(10);
     const [answers, setAnswers] = useState<number[]>([]);
-    const [status, setStatus] = useState<'playing' | 'failed' | 'success'>('playing');
+    const [status, setStatus] = useState<'playing' | 'calculating' | 'success'>('playing');
+    const [correctCount, setCorrectCount] = useState(0);
 
     const currentQuestion = task.questions![currentIdx];
 
@@ -183,9 +209,9 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
-                    clearInterval(timer);
-                    setStatus('failed');
-                    return 0;
+                    // Time out: move to next or calculate
+                    handleAnswer(-1); // -1 marks as incorrect/timed out
+                    return 10;
                 }
                 return prev - 1;
             });
@@ -197,10 +223,8 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
     const handleAnswer = (idx: number) => {
         if (status !== 'playing') return;
 
-        if (idx !== currentQuestion.answer) {
-            setStatus('failed');
-            return;
-        }
+        const isCorrect = idx === currentQuestion.answer;
+        if (isCorrect) setCorrectCount(prev => prev + 1);
 
         const newAnswers = [...answers, idx];
         setAnswers(newAnswers);
@@ -209,9 +233,13 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
             setCurrentIdx(currentIdx + 1);
             setTimeLeft(10);
         } else {
-            setStatus('success');
-            // Slight delay before completing to show success state
-            setTimeout(() => onComplete(task.id), 1500);
+            setStatus('calculating');
+            // Final calculation and API call
+            const finalCorrect = isCorrect ? correctCount + 1 : correctCount;
+            setTimeout(() => {
+                setStatus('success');
+                onComplete(task.id, finalCorrect, task.questions!.length);
+            }, 2000);
         }
     };
 
@@ -280,22 +308,23 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
                             ))}
                         </div>
                     </>
-                ) : status === 'failed' ? (
+                ) : status === 'calculating' ? (
                     <div className="flex-center" style={{ flexDirection: 'column', gap: '24px', padding: '40px 0' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <AlertTriangle size={40} color="var(--error)" />
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Activity size={40} color="var(--primary)" />
                         </div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', textAlign: 'center' }}>MISSION FAILED</h2>
-                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem' }}>Time ran out or you selected the wrong answer. Synchronization failed.</p>
-                        <button onClick={onClose} className="btn" style={{ background: '#fff', color: '#000', padding: '16px 40px', letterSpacing: '2px' }}>TRY AGAIN LATER</button>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', textAlign: 'center' }}>ANALYZING PERFORMANCE</h2>
+                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem' }}>Compiling protocol results and calculating reward metrics...</p>
                     </div>
                 ) : (
                     <div className="flex-center" style={{ flexDirection: 'column', gap: '24px', padding: '40px 0' }}>
                         <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <CheckCircle2 size={40} color="var(--emerald)" />
                         </div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', textAlign: 'center' }}>{isSubmitting ? "SYNCHRONIZING..." : "MISSION COMPLETE"}</h2>
-                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem' }}>All protocols verified. Rewards are being dispatched.</p>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', textAlign: 'center' }}>MISSION TERMINATED</h2>
+                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '1.1rem', fontWeight: '900' }}>SCORE: {correctCount} / {task.questions!.length}</p>
+                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem' }}>Efficiency rating established. Rewards are being dispatched to your wallet.</p>
+                        <button onClick={onClose} className="btn" style={{ background: '#fff', color: '#000', padding: '16px 40px', letterSpacing: '2px', width: '100%', marginTop: '20px' }}>EXIT SIMULATION</button>
                     </div>
                 )}
             </div>
@@ -406,7 +435,7 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                             textShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
                         }}>{task.reward.toLocaleString()}</span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>FLOW CAPITAL</span>
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>FLOW</span>
                             {isPremium && (
                                 <span style={{ color: 'var(--gold)', fontSize: '0.5rem', fontWeight: '900', letterSpacing: '1px' }}>+20% BOOST</span>
                             )}
@@ -423,14 +452,16 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                         height: '60px',
                         fontSize: '0.8rem',
                         borderRadius: '12px',
-                        background: '#fff',
-                        color: '#000',
+                        background: task.is_locked ? 'rgba(255,255,255,0.05)' : '#fff',
+                        color: task.is_locked ? 'rgba(255,255,255,0.2)' : '#000',
                         fontWeight: '950',
                         letterSpacing: '3px',
-                        marginTop: 'auto'
+                        marginTop: 'auto',
+                        border: task.is_locked ? '1px solid #222' : 'none',
+                        cursor: task.is_locked ? 'not-allowed' : 'pointer'
                     }}
                 >
-                    {isCompleting ? "EXECUTING..." : "DEPLOY MISSION"}
+                    {isCompleting ? "EXECUTING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : "DEPLOY MISSION"}
                 </button>
             </div>
         </div>

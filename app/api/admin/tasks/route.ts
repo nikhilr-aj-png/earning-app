@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: Request) {
     try {
@@ -108,7 +108,9 @@ export async function DELETE(request: Request) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
-        const { error } = await supabaseMain
+        console.log(`ADMIN: Manual Deletion Triggered for Task ID: ${id}`);
+
+        const { error } = await supabaseAdmin
             .from('tasks')
             .delete()
             .eq('id', id);

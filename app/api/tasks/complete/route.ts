@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: Request) {
     try {
         const userId = request.headers.get('x-user-id');
-        const { taskId } = await request.json();
+        const { taskId, correctCount, totalCount } = await request.json();
 
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         // 2. Fetch User Profile
         const { data: profile, error: profileError } = await supabaseMain
             .from('profiles')
-            .select('coins, is_premium')
+            .select('coins, is_premium, is_admin')
             .eq('id', userId)
             .single();
 
@@ -32,52 +32,58 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
         }
 
+        // 2.5 Security: Check if Free user is trying to claim Premium task
+        if (task.target_audience === 'premium' && !profile.is_premium && !profile.is_admin) {
+            return NextResponse.json({ error: 'PREMIUM STATUS REQUIRED FOR THIS MISSION' }, { status: 403 });
+        }
+
         const isPremium = profile.is_premium === true;
 
-        // 2.5 Check for duplicate completion (within 24h or cooldown)
-        const cooldownHours = task.cooldown ? task.cooldown / 60 : 24;
-        const since = new Date(Date.now() - cooldownHours * 60 * 60 * 1000).toISOString();
-
+        // 2.6 CHECK FOR PRIOR ATTEMPTS (Strict Single Attempt)
         const { data: existingTx } = await supabaseMain
             .from('transactions')
             .select('id')
             .eq('user_id', userId)
             .ilike('description', `%[CLAIMED:${taskId}]%`)
-            .gt('created_at', since)
             .limit(1);
 
         if (existingTx && existingTx.length > 0) {
-            return NextResponse.json({ error: 'MISSION ALREADY CLAIMED (COOLDOWN ACTIVE)' }, { status: 400 });
+            return NextResponse.json({ error: 'MISSION ALREADY ATTEMPTED (LOCK ACTIVE)' }, { status: 400 });
         }
 
-        const baseReward = task.reward;
+        // Calculate Reward Proportional to Accuracy
+        const accuracy = totalCount > 0 ? Math.min(1, correctCount / totalCount) : 1;
+        const baseReward = Math.ceil(task.reward * accuracy);
         const booster = isPremium ? Math.floor(baseReward * 0.2) : 0;
         const totalReward = baseReward + booster;
+
         const newBalance = (profile.coins || 0) + totalReward;
 
-        // 3. Record Transaction
-        const { error: txError } = await supabaseMain
+        // 3. Record Transaction (Use supabaseAdmin to bypass RLS for rewards)
+        const { error: txError } = await supabaseAdmin
             .from('transactions')
             .insert([
                 {
                     user_id: userId,
                     amount: totalReward,
                     type: 'earn',
-                    description: `[CLAIMED:${taskId}] Completed task: ${task.title} ${isPremium ? '(+20% PREMIUM BOOST)' : ''}`
+                    description: `[CLAIMED:${taskId}] Result: ${correctCount}/${totalCount} | ${task.title} ${isPremium ? '(+20% PREMIUM BOOST)' : ''}`
                 }
             ]);
 
         if (txError) {
-            throw new Error('Failed to record transaction');
+            console.error('Transaction Error:', txError);
+            throw new Error(`Failed to record transaction: ${txError.message}`);
         }
 
-        const { error: updateError } = await supabaseMain
+        const { error: updateError } = await supabaseAdmin
             .from('profiles')
             .update({ coins: newBalance })
             .eq('id', userId);
 
         if (updateError) {
-            throw new Error('Failed to update balance');
+            console.error('Balance Update Error:', updateError);
+            throw new Error(`Failed to update balance: ${updateError.message}`);
         }
 
         return NextResponse.json({
