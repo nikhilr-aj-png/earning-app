@@ -208,19 +208,40 @@ function AdminPage() {
 
             {/* Views */}
             {view === 'stats' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', border: '1px solid #222' }}>
-                        <Users size={24} color="#fff" strokeWidth={1} style={{ marginBottom: '16px' }} />
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px' }}>{adminStats?.totalUsers || 0}</h2>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '2px' }}>TOTAL USERS</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(59, 130, 246, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                        <Users size={20} color="var(--sapphire)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                        <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>{adminStats?.totalUsers || 0}</h2>
+                        <div className="flex-between">
+                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>OPERATIONAL IDENTITIES</p>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--emerald)', fontWeight: '900', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>+12% AVG</span>
+                        </div>
+                        <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--sapphire)', filter: 'blur(60px)', opacity: 0.1 }} />
                     </div>
-                    <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', border: '1px solid #222' }}>
-                        <Database size={24} color="#fff" strokeWidth={1} style={{ marginBottom: '16px' }} />
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-2px' }}>{adminStats?.totalCoinsDistributed || 0}</h2>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '2px' }}>DISTRIBUTED CREDITS</p>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--emerald)', fontWeight: '900', marginTop: '8px' }}>
-                            ≈ ₹{((adminStats?.totalCoinsDistributed || 0) / 10).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </p>
+
+                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                        <Database size={20} color="var(--emerald)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                        <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
+                            {((adminStats?.totalCoinsDistributed || 0) / 10).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                        </h2>
+                        <div className="flex-between">
+                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>LIQUIDITY DISTRIBUTED (₹)</p>
+                            <TrendingUp size={14} color="var(--emerald)" />
+                        </div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: '8px', opacity: 0.6 }}>BASE FLOW: {adminStats?.totalCoinsDistributed || 0}</p>
+                        <div style={{ position: 'absolute', bottom: -20, right: -20, width: '100px', height: '100px', background: 'var(--emerald)', filter: 'blur(60px)', opacity: 0.1 }} />
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(234, 179, 8, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                        <Activity size={20} color="var(--gold)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                        <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
+                            {adminTasks.length || 0}
+                        </h2>
+                        <div className="flex-between">
+                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>ACTIVE AI DEPLOYMENTS</p>
+                            <Zap size={14} color="var(--gold)" />
+                        </div>
+                        <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--gold)', filter: 'blur(60px)', opacity: 0.1 }} />
                     </div>
                 </div>
             )}
@@ -304,15 +325,33 @@ function AdminPage() {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div className="glass-panel" style={{ padding: '40px', border: '1px solid #222', background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 100%)' }}>
-                            <div className="flex-between" style={{ marginBottom: '32px' }}>
+                        <div className="glass-panel" style={{
+                            padding: '40px',
+                            border: '1px solid #222',
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 100%)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            {/* AI Badge */}
+                            <div style={{ position: 'absolute', top: '24px', right: '40px', display: 'flex', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(59, 130, 246, 0.1)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                    <Activity size={12} color="var(--primary)" />
+                                    <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--primary)', letterSpacing: '1px' }}>MODEL: GEMINI 2.0 FLASH</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--emerald)', animation: 'pulse-glow 2s infinite' }} />
+                                    <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '1px' }}>LATENCY VERIFIED</span>
+                                </div>
+                            </div>
+
+                            <div className="flex-between" style={{ marginBottom: '40px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <div style={{ padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px' }}>
-                                        <Zap size={24} color="var(--primary)" />
+                                    <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', border: '1px solid #333' }}>
+                                        <Zap size={24} color="#fff" />
                                     </div>
                                     <div>
-                                        <h3 style={{ fontSize: '0.8rem', fontWeight: '950', letterSpacing: '2px', color: '#fff' }}>DEPLOYMENT CONFIGURATOR</h3>
-                                        <p style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>GLOBAL TASK ALLOCATION PARAMETERS</p>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>MACRO HUB</h3>
+                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>AI-DRIVEN MISSION DEPLOYMENT COHORT</p>
                                     </div>
                                 </div>
                             </div>
@@ -320,25 +359,22 @@ function AdminPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <label style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>MISSION VOLUME</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <input
-                                                type="number"
-                                                value={autoConfig.count}
-                                                onChange={(e) => setAutoConfig({ ...autoConfig, count: parseInt(e.target.value) || 0 })}
-                                                style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '18px 24px', borderRadius: '12px', color: '#fff', fontSize: '1.1rem', fontWeight: '950' }}
-                                            />
-                                            <span style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900' }}>TOTAL NODES</span>
-                                        </div>
+                                        <label style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>MISSION VOLUME (NODES)</label>
+                                        <input
+                                            type="number"
+                                            value={autoConfig.count}
+                                            onChange={(e) => setAutoConfig({ ...autoConfig, count: parseInt(e.target.value) || 0 })}
+                                            style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '18px 24px', borderRadius: '12px', color: '#fff', fontSize: '1.2rem', fontWeight: '950' }}
+                                        />
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <label style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>EXPIRY PROTOCOL (24H SYNC)</label>
+                                        <label style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>EXPIRY SYNCHRONIZATION</label>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                                             <select
                                                 value={autoConfig.exp_h}
                                                 onChange={(e) => setAutoConfig({ ...autoConfig, exp_h: e.target.value })}
-                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', textAlign: 'center' }}
+                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
                                             >
                                                 {[...Array(12)].map((_, i) => (
                                                     <option key={i + 1} value={(i + 1).toString().padStart(2, '0')}>{i + 1}</option>
@@ -347,7 +383,7 @@ function AdminPage() {
                                             <select
                                                 value={autoConfig.exp_m}
                                                 onChange={(e) => setAutoConfig({ ...autoConfig, exp_m: e.target.value })}
-                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem' }}
+                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
                                             >
                                                 {[...Array(60)].map((_, i) => (
                                                     <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
@@ -356,7 +392,7 @@ function AdminPage() {
                                             <select
                                                 value={autoConfig.exp_p}
                                                 onChange={(e) => setAutoConfig({ ...autoConfig, exp_p: e.target.value })}
-                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem' }}
+                                                style={{ background: '#000', border: '1px solid #333', padding: '18px', borderRadius: '12px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
                                             >
                                                 <option value="AM">AM</option>
                                                 <option value="PM">PM</option>
@@ -366,55 +402,49 @@ function AdminPage() {
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    <div className="glass-panel" style={{ padding: '24px', background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '16px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--sapphire)' }} />
-                                            <p style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px' }}>FREE TIER PROTOCOL</p>
-                                        </div>
-                                        <div style={{ display: 'grid', gap: '16px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                <label style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '800' }}>QUESTION DENSITY</label>
+                                    <div className="glass-panel" style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid #222', borderRadius: '16px' }}>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px', marginBottom: '20px' }}>FREE TIER PROTOCOL</p>
+                                        <div style={{ display: 'grid', gap: '12px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>Q DENSITY</span>
                                                 <input
                                                     type="number"
                                                     value={autoConfig.free_questions}
                                                     onChange={(e) => setAutoConfig({ ...autoConfig, free_questions: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '14px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem' }}
+                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
                                                 />
                                             </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                <label style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '800' }}>TARGET YIELD (FLOW)</label>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>REWARD (F)</span>
                                                 <input
                                                     type="number"
                                                     value={autoConfig.free_reward}
                                                     onChange={(e) => setAutoConfig({ ...autoConfig, free_reward: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '14px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem' }}
+                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="glass-panel" style={{ padding: '24px', background: 'rgba(234, 179, 8, 0.02)', border: '1px solid rgba(234, 179, 8, 0.1)', borderRadius: '16px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)' }} />
-                                            <p style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px' }}>PREMIUM TIER PROTOCOL</p>
-                                        </div>
-                                        <div style={{ display: 'grid', gap: '16px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                <label style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '800' }}>QUESTION DENSITY</label>
+                                        <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px', marginBottom: '20px' }}>PREMIUM TIER PROTOCOL</p>
+                                        <div style={{ display: 'grid', gap: '12px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>Q DENSITY</span>
                                                 <input
                                                     type="number"
                                                     value={autoConfig.premium_questions}
                                                     onChange={(e) => setAutoConfig({ ...autoConfig, premium_questions: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '14px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem' }}
+                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
                                                 />
                                             </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                <label style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '800' }}>TARGET YIELD (FLOW)</label>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>REWARD (F)</span>
                                                 <input
                                                     type="number"
                                                     value={autoConfig.premium_reward}
                                                     onChange={(e) => setAutoConfig({ ...autoConfig, premium_reward: parseInt(e.target.value) || 0 })}
-                                                    style={{ background: '#000', border: '1px solid #222', padding: '14px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem' }}
+                                                    style={{ background: '#000', border: '1px solid #222', padding: '8px 12px', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', width: '60px', textAlign: 'center' }}
                                                 />
                                             </div>
                                         </div>
@@ -431,12 +461,12 @@ function AdminPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: '12px',
+                                        gap: '16px',
                                         background: '#fff',
                                         color: '#000',
                                         border: 'none',
                                         padding: '24px',
-                                        fontSize: '0.9rem',
+                                        fontSize: '1rem',
                                         borderRadius: '16px',
                                         fontWeight: '950',
                                         letterSpacing: '4px',
@@ -444,8 +474,7 @@ function AdminPage() {
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    <TrendingUp size={20} />
-                                    {generateMutation.isPending ? 'SYNCHRONIZING GLOBAL STATE...' : 'EXECUTE AI DEPLOYMENT'}
+                                    {generateMutation.isPending ? 'SYNCHRONIZING GLOBAL STATE...' : 'DEPLOY MISSION MACRO'}
                                 </button>
                             </div>
                         </div>
@@ -487,7 +516,8 @@ function AdminPage() {
                                     return matchesSearch && matchesAudience;
                                 })
                                 .map((t: any) => {
-                                    const isExpired = new Date(t.expires_at) < new Date();
+                                    const expAt = t.expires_at ? new Date(t.expires_at) : null;
+                                    const isExpired = expAt ? expAt < new Date() : false;
                                     return (
                                         <div key={t.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', borderRadius: '12px', background: isExpired ? 'rgba(239, 68, 68, 0.02)' : 'rgba(255,255,255,0.01)' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -507,20 +537,28 @@ function AdminPage() {
                                                         <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>•</span>
                                                         <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>{t.completion_count || 0} CLAIMS</p>
                                                         <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem' }}>•</span>
-                                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>EXP: {new Date(t.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '800' }}>
+                                                            EXP: {t.expires_at ? new Date(t.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '12px' }}>
                                                 <button
                                                     onClick={() => {
-                                                        const d = new Date(t.expires_at);
+                                                        const expAtVal = t.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                                                        const d = new Date(expAtVal);
                                                         let h = d.getHours();
-                                                        const m = d.getMinutes().toString().padStart(2, '0');
+                                                        const m = (d.getMinutes() || 0).toString().padStart(2, '0');
                                                         const p = h >= 12 ? 'PM' : 'AM';
                                                         if (h > 12) h -= 12;
                                                         if (h === 0) h = 12;
-                                                        setEditingTask({ ...t, exp_h: h.toString().padStart(2, '0'), exp_m: m, exp_p: p });
+                                                        setEditingTask({
+                                                            ...t,
+                                                            exp_h: h.toString().padStart(2, '0'),
+                                                            exp_m: m,
+                                                            exp_p: p
+                                                        });
                                                     }}
                                                     className="btn-stat"
                                                     style={{ padding: '10px' }}
@@ -553,12 +591,23 @@ function AdminPage() {
                 />
             )}
 
-            {view === 'casino' && (
-                <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', border: '1px solid #fff', borderRadius: '4px' }}>
-                    <Activity size={32} color="#fff" strokeWidth={1} style={{ marginBottom: '24px' }} />
-                    <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
-                </div>
+            {editingTask && (
+                <TaskEditModal
+                    task={editingTask}
+                    onClose={() => setEditingTask(null)}
+                    onSave={(t) => updateTaskMutation.mutate(t)}
+                    isSaving={updateTaskMutation.isPending}
+                />
             )}
+
+            {
+                view === 'casino' && (
+                    <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', border: '1px solid #fff', borderRadius: '4px' }}>
+                        <Activity size={32} color="#fff" strokeWidth={1} style={{ marginBottom: '24px' }} />
+                        <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
+                    </div>
+                )
+            }
 
         </div>
     );
@@ -690,14 +739,6 @@ function UserEditModal({ user, onClose, onSave, onDelete, isSaving }: { user: an
                     </div>
                 </div>
             </div>
-            {editingTask && (
-                <TaskEditModal
-                    task={editingTask}
-                    onClose={() => setEditingTask(null)}
-                    onSave={(t) => updateTaskMutation.mutate(t)}
-                    isSaving={updateTaskMutation.isPending}
-                />
-            )}
         </div>
     );
 }

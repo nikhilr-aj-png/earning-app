@@ -8,6 +8,10 @@ CREATE TABLE profiles (
   coins BIGINT DEFAULT 100, -- Welcome bonus
   referral_code TEXT UNIQUE,
   referred_by TEXT,
+  is_admin BOOLEAN DEFAULT FALSE,
+  is_premium BOOLEAN DEFAULT FALSE,
+  is_blocked BOOLEAN DEFAULT FALSE,
+  premium_until TIMESTAMPTZ,
   joined_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -16,9 +20,12 @@ CREATE TABLE tasks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   reward INT NOT NULL,
-  type TEXT DEFAULT 'visit',
+  type TEXT DEFAULT 'visit', -- 'visit', 'quiz', 'ad'
   url TEXT,
   cooldown INT DEFAULT 1440, -- Minutes
+  target_audience TEXT DEFAULT 'free', -- 'free' or 'premium'
+  expires_at TIMESTAMPTZ,
+  questions JSONB DEFAULT '[]', -- For quiz types
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

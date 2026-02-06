@@ -110,9 +110,13 @@ export async function POST(request: Request) {
             console.error("INITIAL JSON PARSE FAILED, ATTEMPTING REGEX EXTRACTION");
             const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
             if (jsonMatch) {
-                generatedTasks = JSON.parse(jsonMatch[0]);
+                try {
+                    generatedTasks = JSON.parse(jsonMatch[0]);
+                } catch (innerError) {
+                    throw new Error("COULD NOT PARSE EXTRACTED JSON FROM AI RESPONSE");
+                }
             } else {
-                throw new Error("COULD NOT EXTRACT VALID JSON FROM AI RESPONSE");
+                throw new Error("COULD NOT LOCATE JSON ARRAY IN AI RESPONSE");
             }
         }
 
@@ -131,7 +135,8 @@ export async function POST(request: Request) {
             throw error;
         }
 
-        return NextResponse.json({ success: true, count: data.length, tasks: data });
+        const successCount = data?.length || 0;
+        return NextResponse.json({ success: true, count: successCount, tasks: data || [] });
     } catch (error: any) {
         console.error("AI GENERATION ERROR:", error);
         return NextResponse.json({ error: "AI SYCHRONIZATION FAILED: " + error.message }, { status: 500 });

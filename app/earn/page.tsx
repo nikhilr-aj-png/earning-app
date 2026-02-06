@@ -114,31 +114,38 @@ export default function EarnPage() {
                 <div style={{ position: 'absolute', top: '0', right: '0', width: '200px', height: '100px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.1 }} />
             </div>
 
-            {tasks.length > 0 ? tasks.map((task: Task) => (
-                <MissionCard
-                    key={task.id}
-                    task={task}
-                    onExecute={handleExecute}
-                    isCompleting={completingId === task.id}
-                    isPremium={user?.is_premium}
-                />
-            )) : (
-                <div className="glass-panel flex-center" style={{ gridColumn: '1 / -1', padding: '80px 20px', flexDirection: 'column', gap: '24px', border: '1px solid #111', background: 'rgba(255,255,255,0.01)' }}>
-                    <div style={{ padding: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', color: 'var(--text-dim)' }}>
-                        <Activity size={48} strokeWidth={1} />
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '24px',
+                marginBottom: '48px'
+            }}>
+                {tasks.length > 0 ? tasks.map((task: Task) => (
+                    <MissionCard
+                        key={task.id}
+                        task={task}
+                        onExecute={handleExecute}
+                        isCompleting={completingId === task.id}
+                        isPremium={user?.is_premium}
+                    />
+                )) : (
+                    <div className="glass-panel flex-center" style={{ gridColumn: '1 / -1', padding: '80px 20px', flexDirection: 'column', gap: '24px', border: '1px solid #111', background: 'rgba(255,255,255,0.01)' }}>
+                        <div style={{ padding: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', color: 'var(--text-dim)' }}>
+                            <Activity size={48} strokeWidth={1} />
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', letterSpacing: '2px', marginBottom: '8px' }}>NO ACTIVE MISSIONS</h3>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>Global operational flow is currently optimized. Check back soon.</p>
+                        </div>
+                        <button
+                            onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
+                            style={{ background: 'transparent', border: '1px solid #333', color: '#fff', padding: '12px 32px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}
+                        >
+                            SYNCHRONIZE MANUALLY
+                        </button>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', letterSpacing: '2px', marginBottom: '8px' }}>NO ACTIVE MISSIONS</h3>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>Global operational flow is currently optimized. Check back soon.</p>
-                    </div>
-                    <button
-                        onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
-                        style={{ background: 'transparent', border: '1px solid #333', color: '#fff', padding: '12px 32px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}
-                    >
-                        SYNCHRONIZE MANUALLY
-                    </button>
-                </div>
-            )}
+                )}
+            </div>
 
             <div className="glass-panel" style={{ padding: '48px', background: 'rgba(255,255,255,0.01)', border: '1px solid #222', textAlign: 'center', borderRadius: '4px' }}>
                 <Info size={32} color="var(--text-dim)" strokeWidth={1} style={{ marginBottom: '24px' }} />
@@ -321,103 +328,111 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
 
     return (
         <div className="glass-panel glass-vibrant" style={{
-            padding: '40px',
-            border: task.is_completed ? '1.5px solid #222' : '1.5px solid var(--emerald)',
+            padding: '32px',
+            border: task.is_completed ? '1px solid #111' : '1px solid var(--emerald)',
             borderRadius: '24px',
             background: task.is_completed
-                ? 'linear-gradient(135deg, #111 0%, #000 100%)'
-                : 'linear-gradient(135deg, #065f46 0%, #020617 100%)',
-            display: 'flex', flexDirection: 'column', gap: '32px',
-            transition: 'all 0.5s var(--transition)',
+                ? 'rgba(255,255,255,0.01)'
+                : 'linear-gradient(135deg, #064e3b 0%, #020617 100%)',
+            display: 'flex', flexDirection: 'column', gap: '20px',
+            transition: 'all 0.4s var(--transition)',
             position: 'relative',
             overflow: 'hidden',
-            opacity: task.is_completed ? 0.6 : 1,
-            pointerEvents: task.is_completed ? 'none' : 'auto',
-            boxShadow: task.is_completed ? 'none' : '0 20px 40px rgba(16, 185, 129, 0.2)'
+            opacity: task.is_completed ? 0.5 : 1,
+            boxShadow: task.is_completed ? 'none' : '0 10px 30px rgba(16, 185, 129, 0.1)',
+            minHeight: '380px'
         }}>
             {/* Status Overlays */}
             {task.is_completed && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, backdropFilter: 'blur(2px)' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, backdropFilter: 'blur(4px)' }}>
                     <div style={{
                         background: '#000',
-                        border: '1px solid #333',
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        color: 'var(--text-dim)',
-                        fontSize: '0.7rem',
+                        border: '1px solid #222',
+                        padding: '10px 20px',
+                        borderRadius: '12px',
+                        color: 'var(--emerald)',
+                        fontSize: '0.65rem',
                         fontWeight: '950',
-                        letterSpacing: '4px',
+                        letterSpacing: '3px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px'
+                        gap: '8px'
                     }}>
-                        <CheckCircle2 size={16} color="var(--emerald)" /> MISSION CLAIMED
+                        <CheckCircle2 size={14} /> CLAIMED
                     </div>
                 </div>
             )}
 
-            <div className="flex" style={{ gap: '28px', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                <div style={{
-                    width: '80px', height: '80px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
-                    flexShrink: 0
-                }} className="flex-center">
-                    {task.type === "ad" && <PlayCircle size={32} strokeWidth={2} />}
-                    {task.type === "visit" && <ExternalLink size={32} strokeWidth={2} />}
-                    {task.type === "checkin" && <CheckCircle2 size={32} strokeWidth={2} />}
-                    {task.type === "quiz" && <Zap size={32} strokeWidth={2} color="var(--primary)" />}
-                </div>
-                <div style={{ flex: 1 }}>
-                    <div className="flex" style={{ flexDirection: 'column', gap: '4px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', letterSpacing: '1px' }}>{task.title.toUpperCase()}</h3>
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                            {task.questions && (
-                                <div style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Timer size={10} /> {task.questions.length} QUESTIONS
-                                </div>
-                            )}
-                            {timeLeft && (
-                                <div style={{ fontSize: '0.6rem', color: 'var(--gold)', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Clock size={10} /> {timeLeft}
-                                </div>
-                            )}
-                        </div>
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+                <div className="flex-between" style={{ alignItems: 'flex-start' }}>
+                    <div style={{
+                        width: '64px', height: '64px',
+                        borderRadius: '16px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: task.type === 'quiz' ? 'var(--primary)' : '#fff'
+                    }} className="flex-center">
+                        {task.type === "ad" && <PlayCircle size={28} strokeWidth={1.5} />}
+                        {task.type === "visit" && <ExternalLink size={28} strokeWidth={1.5} />}
+                        {task.type === "checkin" && <CheckCircle2 size={28} strokeWidth={1.5} />}
+                        {task.type === "quiz" && <Zap size={28} strokeWidth={1.5} fill="var(--primary)" fillOpacity={0.1} />}
                     </div>
-                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginTop: '12px' }}>
-                        <span style={{ color: 'var(--emerald)', fontSize: '1.75rem', fontWeight: '950', letterSpacing: '-2px' }}>{task.reward.toLocaleString()}</span>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '950', letterSpacing: '2px' }}>FLOW CAPITAL</span>
-                            {isPremium && (
-                                <span style={{ color: 'var(--gold)', fontSize: '0.55rem', fontWeight: '950', letterSpacing: '1px' }}>+20% PREMIUM BOOST ACTIVE</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <button
-                onClick={() => onExecute(task)}
-                disabled={isCompleting || task.is_completed}
-                className="btn"
-                style={{
-                    width: '100%',
-                    height: '72px',
-                    fontSize: '0.9rem',
-                    borderRadius: '16px',
-                    background: task.is_completed ? 'transparent' : '#fff',
-                    color: task.is_completed ? '#333' : '#000',
-                    border: task.is_completed ? '1px solid #222' : 'none',
-                    fontWeight: '950',
-                    letterSpacing: '4px',
-                    boxShadow: task.is_completed ? 'none' : '0 15px 30px rgba(255,255,255,0.2)'
-                }}
-            >
-                {isCompleting ? "EXECUTING..." : task.is_completed ? "MISSION ARCHIVED" : "EXECUTE MISSION"}
-            </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                        {timeLeft && (
+                            <div style={{ fontSize: '0.55rem', color: 'var(--gold)', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(234, 179, 8, 0.05)', padding: '4px 8px', borderRadius: '4px' }}>
+                                <Clock size={10} /> {timeLeft}
+                            </div>
+                        )}
+                        {task.questions && (
+                            <div style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.05)', padding: '4px 8px', borderRadius: '4px' }}>
+                                <Timer size={10} /> {task.questions.length} Q
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: '950', color: '#fff', letterSpacing: '-0.5px', marginBottom: '12px', lineHeight: 1.2 }}>
+                        {task.title.toUpperCase()}
+                    </h3>
+
+                    <div className="flex" style={{ alignItems: 'baseline', gap: '8px' }}>
+                        <span style={{
+                            color: 'var(--emerald)',
+                            fontSize: '2.4rem',
+                            fontWeight: '950',
+                            letterSpacing: '-2px',
+                            textShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
+                        }}>{task.reward.toLocaleString()}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>FLOW CAPITAL</span>
+                            {isPremium && (
+                                <span style={{ color: 'var(--gold)', fontSize: '0.5rem', fontWeight: '900', letterSpacing: '1px' }}>+20% BOOST</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => onExecute(task)}
+                    disabled={isCompleting || task.is_completed}
+                    className="btn"
+                    style={{
+                        width: '100%',
+                        height: '60px',
+                        fontSize: '0.8rem',
+                        borderRadius: '12px',
+                        background: '#fff',
+                        color: '#000',
+                        fontWeight: '950',
+                        letterSpacing: '3px',
+                        marginTop: 'auto'
+                    }}
+                >
+                    {isCompleting ? "EXECUTING..." : "DEPLOY MISSION"}
+                </button>
+            </div>
         </div>
     );
 }
