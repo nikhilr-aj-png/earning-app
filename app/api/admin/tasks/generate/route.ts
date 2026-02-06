@@ -69,9 +69,10 @@ export async function POST(request: Request) {
         Return ONLY a JSON array of objects. No Markdown formatting, no extra text.`;
 
         // MODEL FALLBACK LOGIC
-        const modelNames = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"];
+        const modelNames = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro", "gemini-flash-latest", "gemini-pro-latest"];
         let responseText = "";
         let finalModelUsed = "";
+        let attemptErrors: string[] = [];
 
         for (const modelName of modelNames) {
             try {
@@ -84,13 +85,16 @@ export async function POST(request: Request) {
                     break;
                 }
             } catch (err: any) {
-                console.warn(`MODEL ${modelName} FAILED OR UNAVAILABLE:`, err.message);
+                const errMsg = `[${modelName}]: ${err.message}`;
+                console.warn(errMsg);
+                attemptErrors.push(errMsg);
                 continue;
             }
         }
 
         if (!responseText) {
-            throw new Error("ALL AI MODELS FAILED TO RESPOND. Please check API Key usage/quotas.");
+            console.error("ALL MODELS FAILED. Errors:", attemptErrors);
+            throw new Error(`ALL AI MODELS FAILED TO RESPOND. \nDetails: ${attemptErrors.join(' | ')}`);
         }
 
         console.log(`AI MISSION DEPLOYED VIA: ${finalModelUsed}`);
