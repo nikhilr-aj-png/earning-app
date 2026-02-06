@@ -12,7 +12,8 @@ export async function POST(request: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Switching to 'gemini-pro' for maximum compatibility across all API versions.
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const userId = request.headers.get('x-user-id');
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
