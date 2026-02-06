@@ -12,8 +12,6 @@ export async function POST(request: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Switching to 'gemini-2.0-flash' which is verified in diagnostic list.
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
         const userId = request.headers.get('x-user-id');
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -70,8 +68,32 @@ export async function POST(request: Request) {
 
         Return ONLY a JSON array of objects. No Markdown formatting, no extra text.`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        // MODEL FALLBACK LOGIC
+        const modelNames = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"];
+        let responseText = "";
+        let finalModelUsed = "";
+
+        for (const modelName of modelNames) {
+            try {
+                console.log(`ATTEMPTING MISSION GENERATION WITH: ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                responseText = result.response.text();
+                if (responseText) {
+                    finalModelUsed = modelName;
+                    break;
+                }
+            } catch (err: any) {
+                console.warn(`MODEL ${modelName} FAILED OR UNAVAILABLE:`, err.message);
+                continue;
+            }
+        }
+
+        if (!responseText) {
+            throw new Error("ALL AI MODELS FAILED TO RESPOND. Please check API Key usage/quotas.");
+        }
+
+        console.log(`AI MISSION DEPLOYED VIA: ${finalModelUsed}`);
         console.log("AI RAW RESPONSE:", responseText);
 
         // Robust JSON extraction
