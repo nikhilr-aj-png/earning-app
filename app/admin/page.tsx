@@ -40,9 +40,8 @@ function AdminPage() {
     const [editingTask, setEditingTask] = useState<any>(null);
     const [taskSearch, setTaskSearch] = useState('');
     const [taskAudienceFilter, setTaskAudienceFilter] = useState<'all' | 'free' | 'premium'>('all');
-    const [autoConfig, setAutoConfig] = useState({ count: 5, free_questions: 2, premium_questions: 4, free_reward: 50, premium_reward: 150, exp_h: '12', exp_m: '00', exp_p: 'AM' });
     const [automationSettings, setAutomationSettings] = useState<any>(null);
-    const [countdown, setCountdown] = useState(30);
+    const [countdown, setCountdown] = useState(120);
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -194,27 +193,6 @@ function AdminPage() {
     });
 
 
-    const generateMutation = useMutation({
-        mutationFn: async () => {
-            const res = await fetch('/api/admin/tasks/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
-                body: JSON.stringify(autoConfig)
-            });
-            return res.json();
-        },
-        onSuccess: (data) => {
-            if (data.error) {
-                alert(`SYNCHRONIZATION FAILED: ${data.error}`);
-            } else {
-                alert("AI MISSIONS GENERATED SUCCESSFULLY");
-                queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
-            }
-        },
-        onError: (error: any) => {
-            alert(`CRITICAL ERROR: ${error.message}`);
-        }
-    });
 
     const deleteTaskMutation = useMutation({
         mutationFn: async (id: string) => {
@@ -798,16 +776,16 @@ function AdminPage() {
                                             }}
                                             disabled={syncMutation.isPending}
                                             style={{
-                                                background: '#fff',
-                                                color: '#000',
-                                                border: 'none',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid #333',
+                                                color: syncMutation.isPending ? 'var(--text-dim)' : '#fff',
                                                 padding: '24px',
-                                                fontSize: '1rem',
                                                 borderRadius: '12px',
+                                                fontSize: '0.85rem',
                                                 fontWeight: '950',
-                                                letterSpacing: '6px',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 10px 40px rgba(255,255,255,0.1)',
+                                                letterSpacing: '4px',
+                                                cursor: syncMutation.isPending ? 'not-allowed' : 'pointer',
+                                                flex: 1,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -815,7 +793,7 @@ function AdminPage() {
                                             }}
                                         >
                                             <Gamepad2 size={24} />
-                                            {syncMutation.isPending ? 'EXECUTING FRESH START...' : 'RUN AI ENGINE'}
+                                            {syncMutation.isPending ? 'SYNCHRONIZING CORE...' : 'FRESH START (RESET)'}
                                         </button>
                                     </div>
                                 </div>
