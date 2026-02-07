@@ -146,7 +146,7 @@ function AdminPage() {
                     }
                     alert(msg);
                 }
-            } else {
+            } else if (!data.silent) {
                 alert("ENGINE STATUS: " + (data.message || "FINISHED BUT NO CHANGES MADE."));
             }
         },
