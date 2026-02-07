@@ -7,6 +7,7 @@ import { useToast } from './ToastContext';
 
 interface User {
     id: string;
+    display_id?: string;
     email: string;
     name?: string;
     coins: number;
@@ -126,7 +127,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                     logout();
                     return;
                 }
-                setUser(newData);
+
+                // Only update if data has actually changed to prevent infinite loops
+                const hasChanged = JSON.stringify(newData) !== JSON.stringify(user);
+                if (hasChanged) {
+                    setUser(newData);
+                }
             } else if (res.status === 404 || res.status === 401) {
                 // Profile missing or unauthorized - terminated session
                 logout();

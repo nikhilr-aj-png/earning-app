@@ -37,10 +37,10 @@ export default function Dashboard() {
             }
         };
 
-        if (user) {
+        if (user?.id) {
             fetchTransactions();
         }
-    }, [user]);
+    }, [user?.id]);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -101,10 +101,11 @@ export default function Dashboard() {
 
             {/* Executive Balance Card - Extreme Vibrant */}
             <div className="glass-panel glass-vibrant" style={{
-                padding: 'clamp(24px, 5vw, 60px) clamp(20px, 4vw, 40px)',
+                width: '75%',
+                margin: '0 auto 40px',
+                padding: '40px 24px',
                 background: 'linear-gradient(135deg, #1e40af 0%, #7e22ce 50%, #020617 100%)',
                 border: '1px solid rgba(255,255,255,0.1)',
-                marginBottom: '40px',
                 position: 'relative',
                 overflow: 'hidden',
                 borderRadius: '32px',

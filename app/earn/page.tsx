@@ -147,7 +147,7 @@ export default function EarnPage() {
 
             {/* Completed Missions (The "Box" at the bottom) */}
             {tasks.filter(t => t.is_completed).length > 0 && (
-                <div style={{ marginTop: '80px', padding: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid #111', borderRadius: '24px' }}>
+                <div style={{ width: '75%', margin: '80px auto 0', padding: '32px', background: 'rgba(255,255,255,0.01)', border: '1px solid #111', borderRadius: '24px' }}>
                     <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '32px' }}>
                         <CheckCircle2 size={16} color="var(--text-dim)" />
                         <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>COMPLETED TASK LOGS</span>
@@ -235,13 +235,13 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
     return (
         <div className="modal-overlay flex-center" style={{ zIndex: 2000, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(20px)' }}>
             <div className="animate-scale-up" style={{
-                width: '95%', maxWidth: '600px',
+                width: '75%', maxWidth: '600px',
+                maxHeight: '80vh', overflowY: 'auto',
                 background: '#020617',
                 border: '1px solid rgba(16, 185, 129, 0.2)',
-                padding: '48px',
+                padding: '32px',
                 borderRadius: '40px',
                 position: 'relative',
-                overflow: 'hidden',
                 boxShadow: '0 0 100px rgba(16, 185, 129, 0.05)'
             }}>
                 {/* Tactical Corner Glitches */}

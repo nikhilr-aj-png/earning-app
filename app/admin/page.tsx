@@ -27,14 +27,15 @@ import {
     Plus,
     Activity,
     TrendingUp,
-    ShieldCheck
+    ShieldCheck,
+    X
 } from 'lucide-react';
 import Link from "next/link";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 function AdminPage() {
     const { user, loading, refreshUser } = useUser();
-    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'casino' | 'automation'>('stats');
+    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'casino' | 'automation' | 'financials'>('stats');
     const [editingUser, setEditingUser] = useState<any>(null);
     const [userFilter, setUserFilter] = useState<'all' | 'free' | 'premium' | 'admin'>('all');
     const [editingTask, setEditingTask] = useState<any>(null);
@@ -91,6 +92,61 @@ function AdminPage() {
             return data;
         },
         enabled: !!user,
+    });
+
+    const { data: financialData, isLoading: financialsLoading } = useQuery({
+        queryKey: ['admin-financials'],
+        queryFn: async () => {
+            const res = await fetch('/api/admin/financials', { headers: { 'x-user-id': user?.id || '' } });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch financials');
+            return data;
+        },
+        enabled: !!user && view === 'financials',
+    });
+
+    const processWithdrawalMutation = useMutation({
+        mutationFn: async ({ transactionId, action, rejectionReason }: { transactionId: string, action: 'approve' | 'reject', rejectionReason?: string }) => {
+            const res = await fetch('/api/admin/withdrawals/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                body: JSON.stringify({ transactionId, action, rejectionReason })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Processing failed');
+            return data;
+        },
+        onSuccess: (data) => {
+            alert(data.message.toUpperCase());
+            queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
+        },
+        onSuccess: (data) => {
+            alert(data.message.toUpperCase());
+            queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
+        },
+        onError: (err: any) => {
+            alert("ACTION FAILED: " + err.message);
+        }
+    });
+
+    const processUpiMutation = useMutation({
+        mutationFn: async ({ targetUserId, action }: { targetUserId: string, action: 'approve' | 'reject' }) => {
+            const res = await fetch('/api/admin/upi/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                body: JSON.stringify({ targetUserId, action })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Processing failed');
+            return data;
+        },
+        onSuccess: (data) => {
+            alert(data.message.toUpperCase());
+            queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
+        },
+        onError: (err: any) => {
+            alert("UPI ACTION FAILED: " + err.message);
+        }
     });
 
     // Sync query data to local state when query finishes
@@ -307,9 +363,8 @@ function AdminPage() {
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
-                {['stats', 'users', 'tasks', 'automation', 'casino'].map((t) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
+                {['stats', 'users', 'tasks', 'automation', 'casino', 'financials'].map((t) => (
                     <button
                         key={t} onClick={() => setView(t as any)}
                         style={{
@@ -797,6 +852,200 @@ function AdminPage() {
                     <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
                 </div>
             )}
+
+            {view === 'financials' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                    {/* Revenue Stats */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--emerald)', background: 'rgba(16, 185, 129, 0.05)' }}>
+                            <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '2px' }}>TOTAL REVENUE</p>
+                                <TrendingUp size={20} color="var(--emerald)" />
+                            </div>
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', color: '#fff' }}>
+                                ₹{(financialData?.stats?.totalRevenue || 0).toLocaleString()}
+                            </h2>
+                        </div>
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)', background: 'rgba(234, 179, 8, 0.05)' }}>
+                            <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px' }}>PREMIUM INCOME</p>
+                                <Zap size={20} color="var(--gold)" />
+                            </div>
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', color: '#fff' }}>
+                                ₹{(financialData?.stats?.premiumRevenue || 0).toLocaleString()}
+                            </h2>
+                        </div>
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--sapphire)', background: 'rgba(59, 130, 246, 0.05)' }}>
+                            <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px' }}>FLOW CIRCULATION</p>
+                                <Activity size={20} color="var(--sapphire)" />
+                            </div>
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', color: '#fff' }}>
+                                {(financialData?.stats?.totalCoinsDistributed || 0).toLocaleString()}
+                            </h2>
+                        </div>
+                    </div>
+
+                    {/* Withdrawal Queue */}
+                    <div>
+                        <div className="flex-between" style={{ marginBottom: '24px' }}>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>WITHDRAWAL QUEUE</h2>
+                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
+                                {financialData?.withdrawals?.filter((w: any) => w.status === 'pending').length || 0} PENDING REQUESTS
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {financialsLoading ? (
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Syncing Ledger...</p>
+                            ) : financialData?.withdrawals?.length === 0 ? (
+                                <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
+                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO WITHDRAWAL REQUESTS FOUND.</p>
+                                </div>
+                            ) : (
+                                financialData?.withdrawals?.map((tx: any) => (
+                                    <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', background: 'rgba(0,0,0,0.2)' }}>
+                                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                                            <div style={{
+                                                width: '48px', height: '48px', borderRadius: '12px',
+                                                background: tx.status === 'pending' ? 'rgba(234, 179, 8, 0.1)' : tx.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                border: `1px solid ${tx.status === 'pending' ? 'var(--gold)' : tx.status === 'completed' ? 'var(--emerald)' : 'var(--error)'}`,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                {tx.status === 'pending' ? <Clock size={20} color="var(--gold)" /> : tx.status === 'completed' ? <CheckCircle2 size={20} color="var(--emerald)" /> : <X size={20} color="var(--error)" />}
+                                            </div>
+                                            <div>
+                                                <h4 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>
+                                                    {Math.abs(tx.amount).toLocaleString()} FLOW <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>(₹{Math.abs(tx.amount) / 10})</span>
+                                                </h4>
+                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>{tx.profiles?.email}</p>
+                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                    <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>{new Date(tx.created_at).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            {tx.status === 'pending' ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (window.confirm("CONFIRM PAYOUT?\nThis will mark the transaction as completed.")) {
+                                                                processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'approve' });
+                                                            }
+                                                        }}
+                                                        disabled={processWithdrawalMutation.isPending}
+                                                        className="btn"
+                                                        style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--emerald)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
+                                                    >
+                                                        APPROVE
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const reason = prompt("REJECTION REASON (Optional):");
+                                                            if (reason !== null) {
+                                                                processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'reject', rejectionReason: reason });
+                                                            }
+                                                        }}
+                                                        disabled={processWithdrawalMutation.isPending}
+                                                        className="btn"
+                                                        style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
+                                                    >
+                                                        REJECT
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span style={{
+                                                    padding: '8px 16px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '1px',
+                                                    background: tx.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                    color: tx.status === 'completed' ? 'var(--emerald)' : 'var(--error)',
+                                                    border: `1px solid ${tx.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                                                }}>
+                                                    {tx.status.toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* UPI Settlements Queue */}
+                    <div>
+                        <div className="flex-between" style={{ marginBottom: '24px' }}>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>UPI SETTLEMENTS</h2>
+                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
+                                {financialData?.upiRequests?.length || 0} CHANGE REQUESTS
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {financialsLoading ? (
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Scanning Requests...</p>
+                            ) : financialData?.upiRequests?.length === 0 ? (
+                                <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
+                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO UPI CHANGE REQUESTS.</p>
+                                </div>
+                            ) : (
+                                financialData?.upiRequests?.map((req: any) => (
+                                    <div key={req.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', background: 'rgba(0,0,0,0.2)' }}>
+                                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                                            <div style={{
+                                                width: '48px', height: '48px', borderRadius: '12px',
+                                                background: 'rgba(59, 130, 246, 0.1)',
+                                                border: '1px solid var(--sapphire)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <ShieldCheck size={20} color="var(--sapphire)" />
+                                            </div>
+                                            <div>
+                                                <h4 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>
+                                                    {req.new_upi_id}
+                                                </h4>
+                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>OLD: {req.upi_id}</p>
+                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                    <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '800' }}>{req.email}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm(`APPROVE UPI CHANGE?\n${req.upi_id} -> ${req.new_upi_id}`)) {
+                                                        processUpiMutation.mutate({ targetUserId: req.id, action: 'approve' });
+                                                    }
+                                                }}
+                                                disabled={processUpiMutation.isPending}
+                                                className="btn"
+                                                style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--sapphire)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)' }}
+                                            >
+                                                APPROVE CHANGE
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm("REJECT REQUEST?")) {
+                                                        processUpiMutation.mutate({ targetUserId: req.id, action: 'reject' });
+                                                    }
+                                                }}
+                                                disabled={processUpiMutation.isPending}
+                                                className="btn"
+                                                style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
+                                            >
+                                                REJECT
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

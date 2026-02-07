@@ -13,7 +13,7 @@ export interface Transaction {
     createdAt: string;
 }
 
-import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -24,8 +24,80 @@ export default function WalletPage() {
     const { showToast } = useToast();
     const queryClient = useQueryClient();
     const [showDepositModal, setShowDepositModal] = useState(false);
-    const [depositAmount, setDepositAmount] = useState<string>("");
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // UPI State
+    const [showUpiModal, setShowUpiModal] = useState(false);
+    const [upiInput, setUpiInput] = useState('');
+
+    const { data: userProfile, refetch: refetchProfile } = useQuery({
+        queryKey: ['user-profile-upi', user?.id],
+        queryFn: async () => {
+            const res = await fetch('/api/user/profile', { headers: { 'x-user-id': user?.id || '' } });
+            return res.json();
+        },
+        enabled: !!user
+    });
+
+    const handleUpiUpdate = async () => {
+        if (!upiInput.includes('@')) {
+            showToast("INVALID UPI ID FORMAT", "error");
+            return;
+        }
+        setIsProcessing(true);
+        try {
+            const res = await fetch('/api/user/upi/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                body: JSON.stringify({ upiId: upiInput })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showToast(data.message, "success");
+            setShowUpiModal(false);
+            setUpiInput('');
+            refetchProfile();
+        } catch (error: any) {
+            showToast(error.message, "error");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleWithdraw = async (flowAmount: number) => {
+        if (!user) return;
+        if (user.coins < flowAmount) {
+            showToast("INSUFFICIENT FLOW BALANCE", "error");
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            showToast("INITIATING WITHDRAWAL PROTOCOL...", "info");
+            const res = await fetch("/api/user/withdraw", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-user-id": user.id
+                },
+                body: JSON.stringify({ flowAmount })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showToast(data.message, "success");
+            setShowWithdrawModal(false);
+            refreshUser();
+            queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+        } catch (err: any) {
+            showToast(err.message || "WITHDRAWAL ERROR", "error");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
         queryKey: ['transactions', user?.id],
@@ -39,43 +111,73 @@ export default function WalletPage() {
         enabled: !!user,
     });
 
-    const depositMutation = useMutation({
-        mutationFn: async (amount: number) => {
-            const res = await fetch("/api/wallet/deposit", {
+    const handleBuyFlow = async (flowAmount: number) => {
+        if (!user) return;
+        const rupeeAmount = flowAmount / 10;
+        setIsProcessing(true);
+        try {
+            showToast("INITIATING SECURE PROTOCOL...", "info");
+
+            // 1. Create Razorpay Order
+            const orderRes = await fetch("/api/payment/create-order", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-user-id": user?.id || ""
-                },
-                body: JSON.stringify({ amountRupees: amount }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.id, amount: rupeeAmount, type: 'coins' })
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-            return data;
-        },
-        onSuccess: (data) => {
-            showToast(data.message, "success");
-            setShowDepositModal(false);
-            setDepositAmount("");
-            refreshUser();
-            queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-        },
-        onError: (error: any) => {
-            showToast(error.message || "PROTOCOL FAILURE", "error");
-        },
-        onSettled: () => {
+            const orderData = await orderRes.json();
+            if (!orderRes.ok) throw new Error(orderData.error);
+
+            // 2. Launch Razorpay Checkout
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+                amount: orderData.amount,
+                currency: "INR",
+                name: "EarnFlow",
+                description: `Purchase ${flowAmount.toLocaleString()} FLOW Coins`,
+                order_id: orderData.id,
+                handler: async (response: any) => {
+                    showToast("VERIFYING TRANSACTION...", "info");
+
+                    const verifyRes = await fetch("/api/payment/verify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            userId: user.id,
+                            type: 'coins',
+                            amount: rupeeAmount
+                        })
+                    });
+
+                    const verifyResult = await verifyRes.json();
+                    if (verifyRes.ok) {
+                        showToast("FLOW SECURED. LIQUIDITY INJECTED.", "success");
+                        setShowDepositModal(false);
+                        refreshUser();
+                        queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+                    } else {
+                        throw new Error(verifyResult.error);
+                    }
+                },
+                prefill: {
+                    name: user.name,
+                    email: user.email,
+                },
+                theme: {
+                    color: "#10b981"
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+
+        } catch (err: any) {
+            showToast(err.message || "PROTOCOL ERROR", "error");
+        } finally {
             setIsProcessing(false);
         }
-    });
-
-    const handleDeposit = () => {
-        const amount = parseFloat(depositAmount);
-        if (isNaN(amount) || amount <= 0) {
-            showToast("INVALID CAPITAL INPUT", "error");
-            return;
-        }
-        setIsProcessing(true);
-        depositMutation.mutate(amount);
     };
 
     const formatDate = (dateStr: string) => {
@@ -104,12 +206,40 @@ export default function WalletPage() {
                 <div style={{ width: '40px' }} />
             </div>
 
+            {/* UPI ID SECTION */}
+            <div className="glass-panel" style={{ width: '75%', margin: '0 auto 24px', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--glass-border)' }}>
+                <div className="flex-center" style={{ gap: '12px' }}>
+                    <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                        <Zap size={18} color="var(--gold)" fill="var(--gold)" />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px' }}>LINKED UPI ID</p>
+                        <p style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '800', letterSpacing: '0.05em' }}>
+                            {userProfile?.upi_id || 'NOT LINKED'}
+                        </p>
+                        {userProfile?.new_upi_id && (
+                            <p style={{ fontSize: '0.6rem', color: 'var(--gold)', fontWeight: '800', marginTop: '4px' }}>
+                                CHANGE REQUEST PENDING: {userProfile.new_upi_id}
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowUpiModal(true)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: '0.7rem', height: 'auto', background: 'rgba(255,255,255,0.05)' }}
+                >
+                    {userProfile?.upi_id ? 'CHANGE' : 'LINK NOW'}
+                </button>
+            </div>
+
             {/* Capital Balance Module - Extreme Vibrant Sapphire */}
             <div className="glass-panel glass-vibrant" style={{
-                padding: '80px 40px',
+                width: '75%',
+                margin: '0 auto 40px',
+                padding: '60px 24px',
                 background: 'linear-gradient(135deg, #1e40af 0%, #020617 100%)',
                 border: '1.5px solid var(--sapphire)',
-                marginBottom: '48px',
                 textAlign: 'center',
                 borderRadius: '32px',
                 boxShadow: '0 40px 80px rgba(0, 112, 243, 0.3)',
@@ -133,11 +263,11 @@ export default function WalletPage() {
                     </p>
                     <div className="flex-center" style={{ gap: '16px' }}>
                         <div style={{ textAlign: 'right' }}>
-                            <h2 style={{ fontSize: '5rem', fontWeight: '950', color: '#fff', letterSpacing: '-6px', lineHeight: 1 }}>
-                                {user?.coins.toLocaleString()}
+                            <h2 style={{ fontSize: '4rem', fontWeight: '950', color: '#fff', letterSpacing: '-4px', lineHeight: 1 }}>
+                                {(user?.coins || 0).toLocaleString()}
                             </h2>
                             <p style={{ fontSize: '1.2rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '1px', marginTop: '4px' }}>
-                                ≈ ₹{(user?.coins / 10).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ≈ ₹{((user?.coins || 0) / 10).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
                         <span style={{ color: 'var(--primary)', fontWeight: '950', fontSize: '1.25rem', marginTop: '12px', letterSpacing: '4px' }}>FLOW</span>
@@ -155,9 +285,13 @@ export default function WalletPage() {
                     className="btn"
                     style={{ padding: '20px', background: 'var(--emerald)', color: '#fff', border: 'none', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.2)' }}
                 >
-                    DEPOSIT
+                    BUY FLOW
                 </button>
-                <button className="btn btn-secondary" style={{ padding: '20px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
+                <button
+                    onClick={() => setShowWithdrawModal(true)}
+                    className="btn btn-secondary"
+                    style={{ padding: '20px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}
+                >
                     WITHDRAWAL
                 </button>
             </div>
@@ -211,89 +345,170 @@ export default function WalletPage() {
                 </div>
             </div>
 
-            {/* Deposit Modal */}
+            {/* BUY FLOW Modal */}
             {showDepositModal && (
                 <div className="modal-overlay" style={{ display: 'flex' }}>
                     <div className="glass-panel animate-slide-up" style={{
-                        width: '90%', maxWidth: '400px', padding: '32px',
+                        width: '75%', maxWidth: '500px', padding: '24px',
+                        maxHeight: '85vh', overflowY: 'auto',
                         border: '2px solid var(--emerald)', background: '#000',
-                        position: 'relative'
+                        position: 'relative', borderRadius: '24px'
                     }}>
                         <button
                             onClick={() => setShowDepositModal(false)}
-                            style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
+                            style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
                         >
                             <X size={24} />
                         </button>
 
                         <div className="flex-center" style={{ gap: '16px', marginBottom: '32px' }}>
                             <TrendingUp size={32} color="var(--emerald)" />
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '4px' }}>LIQUIDITY INJECTION</h2>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '4px' }}>BUY FLOW</h2>
                         </div>
 
                         <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1px', marginBottom: '24px', textAlign: 'center' }}>
-                            CONVERSION RATIO: ₹1 = 10 FLOW
+                            SELECT CONVERSION TIER
                         </p>
 
-                        {/* Preset Options */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '24px' }}>
-                            {[100, 500, 1000].map((amt) => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                            {[1000, 5000, 10000, 20000, 30000, 40000, 50000].map((flowAmt) => (
                                 <button
-                                    key={amt}
-                                    onClick={() => setDepositAmount(amt.toString())}
+                                    key={flowAmt}
+                                    onClick={() => handleBuyFlow(flowAmt)}
+                                    disabled={isProcessing}
                                     style={{
-                                        padding: '12px', borderRadius: '4px', border: '1px solid #222',
-                                        background: depositAmount === amt.toString() ? 'var(--emerald)' : 'transparent',
-                                        color: depositAmount === amt.toString() ? '#000' : '#fff',
-                                        fontSize: '0.75rem', fontWeight: '950'
+                                        width: '100%', padding: '20px', background: 'rgba(255,255,255,0.02)',
+                                        border: '1px solid #222', borderRadius: '12px', display: 'flex',
+                                        justifyContent: 'space-between', alignItems: 'center', transition: '0.3s',
+                                        opacity: isProcessing ? 0.5 : 1
                                     }}
+                                    className="buy-option-hover"
                                 >
-                                    ₹{amt}
+                                    <div style={{ textAlign: 'left' }}>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', display: 'block' }}>{flowAmt.toLocaleString()} FLOW</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--emerald)', fontWeight: '800' }}>BASIC LIQUIDITY</span>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '1.25rem', fontWeight: '950', color: 'var(--emerald)' }}>₹{flowAmt / 10}</span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
 
-                        <div style={{ marginBottom: '32px' }}>
-                            <label style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', display: 'block', marginBottom: '8px' }}>
-                                CUSTOM RUPEE AMOUNT
-                            </label>
-                            <div style={{ position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--emerald)' }}>₹</span>
-                                <input
-                                    type="number"
-                                    value={depositAmount}
-                                    onChange={(e) => setDepositAmount(e.target.value)}
-                                    placeholder="0.00"
-                                    style={{
-                                        width: '100%', padding: '16px 16px 16px 32px', background: '#111', border: '1px solid #222',
-                                        borderRadius: '8px', color: '#fff', fontSize: '1.25rem', fontWeight: '950'
-                                    }}
-                                />
-                            </div>
-                            <div style={{ marginTop: '12px', textAlign: 'right' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '900' }}>
-                                    YIELD: {(parseFloat(depositAmount) || 0) * 10} FLOW
-                                </span>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleDeposit}
-                            disabled={isProcessing}
-                            className="btn"
-                            style={{
-                                width: '100%', height: '64px', background: '#fff', color: '#000',
-                                border: 'none', fontWeight: '950', letterSpacing: '2px',
-                                opacity: isProcessing ? 0.5 : 1
-                            }}
-                        >
-                            {isProcessing ? 'SYNCHRONIZING...' : 'AUTHORIZE INJECTION'}
-                        </button>
-
-                        <div style={{ marginTop: '24px', display: 'flex', gap: '12px', alignItems: 'center', opacity: 0.6 }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', opacity: 0.6, justifyContent: 'center' }}>
                             <Zap size={16} color="var(--emerald)" />
                             <p style={{ fontSize: '0.55rem', fontWeight: '900', letterSpacing: '1px' }}>SECURE GATEWAY ENCRYPTION ACTIVE</p>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* WITHDRAW FLOW Modal */}
+            {showWithdrawModal && (
+                <div className="modal-overlay" style={{ display: 'flex' }}>
+                    <div className="glass-panel animate-slide-up" style={{
+                        width: '75%', maxWidth: '500px', padding: '24px',
+                        maxHeight: '85vh', overflowY: 'auto',
+                        border: '2px solid var(--primary)', background: '#000',
+                        position: 'relative', borderRadius: '24px'
+                    }}>
+                        <button
+                            onClick={() => setShowWithdrawModal(false)}
+                            style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div className="flex-center" style={{ gap: '16px', marginBottom: '32px' }}>
+                            <ArrowUpRight size={32} color="var(--primary)" />
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '4px' }}>WITHDRAW FLOW</h2>
+                        </div>
+
+                        <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1px', marginBottom: '24px', textAlign: 'center' }}>
+                            SELECT WITHDRAWAL TIER
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                            {[5000, 10000, 25000, 50000].map((flowAmt) => (
+                                <button
+                                    key={flowAmt}
+                                    onClick={() => handleWithdraw(flowAmt)}
+                                    disabled={isProcessing}
+                                    style={{
+                                        width: '100%', padding: '20px', background: 'rgba(255,255,255,0.02)',
+                                        border: '1px solid #222', borderRadius: '12px', display: 'flex',
+                                        justifyContent: 'space-between', alignItems: 'center', transition: '0.3s',
+                                        opacity: isProcessing ? 0.5 : 1
+                                    }}
+                                    className="buy-option-hover"
+                                >
+                                    <div style={{ textAlign: 'left' }}>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', display: 'block' }}>{flowAmt.toLocaleString()} FLOW</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800' }}>CASHOUT READY</span>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '1.25rem', fontWeight: '950', color: 'var(--primary)' }}>₹{flowAmt / 10}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', opacity: 0.6, justifyContent: 'center' }}>
+                            <Shield size={16} color="var(--primary)" />
+                            <p style={{ fontSize: '0.55rem', fontWeight: '900', letterSpacing: '1px' }}>MINIMUM PAYOUT: 5,000 FLOW</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* UPI MODAL */}
+            {showUpiModal && (
+                <div className="modal-overlay" style={{ display: 'flex' }}>
+                    <div className="glass-panel animate-slide-up" style={{
+                        width: '75%', maxWidth: '400px', padding: '32px',
+                        border: '1px solid var(--gold)', background: '#000',
+                        position: 'relative', borderRadius: '24px', textAlign: 'center'
+                    }}>
+                        <button
+                            onClick={() => setShowUpiModal(false)}
+                            style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div className="flex-center" style={{ marginBottom: '24px', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ padding: '16px', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '50%', border: '1px solid var(--gold)' }}>
+                                <Zap size={32} color="var(--gold)" />
+                            </div>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '2px' }}>
+                                {userProfile?.upi_id ? 'REQUEST UPI CHANGE' : 'LINK UPI ID'}
+                            </h2>
+                        </div>
+
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '24px', lineHeight: 1.6 }}>
+                            {userProfile?.upi_id
+                                ? "Changing your UPI ID requires Admin Approval. This process may take up to 24-48 hours."
+                                : "Link your UPI ID for instant withdrawals. Once linked, it can only be changed with approval."}
+                        </p>
+
+                        <input
+                            type="text"
+                            placeholder="example@upi"
+                            value={upiInput}
+                            onChange={(e) => setUpiInput(e.target.value)}
+                            style={{
+                                width: '100%', padding: '16px', borderRadius: '12px',
+                                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
+                                color: '#fff', fontSize: '1rem', textAlign: 'center', marginBottom: '24px', fontWeight: '800'
+                            }}
+                        />
+
+                        <button
+                            onClick={handleUpiUpdate}
+                            disabled={isProcessing || !upiInput}
+                            className="btn"
+                            style={{ width: '100%', padding: '16px', background: 'var(--gold)', color: '#000', fontWeight: '950', letterSpacing: '1px' }}
+                        >
+                            {isProcessing ? 'PROCESSING...' : userProfile?.upi_id ? 'SUBMIT REQUEST' : 'LINK INSTANTLY'}
+                        </button>
                     </div>
                 </div>
             )}

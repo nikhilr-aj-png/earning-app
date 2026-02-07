@@ -56,6 +56,7 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable} ${outfit.variable} antialiased`}>
                 <ClientProviders>
+                    <script src="https://checkout.razorpay.com/v1/checkout.js" async />
                     <div className="min-h-screen" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                         <main style={{ flex: 1, width: '100%' }}>
                             {children}

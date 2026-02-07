@@ -2,20 +2,92 @@
 
 export const dynamic = 'force-dynamic';
 
+import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { User, Mail, Shield, Copy, LogOut, ChevronRight, Zap, Users, TrendingUp, Crown, Star } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import Link from "next/link";
 
 export default function ProfilePage() {
-    const { user, logout } = useUser();
+    const { user, logout, refreshUser } = useUser();
     const { showToast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    useEffect(() => {
+        refreshUser();
+    }, [refreshUser]);
 
     if (!user) return <div className="flex-center" style={{ minHeight: '80vh', color: 'var(--text-dim)' }}>INITIALIZING PROFILE...</div>;
 
     const copyReferral = () => {
         navigator.clipboard.writeText(user.referral_code);
         showToast("REFERRAL CODE COPIED", "success");
+    };
+
+    const handleUpgrade = async () => {
+        if (!user) return;
+        setIsProcessing(true);
+        try {
+            showToast("INITIATING SECURE PROTOCOL...", "info");
+
+            // 1. Create Razorpay Order
+            const orderRes = await fetch("/api/payment/create-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.id, amount: 99, type: 'premium' }) // Fixed at ₹99
+            });
+            const orderData = await orderRes.json();
+            if (!orderRes.ok) throw new Error(orderData.error);
+
+            // 2. Launch Razorpay Checkout
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+                amount: orderData.amount,
+                currency: "INR",
+                name: "EarnFlow",
+                description: "Elite Program Monthly Access",
+                order_id: orderData.id,
+                handler: async (response: any) => {
+                    showToast("VERIFYING TRANSACTION...", "info");
+
+                    const verifyRes = await fetch("/api/payment/verify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            userId: user.id,
+                            type: 'premium',
+                            amount: 99
+                        })
+                    });
+
+                    const verifyResult = await verifyRes.json();
+                    if (verifyRes.ok) {
+                        showToast("UPGRADE SECURED. WELCOME ELITE.", "success");
+                        refreshUser();
+                    } else {
+                        throw new Error(verifyResult.error);
+                    }
+                },
+                prefill: {
+                    name: user.name,
+                    email: user.email,
+                },
+                theme: {
+                    color: "#EAB308"
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+
+        } catch (err: any) {
+            showToast(err.message || "PROTOCOL ERROR", "error");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -41,7 +113,7 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
-                <h1 style={{ fontSize: '3rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '12px', color: '#fff' }}>{user.name.toUpperCase()}</h1>
+                <h1 style={{ fontSize: '3rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '12px', color: '#fff' }}>{user.name?.toUpperCase()}</h1>
                 <div className="flex-center" style={{ gap: '16px' }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '6px' }}>EXECUTIVE PROTOCOL</span>
                     {user.is_premium ? (
@@ -69,12 +141,14 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex-between" style={{ borderTop: '1px solid #111', paddingTop: '24px' }}>
                         <div className="flex-center" style={{ gap: '16px' }}>
-                            <div style={{ padding: '10px', borderRadius: '8px', background: 'var(--gold-glow)' }}>
-                                <Shield size={18} color="var(--gold)" strokeWidth={2} />
+                            <div style={{ padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)' }}>
+                                <TrendingUp size={18} color="var(--text-dim)" strokeWidth={2} />
                             </div>
-                            <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)', fontWeight: '800' }}>Secure Session Active</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '1px' }}>UNIQUE IDENTITY</span>
+                                <span style={{ fontSize: '1rem', color: '#fff', fontWeight: '950', letterSpacing: '2px' }}>ID: {user.display_id || 'PROVISIONING...'}</span>
+                            </div>
                         </div>
-                        <ChevronRight size={18} color="var(--text-muted)" />
                     </div>
                 </div>
             </div>
@@ -82,10 +156,11 @@ export default function ProfilePage() {
             {/* Premium Upgrade Hub - Special Offer */}
             {!user.is_premium && (
                 <div className="glass-panel glass-vibrant" style={{
+                    width: '75%',
+                    margin: '0 auto 24px',
                     padding: '32px',
                     border: '1px solid var(--gold)',
                     borderRadius: '24px',
-                    marginBottom: '24px',
                     background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)',
                     boxShadow: '0 20px 40px rgba(234, 179, 8, 0.2)',
                     position: 'relative',
@@ -97,8 +172,19 @@ export default function ProfilePage() {
                                 <Star size={16} color="var(--gold)" fill="currentColor" />
                                 <span style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px' }}>EXECUTIVE SPECIAL</span>
                             </div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>ELITE ACCESS</h2>
-                            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', fontWeight: '800' }}>Get 20% more coins & priority withdrawals.</p>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>ELITE ACCESS</h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {[
+                                    '2X REFERRAL PAYOUTS (+100 FLOW)',
+                                    'INSTANT WITHDRAWAL PRIORITY',
+                                    'EXCLUSIVE HIGH-PAYOUT VIP TASKS'
+                                ].map((point, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.8)', fontWeight: '900', letterSpacing: '0.5px' }}>
+                                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 10px var(--gold)' }} />
+                                        {point}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through', fontWeight: '900' }}>₹499</div>
@@ -108,20 +194,26 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-                    <Link href="/elite" className="btn" style={{
-                        width: '100%', height: '56px', background: 'var(--gold)', color: '#000',
-                        border: 'none', marginTop: '24px', fontWeight: '950', fontSize: '0.8rem',
-                        letterSpacing: '2px', borderRadius: '12px'
-                    }}>
-                        UPGRADE NOW
-                    </Link>
+                    <button
+                        onClick={handleUpgrade}
+                        disabled={isProcessing}
+                        className="btn"
+                        style={{
+                            width: '100%', height: '56px', background: 'var(--gold)', color: '#000',
+                            border: 'none', marginTop: '24px', fontWeight: '950', fontSize: '0.8rem',
+                            letterSpacing: '2px', borderRadius: '12px',
+                            opacity: isProcessing ? 0.7 : 1
+                        }}
+                    >
+                        {isProcessing ? 'SYNCHRONIZING...' : 'UPGRADE NOW'}
+                    </button>
                     {/* Background Visual */}
                     <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '150px', height: '150px', background: 'var(--gold)', filter: 'blur(80px)', opacity: 0.15 }} />
                 </div>
             )}
 
             {/* Portfolio Statistics - Accented */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '48px' }}>
                 <div className="glass-panel" style={{ padding: '32px', border: '1px solid #111', textAlign: 'center', borderRadius: '12px', background: 'rgba(0,0,0,0.4)' }}>
                     <TrendingUp size={24} color="var(--sapphire)" style={{ marginBottom: '16px' }} strokeWidth={2} />
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '3px', marginBottom: '8px' }}>LIQUIDITY</p>
@@ -135,42 +227,6 @@ export default function ProfilePage() {
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '3px', marginBottom: '8px' }}>PARTNERS</p>
                     <h3 style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff' }}>ELITE</h3>
                 </div>
-            </div>
-
-            {/* Referral Management - Extreme Vibrant Emerald Hub */}
-            <div className="glass-panel glass-vibrant" style={{
-                padding: '56px 40px',
-                border: '2px solid var(--emerald)',
-                borderRadius: '32px',
-                marginBottom: '48px',
-                background: 'linear-gradient(135deg, #065f46 0%, #1e40af 100%)',
-                boxShadow: '0 30px 60px rgba(16, 185, 129, 0.25)',
-                position: 'relative',
-                overflow: 'hidden',
-                zIndex: 1
-            }}>
-                <div style={{ position: 'relative', zIndex: 2 }}>
-                    <div className="flex-between" style={{ marginBottom: '32px' }}>
-                        <div className="flex-center" style={{ gap: '16px' }}>
-                            <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)' }}>
-                                <Zap size={24} color="#fff" fill="currentColor" />
-                            </div>
-                            <h2 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', letterSpacing: '6px', textTransform: 'uppercase' }}>INVITATION HUB</h2>
-                        </div>
-                        <span style={{ color: 'var(--gold)', fontWeight: '950', fontSize: '0.9rem', letterSpacing: '2px' }}>EXECUTIVE BONUSES</span>
-                    </div>
-                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', marginBottom: '48px', lineHeight: '1.6', fontWeight: '600' }}>Scale the EarnFlow node network. Acquire **100 FLOW** instantly for every verified partner arrival.</p>
-                    <div style={{ display: 'flex', gap: '20px' }}>
-                        <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', padding: '24px', borderRadius: '16px', fontSize: '2rem', fontWeight: '950', letterSpacing: '12px', textAlign: 'center', color: '#fff', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.5)' }}>
-                            {user.referral_code}
-                        </div>
-                        <button onClick={copyReferral} className="btn" style={{ width: '80px', height: '80px', background: '#fff', color: '#000', borderRadius: '16px', border: 'none' }}>
-                            <Copy size={32} strokeWidth={3} />
-                        </button>
-                    </div>
-                </div>
-                {/* Visual Accent */}
-                <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '200px', height: '200px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.2 }} />
             </div>
 
             {/* Logout Action */}

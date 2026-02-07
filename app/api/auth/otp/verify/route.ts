@@ -32,6 +32,7 @@ export async function POST(req: Request) {
 
             // New user registration
             const generatedReferralCode = 'EF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            const generatedDisplayId = Math.floor(10000000 + Math.random() * 90000000).toString();
 
             const { data: newProfile, error: insError } = await supabaseMain
                 .from('profiles')
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
                     id: user.id,
                     email: user.email,
                     name: metadata.full_name || user.email?.split('@')[0],
+                    display_id: generatedDisplayId,
                     referral_code: generatedReferralCode,
                     referred_by: metadata.referral_code,
                     coins: 100 // Welcome bonus
@@ -93,6 +95,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({
             id: user.id,
+            display_id: finalProfile.display_id,
             email: user.email,
             name: finalProfile.name,
             coins: finalProfile.coins,
