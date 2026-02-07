@@ -112,16 +112,7 @@ export default function EarnPage() {
     return (
         <div className="animate-fade-in" style={{ padding: '24px 20px', paddingBottom: '120px' }}>
             <div style={{ marginBottom: '48px', position: 'relative' }}>
-                <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '16px' }}>
-                    <div style={{ padding: '4px', borderRadius: '4px', background: 'var(--emerald-glow)' }}>
-                        <Target size={18} color="var(--emerald)" strokeWidth={1.5} />
-                    </div>
-                    <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '4px' }}>OPERATIONAL FLOW</span>
-                </div>
-                <h1 className="font-heading" style={{ fontSize: '3.2rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '8px', lineHeight: 1.1 }}>Flow Center</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '0.5px', lineHeight: '1.6', width: '99%', maxWidth: 'var(--max-width)' }}>
-                    Execute verified protocols to scale your portfolio. Global mission parameters are optimized for high-volume acquisition.
-                </p>
+                <h1 className="font-heading" style={{ fontSize: '3.2rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '8px', lineHeight: 1.1 }}>Flow Tasks</h1>
                 <div style={{ position: 'absolute', top: '0', right: '0', width: '200px', height: '100px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.1 }} />
             </div>
 
@@ -129,7 +120,7 @@ export default function EarnPage() {
             <div style={{ marginBottom: '64px' }}>
                 <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '24px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--emerald)', boxShadow: '0 0 10px var(--emerald)' }} />
-                    <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>ACTIVE PROTOCOLS</span>
+                    <span style={{ color: '#fff', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>ACTIVE TASKS</span>
                 </div>
                 <div style={{
                     display: 'grid',
@@ -148,7 +139,7 @@ export default function EarnPage() {
                         ))
                     ) : (
                         <div className="glass-panel flex-center" style={{ gridColumn: '1 / -1', padding: '60px 20px', flexDirection: 'column', gap: '20px', border: '1px solid #111' }}>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>NO ACTIVE PROTOCOLS AVAILABLE.</p>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '1px' }}>NO ACTIVE TASKS AVAILABLE.</p>
                         </div>
                     )}
                 </div>
@@ -159,7 +150,7 @@ export default function EarnPage() {
                 <div style={{ marginTop: '80px', padding: '40px', background: 'rgba(255,255,255,0.01)', border: '1px solid #111', borderRadius: '24px' }}>
                     <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '32px' }}>
                         <CheckCircle2 size={16} color="var(--text-dim)" />
-                        <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>TERMINATED PROTOCOL LOGS</span>
+                        <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>COMPLETED TASK LOGS</span>
                     </div>
                     <div style={{
                         display: 'grid',
@@ -518,7 +509,7 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                     <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '16px' }}>
                         <div style={{ width: '4px', height: '12px', background: 'var(--emerald)', borderRadius: '2px' }} />
                         <span style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '3px' }}>
-                            {task.is_completed ? 'PROTOCOL TERMINATED' : isExpired ? 'TIME OVERFLOW' : 'ACTIVE MISSION'}
+                            {task.is_completed ? 'TASK COMPLETED' : isExpired ? 'TIME OVERFLOW' : 'ACTIVE MISSION'}
                         </span>
                     </div>
 
@@ -579,7 +570,7 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                         e.currentTarget.style.boxShadow = (task.is_locked || isExpired || task.is_completed) ? 'none' : '0 15px 35px rgba(255,255,255,0.1)';
                     }}
                 >
-                    {isCompleting ? "INITIALIZING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : isExpired ? "TIME EXPIRY" : "DEPLOY PROTOCOL"}
+                    {isCompleting ? "INITIALIZING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : isExpired ? "TIME EXPIRY" : "START TASK"}
                 </button>
             </div>
         </div>

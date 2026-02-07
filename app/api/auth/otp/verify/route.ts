@@ -31,12 +31,15 @@ export async function POST(req: Request) {
             const metadata = user.user_metadata || {};
 
             // New user registration
+            const generatedReferralCode = 'EF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
             const { data: newProfile, error: insError } = await supabaseMain
                 .from('profiles')
                 .insert({
                     id: user.id,
                     email: user.email,
                     name: metadata.full_name || user.email?.split('@')[0],
+                    referral_code: generatedReferralCode,
                     referred_by: metadata.referral_code,
                     coins: 100 // Welcome bonus
                 })
@@ -46,13 +49,46 @@ export async function POST(req: Request) {
             if (insError) throw insError;
             finalProfile = newProfile;
 
-            // Log welcome transaction
+            // Log welcome transaction for new user
             await supabaseMain.from('transactions').insert({
                 user_id: user.id,
                 amount: 100,
                 type: 'referral',
                 description: 'WELCOME BONUS'
             });
+
+            // 3. Credit Referrer
+            const referralCodeUsed = metadata.referral_code;
+            if (referralCodeUsed) {
+                try {
+                    const { data: referrer, error: refError } = await supabaseMain
+                        .from('profiles')
+                        .select('id, coins, is_premium, name')
+                        .eq('referral_code', referralCodeUsed)
+                        .single();
+
+                    if (referrer && !refError) {
+                        const rewardAmount = referrer.is_premium ? 100 : 50;
+
+                        // Update referrer's coins
+                        await supabaseMain
+                            .from('profiles')
+                            .update({ coins: (referrer.coins || 0) + rewardAmount })
+                            .eq('id', referrer.id);
+
+                        // Log transaction for referrer
+                        await supabaseMain.from('transactions').insert({
+                            user_id: referrer.id,
+                            amount: rewardAmount,
+                            type: 'referral',
+                            description: `REFERRAL BONUS | ONBOARDED: ${finalProfile.name}`
+                        });
+                    }
+                } catch (err) {
+                    console.error("Referral credit failed:", err);
+                    // Don't throw, we don't want to break signup if referral credit fails
+                }
+            }
         }
 
         return NextResponse.json({

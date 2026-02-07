@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity, Copy, Crown, History } from "lucide-react";
+import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity, Copy, Crown, History, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/context/ToastContext";
 
@@ -19,6 +19,28 @@ export default function Dashboard() {
         if (hour < 18) return "Good Afternoon";
         return "Good Evening";
     });
+
+    const [transactions, setTransactions] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchTransactions = async () => {
+            try {
+                const response = await fetch('/api/user/transactions', {
+                    headers: { 'x-user-id': user?.id || '' }
+                });
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    setTransactions(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch transactions:', error);
+            }
+        };
+
+        if (user) {
+            fetchTransactions();
+        }
+    }, [user]);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -67,10 +89,12 @@ export default function Dashboard() {
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>
                             {greeting},
                         </span>
-                        <div className="badge-gold" style={{ fontSize: '0.55rem' }}>VIP GOLD</div>
+                        {user.is_premium && (
+                            <div className="badge-gold" style={{ fontSize: '0.55rem' }}>VIP GOLD</div>
+                        )}
                     </div>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: '950', letterSpacing: '-2px' }}>
-                        {user.name.toUpperCase()}
+                        {user.name?.toUpperCase()}
                     </h1>
                 </div>
             </div>
@@ -112,13 +136,65 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '40px' }}>
                 {/* Performance Metrics */}
                 {/* Recent Activity Log */}
-                <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222' }}>
+                <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222', minHeight: '300px', display: 'flex', flexDirection: 'column' }}>
                     <div className="flex-between" style={{ marginBottom: '16px' }}>
-                        <h3 style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '2px', color: 'var(--text-dim)' }}>RECENT ACTIVITY</h3>
-                        <History size={20} color="var(--text-dim)" />
+                        <div className="flex-center" style={{ gap: '8px' }}>
+                            <div style={{ width: '4px', height: '12px', background: 'var(--primary)', borderRadius: '2px' }} />
+                            <h3 style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '2px', color: '#fff' }}>RECENT ACTIVITY</h3>
+                        </div>
+                        <History size={18} color="var(--text-dim)" />
                     </div>
-                    <div style={{ textAlign: 'center', padding: '20px 0', opacity: 0.5 }}>
-                        <p style={{ fontSize: '0.7rem', fontWeight: '600' }}>NO ACTIVITY DETECTED</p>
+
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {transactions.length > 0 ? (
+                            transactions.slice(0, 6).map((tx: any, index: number) => (
+                                <div key={tx.id || index} className="animate-fade-in" style={{
+                                    padding: '12px 16px',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    animationDelay: `${index * 50}ms`
+                                }}>
+                                    <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '4px',
+                                            background: tx.amount >= 0 ? 'rgba(52, 211, 153, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            {tx.type === 'earn' ? <Zap size={14} color="var(--primary)" /> : <Activity size={14} color="var(--text-dim)" />}
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#fff', letterSpacing: '0.5px' }}>
+                                                {tx.description.split('|')[1]?.trim() || tx.description.split(']')[1]?.trim() || tx.type.toUpperCase()}
+                                            </span>
+                                            <span style={{ fontSize: '0.55rem', color: 'var(--text-dim)', fontWeight: '600' }}>
+                                                {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {tx.type.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '950',
+                                        color: tx.amount >= 0 ? 'var(--emerald)' : 'var(--rose)',
+                                        letterSpacing: '1px'
+                                    }}>
+                                        {tx.amount >= 0 ? '+' : ''}{tx.amount}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="flex-center" style={{ flex: 1, flexDirection: 'column', gap: '12px', opacity: 0.3 }}>
+                                <History size={32} />
+                                <p style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT DATA DETECTED</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -187,11 +263,11 @@ export default function Dashboard() {
                             </div>
                             <h4 style={{ fontWeight: '950', fontSize: '1rem', letterSpacing: '4px', color: '#fff' }}>NETWORK SCALE</h4>
                         </div>
-                        <span style={{ color: 'var(--gold)', fontWeight: '950', fontSize: '0.8rem', letterSpacing: '2px' }}>+100 FLOW</span>
+                        <span style={{ color: 'var(--gold)', fontWeight: '950', fontSize: '0.8rem', letterSpacing: '2px' }}>+{user.is_premium ? '100' : '50'} FLOW</span>
                     </div>
-                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', marginBottom: '40px', lineHeight: '1.6', fontWeight: '600' }}>
-                        Scale the ecosystem by onboarding high-value nodes. <br />
-                        <span style={{ color: 'var(--gold)' }}>ACQUIRE PREMIUM BONUSES INSTANTLY.</span>
+                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', marginBottom: '40px', lineHeight: '1.6', fontWeight: '600' }}>
+                        Invite high-value nodes to the ecosystem. <br />
+                        <span style={{ color: 'var(--gold)' }}>ACQUIRE {user.is_premium ? '100' : '50'} FLOW PER VALID ONBOARDING.</span>
                     </p>
                     <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{
@@ -200,29 +276,56 @@ export default function Dashboard() {
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '16px',
                             padding: '24px',
-                            fontSize: '1.75rem',
-                            fontWeight: '950',
+                            fontSize: '0.9rem',
+                            fontWeight: '800',
                             color: '#fff',
-                            letterSpacing: '10px',
+                            letterSpacing: '1px',
                             textAlign: 'center',
-                            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
+                            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
                         }}>
-                            {user.referral_code}
+                            earnflow.in/register?ref={user.referral_code}
                         </div>
-                        <button
-                            onClick={() => {
-                                navigator.clipboard.writeText(user.referral_code);
-                                showToast("REFERRAL CODE COPIED", "success");
-                            }}
-                            className="btn"
-                            style={{ width: '80px', background: '#fff', color: '#000', borderRadius: '16px' }}
-                        >
-                            <Copy size={28} strokeWidth={3} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={() => {
+                                    const refLink = `https://earnflow.in/register?ref=${user.referral_code}`;
+                                    navigator.clipboard.writeText(refLink);
+                                    showToast("REFERRAL LINK COPIED", "success");
+                                }}
+                                className="btn"
+                                style={{ width: '64px', height: '64px', background: '#fff', color: '#000', borderRadius: '16px', padding: 0 }}
+                                title="Copy Referral Link"
+                            >
+                                <Copy size={24} strokeWidth={3} />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const refLink = `https://earnflow.in/register?ref=${user.referral_code}`;
+                                    const message = encodeURIComponent(`🚀 Join EARNFLOW and start earning today! \n\nRegister here: ${refLink}`);
+                                    window.open(`https://wa.me/?text=${message}`, '_blank');
+                                }}
+                                className="btn"
+                                style={{
+                                    width: '64px',
+                                    height: '64px',
+                                    background: '#25D366',
+                                    color: '#fff',
+                                    borderRadius: '16px',
+                                    padding: 0,
+                                    boxShadow: '0 10px 20px rgba(37, 211, 102, 0.3)'
+                                }}
+                                title="Invite on WhatsApp"
+                            >
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                {/* Visual Accent */}
-                <div style={{ position: 'absolute', bottom: '-20%', left: '-10%', width: '150px', height: '150px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.3 }} />
             </div>
         </div>
     );
