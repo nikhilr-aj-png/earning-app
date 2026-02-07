@@ -436,32 +436,29 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                         }}>{task.reward.toLocaleString()}</span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>FLOW</span>
-                            {isPremium && (
-                                <span style={{ color: 'var(--gold)', fontSize: '0.5rem', fontWeight: '900', letterSpacing: '1px' }}>+20% BOOST</span>
-                            )}
                         </div>
                     </div>
                 </div>
 
                 <button
                     onClick={() => onExecute(task)}
-                    disabled={isCompleting || task.is_completed}
+                    disabled={isCompleting || task.is_completed || timeLeft === "EXPIRED"}
                     className="btn"
                     style={{
                         width: '100%',
                         height: '60px',
                         fontSize: '0.8rem',
                         borderRadius: '12px',
-                        background: task.is_locked ? 'rgba(255,255,255,0.05)' : '#fff',
-                        color: task.is_locked ? 'rgba(255,255,255,0.2)' : '#000',
+                        background: (task.is_locked || timeLeft === "EXPIRED") ? 'rgba(255,255,255,0.05)' : '#fff',
+                        color: (task.is_locked || timeLeft === "EXPIRED") ? 'rgba(255,255,255,0.2)' : '#000',
                         fontWeight: '950',
                         letterSpacing: '3px',
                         marginTop: 'auto',
-                        border: task.is_locked ? '1px solid #222' : 'none',
-                        cursor: task.is_locked ? 'not-allowed' : 'pointer'
+                        border: (task.is_locked || timeLeft === "EXPIRED") ? '1px solid #222' : 'none',
+                        cursor: (task.is_locked || timeLeft === "EXPIRED") ? 'not-allowed' : 'pointer'
                     }}
                 >
-                    {isCompleting ? "EXECUTING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : "DEPLOY MISSION"}
+                    {isCompleting ? "EXECUTING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : timeLeft === "EXPIRED" ? "EXPIRED" : "DEPLOY MISSION"}
                 </button>
             </div>
         </div>

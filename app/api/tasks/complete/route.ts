@@ -21,6 +21,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Task not found' }, { status: 404 });
         }
 
+        // 1.5 Security: Check if task is expired
+        if (task.expires_at && new Date(task.expires_at).getTime() < Date.now()) {
+            return NextResponse.json({ error: 'MISSION EXPIRED: Rewards no longer available.' }, { status: 410 });
+        }
+
         // 2. Fetch User Profile
         const { data: profile, error: profileError } = await supabaseMain
             .from('profiles')
@@ -51,11 +56,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'MISSION ALREADY ATTEMPTED (LOCK ACTIVE)' }, { status: 400 });
         }
 
-        // Calculate Reward Proportional to Accuracy
+        // Calculate Reward Proportional to Accuracy (Premium Booster Removed)
         const accuracy = totalCount > 0 ? Math.min(1, correctCount / totalCount) : 1;
-        const baseReward = Math.ceil(task.reward * accuracy);
-        const booster = isPremium ? Math.floor(baseReward * 0.2) : 0;
-        const totalReward = baseReward + booster;
+        const totalReward = Math.ceil(task.reward * accuracy);
 
         const newBalance = (profile.coins || 0) + totalReward;
 
@@ -67,7 +70,7 @@ export async function POST(request: Request) {
                     user_id: userId,
                     amount: totalReward,
                     type: 'earn',
-                    description: `[CLAIMED:${taskId}] Result: ${correctCount}/${totalCount} | ${task.title} ${isPremium ? '(+20% PREMIUM BOOST)' : ''}`
+                    description: `[CLAIMED:${taskId}] Result: ${correctCount}/${totalCount} | ${task.title}`
                 }
             ]);
 
@@ -89,8 +92,6 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             reward: totalReward,
-            base: baseReward,
-            bonus: booster,
             newBalance
         });
     } catch (error: any) {

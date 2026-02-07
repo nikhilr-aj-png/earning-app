@@ -13,8 +13,8 @@ export async function GET(request: Request) {
         .eq('id', userId)
         .single();
 
-    // Use a 15-minute buffer for clock drift across systems
-    const now = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    // Instant expiry check
+    const now = new Date().toISOString();
     let query = supabaseMain
         .from('tasks')
         .select('*')

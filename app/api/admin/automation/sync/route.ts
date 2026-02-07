@@ -28,18 +28,19 @@ export async function POST(request: Request) {
         if (settingsError || !settings) throw new Error("Automation settings not found");
         if (!settings.is_enabled) return NextResponse.json({ success: false, message: "Automation is disabled. Please activate it first." });
 
-        // 3. PURGE EXPIRED MISSIONS
+        // 3. PURGE EXPIRED MISSIONS (Always run first)
         const now = new Date().toISOString();
+        const { error: purgeError } = await supabaseAdmin
+            .from('tasks')
+            .delete()
+            .lt('expires_at', now)
+            .eq('type', 'quiz');
+
+        if (purgeError) console.error("Purge Error:", purgeError);
 
         if (isManual) {
-            console.log("Manual Reset Triggered: Purging all quiz tasks...");
+            console.log("Manual Reset Triggered: Purging all quiz tasks for replenishment...");
             await supabaseAdmin.from('tasks').delete().eq('type', 'quiz');
-        } else {
-            const { error: purgeError } = await supabaseAdmin
-                .from('tasks')
-                .delete()
-                .lt('expires_at', now);
-            if (purgeError) console.error("Purge Error:", purgeError);
         }
 
         // 4. DENSITY & WINDOW CHECK
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
 
         if (countError) throw countError;
 
+        // The user wants replenishment to strictly match what was lost or what's needed to hit the target
         const freeCount = currentTasks.filter((t: any) => t.target_audience === 'free').length;
         const premiumCount = currentTasks.filter((t: any) => t.target_audience === 'premium').length;
 
@@ -154,6 +156,10 @@ export async function POST(request: Request) {
         if (!jsonMatch) throw new Error("AI responded but format was invalid. Response: " + responseText.substring(0, 100));
 
         const generated = JSON.parse(jsonMatch[0]);
+        if (!Array.isArray(generated) || generated.length === 0) {
+            throw new Error("AI generated an empty task list.");
+        }
+
         const tasksToInsert = generated.map((t: any) => ({
             title: t.title?.substring(0, 40) || "Untitled Mission",
             reward: parseInt(t.reward) || 50,
