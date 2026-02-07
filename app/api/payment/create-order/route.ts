@@ -30,6 +30,8 @@ export async function POST(req: Request) {
         return NextResponse.json(order);
     } catch (error: any) {
         console.error("Razorpay Order Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        // Return detailed error if available, or fallback
+        const errorMessage = error.error?.description || error.message || 'Razorpay Order Creation Failed';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
