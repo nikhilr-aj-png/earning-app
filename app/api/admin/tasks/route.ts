@@ -16,7 +16,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const { data: tasks, error } = await supabaseMain
+        const { data: tasks, error } = await supabaseAdmin
             .from('tasks')
             .select('*')
             .order('created_at', { ascending: false });
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         if (error) throw error;
 
         // Fetch completion counts
-        const { data: allCompletions } = await supabaseMain
+        const { data: allCompletions } = await supabaseAdmin
             .from('transactions')
             .select('description')
             .eq('type', 'earn')

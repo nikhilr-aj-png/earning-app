@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/useUserStore';
 import { useToast } from './ToastContext';
@@ -42,7 +42,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setLoading(false);
     }, [setLoading]);
 
-    const login = async (email: string, password: string) => {
+    const login = useCallback(async (email: string, password: string) => {
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -64,9 +64,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             showToast(message.toUpperCase(), "error");
             throw err;
         }
-    };
+    }, [setUser, showToast, router]);
 
-    const register = async (email: string, password: string, name?: string, refCode?: string) => {
+    const register = useCallback(async (email: string, password: string, name?: string, refCode?: string) => {
         try {
             const res = await fetch('/api/auth/signup', {
                 method: 'POST',
@@ -82,9 +82,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             showToast(message.toUpperCase(), "error");
             throw err;
         }
-    };
+    }, [showToast]);
 
-    const verifyOtp = async (email: string, token: string) => {
+    const verifyOtp = useCallback(async (email: string, token: string) => {
         try {
             const res = await fetch('/api/auth/otp/verify', {
                 method: 'POST',
@@ -106,14 +106,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             showToast(message.toUpperCase(), "error");
             throw err;
         }
-    };
+    }, [setUser, showToast, router]);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         storeLogout();
         router.push('/');
-    };
+    }, [storeLogout, router]);
 
-    const refreshUser = async () => {
+    const refreshUser = useCallback(async () => {
         if (!user) return;
         try {
             const res = await fetch('/api/user', {
@@ -134,7 +134,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (err: unknown) {
             console.error("Failed to refresh user", err);
         }
-    };
+    }, [user, setUser, logout]);
 
     const forgotPassword = async (email: string) => {
         try {

@@ -29,6 +29,8 @@ export async function GET(request: Request) {
         const { data: settings, error } = await supabaseAdmin
             .from('automation_settings')
             .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
         if (error) throw error;
@@ -74,6 +76,8 @@ export async function POST(request: Request) {
         const { data: existing } = await supabaseAdmin
             .from('automation_settings')
             .select('id')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
         const { data, error } = await supabaseAdmin

@@ -41,7 +41,8 @@ function AdminPage() {
     const [taskSearch, setTaskSearch] = useState('');
     const [taskAudienceFilter, setTaskAudienceFilter] = useState<'all' | 'free' | 'premium'>('all');
     const [automationSettings, setAutomationSettings] = useState<any>(null);
-    const [countdown, setCountdown] = useState(300);
+    const [countdown, setCountdown] = useState(60);
+    const [retryCooldown, setRetryCooldown] = useState(0);
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -78,7 +79,7 @@ function AdminPage() {
             const data = await res.json();
             return data;
         },
-        enabled: !!user && (view === 'tasks' || view === 'automation'),
+        enabled: !!user,
     });
 
     const { data: adminSettings, isLoading: settingsLoading } = useQuery({
@@ -89,7 +90,7 @@ function AdminPage() {
             if (!res.ok) throw new Error(data.error || 'Failed to fetch settings');
             return data;
         },
-        enabled: !!user && (view === 'tasks' || view === 'automation'),
+        enabled: !!user,
     });
 
     // Sync query data to local state when query finishes
@@ -134,20 +135,27 @@ function AdminPage() {
             if (data.success) {
                 queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
                 queryClient.invalidateQueries({ queryKey: ['admin-automation'] });
+                if (data.trace) console.log("ENGINE_TRACE:", data.trace);
                 if (!data.silent) {
-                    alert("SUCCESS: AI ENGINE EXECUTED\nTasks generated/updated.");
+                    let msg = data.generated > 0
+                        ? `SUCCESS: AI ENGINE EXECUTED\nGenerated ${data.generated} new missions.`
+                        : `SYNC COMPLETE: Density counts are within target margins.${data.trace ? `\n\nDETAILS:\n${data.trace.join('\n')}` : ''}`;
+
+                    if (data.is_mock) {
+                        msg += "\n\n⚠️ AI OFFLINE: Used pre-defined survival missions to maintain stability.";
+                    }
+                    alert(msg);
                 }
-            } else if (data.message) {
-                if (!data.silent) {
-                    alert("INFO: " + data.message.toUpperCase());
-                }
-            } else if (!data.silent) {
-                alert("ALERT: ENGINE RUN FINISHED BUT NO CHANGES MADE.");
+            } else {
+                alert("ENGINE STATUS: " + (data.message || "FINISHED BUT NO CHANGES MADE."));
             }
         },
         onError: (err: any, variables: any) => {
             if (!variables?.silent) {
                 alert("SYNC FAILED: " + err.message);
+                if (err.message.includes("429") || err.message.toLowerCase().includes("limit") || err.message.toLowerCase().includes("busy")) {
+                    setRetryCooldown(60);
+                }
             } else {
                 console.log("Background sync skipped (likely rate limit or window). Core remains stable.");
             }
@@ -161,7 +169,7 @@ function AdminPage() {
             setCountdown(prev => {
                 if (prev <= 1) {
                     syncMutation.mutate({ isManual: false, silent: true });
-                    return 300;
+                    return 60;
                 }
                 return prev - 1;
             });
@@ -169,6 +177,14 @@ function AdminPage() {
 
         return () => clearInterval(interval);
     }, [automationSettings?.is_enabled, view]);
+
+    useEffect(() => {
+        if (retryCooldown <= 0) return;
+        const interval = setInterval(() => {
+            setRetryCooldown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [retryCooldown]);
 
 
     const userEditMutation = useMutation({
@@ -539,9 +555,9 @@ function AdminPage() {
                                 <h2 style={{ fontSize: '1.5rem', fontWeight: '950', letterSpacing: '6px', color: '#fff' }}>AUTOMATION HUB</h2>
                                 <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '4px', fontWeight: '800', letterSpacing: '2px' }}>AI MISSION LIFECYCLE CONTROLLER</p>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '12px 24px', borderRadius: '100px', border: '1px solid #222' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: automationSettings?.is_enabled ? 'var(--emerald)' : 'var(--error)', animation: automationSettings?.is_enabled ? 'pulse-glow 2s infinite' : 'none' }} />
-                                <span style={{ fontSize: '0.6rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>SYSTEM: {automationSettings?.is_enabled ? 'ACTIVE' : 'STANDBY'}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(5, 46, 22, 0.1)', padding: '12px 24px', borderRadius: '100px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--emerald)', animation: 'pulse-glow 2s infinite' }} />
+                                <span style={{ fontSize: '0.6rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>SYSTEM: OPERATIONAL</span>
                             </div>
                         </div>
 
@@ -558,11 +574,15 @@ function AdminPage() {
                                     <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>MISSION DENSITY</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                            <span style={{ fontSize: '1rem', fontWeight: '950', color: '#fff' }}>{adminTasks?.filter((t: any) => t.target_audience === 'free').length || 0}</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: '950', color: '#fff' }}>
+                                                {adminTasks?.filter((t: any) => t.target_audience === 'free' && (!t.expires_at || new Date(t.expires_at) > new Date())).length || 0}
+                                            </span>
                                             <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '1px' }}>/ {automationSettings?.free_task_count || 0} FREE</span>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                            <span style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)' }}>{adminTasks?.filter((t: any) => t.target_audience === 'premium').length || 0}</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)' }}>
+                                                {adminTasks?.filter((t: any) => t.target_audience === 'premium' && (!t.expires_at || new Date(t.expires_at) > new Date())).length || 0}
+                                            </span>
                                             <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '1px' }}>/ {automationSettings?.premium_task_count || 0} PREMIUM</span>
                                         </div>
                                     </div>
@@ -570,8 +590,8 @@ function AdminPage() {
                                 <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
                                     <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>SYNC PULSE</p>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Activity size={14} color={automationSettings?.is_enabled ? 'var(--emerald)' : 'var(--text-dim)'} />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: '950', color: '#fff' }}>{automationSettings?.is_enabled ? `${countdown}s` : 'IDLE'}</span>
+                                        <Activity size={14} color="var(--emerald)" />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: '950', color: '#fff' }}>{countdown}s</span>
                                     </div>
                                 </div>
                                 <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
@@ -589,34 +609,16 @@ function AdminPage() {
                                 </div>
                             </div>
 
-                            {/* Status Overlay & Core Controls */}
+                            {/* Manual Control Status */}
                             <div className="flex-between" style={{ marginBottom: '40px' }}>
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button
-                                        onClick={() => updateAutomationMutation.mutate({ is_enabled: !automationSettings?.is_enabled })}
-                                        style={{
-                                            background: automationSettings?.is_enabled ? 'var(--emerald)' : 'rgba(255,0,0,0.1)',
-                                            color: automationSettings?.is_enabled ? '#000' : 'var(--error)',
-                                            border: `1px solid ${automationSettings?.is_enabled ? 'transparent' : 'var(--error)'}`,
-                                            padding: '12px 32px',
-                                            borderRadius: '8px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '950',
-                                            letterSpacing: '2px',
-                                            cursor: 'pointer',
-                                            transition: '0.3s'
-                                        }}
-                                    >
-                                        {automationSettings?.is_enabled ? 'DEACTIVATE AI ENGINE' : 'ACTIVATE AI ENGINE'}
-                                    </button>
+                                <div className="flex-center" style={{ gap: '12px', background: 'rgba(59, 130, 246, 0.05)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                                    <Activity size={16} color="var(--primary)" />
+                                    <span style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--primary)', letterSpacing: '2px' }}>MANUAL MISSION CONTROL ACTIVE</span>
                                 </div>
 
-                                {automationSettings?.is_enabled && (
-                                    <div className="flex-center" style={{ gap: '12px', background: 'rgba(16, 185, 129, 0.05)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                                        <span className="spinner-small" />
-                                        <span style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '2px' }}>AI MONITORING ACTIVE</span>
-                                    </div>
-                                )}
+                                <div className="flex-center" style={{ gap: '12px', background: 'rgba(255, 255, 255, 0.05)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px' }}>BACKGROUND SYNC: MONITOR ONLY</span>
+                                </div>
                             </div>
 
                             {automationSettings ? (
@@ -650,56 +652,32 @@ function AdminPage() {
                                             </div>
                                         </div>
 
-                                        {/* Synchronization */}
+                                        {/* Synchronization Lifecycle */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                             <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
-                                                <Activity size={20} color="var(--primary)" />
-                                                <h3 style={{ fontSize: '0.75rem', fontWeight: '950', letterSpacing: '3px', color: '#fff' }}>CYCLE SYNCHRONIZATION</h3>
+                                                <Clock size={20} color="var(--primary)" />
+                                                <h3 style={{ fontSize: '0.75rem', fontWeight: '950', letterSpacing: '3px', color: '#fff' }}>MISSION LIFETIME</h3>
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>HOUR</span>
+                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>EXPIRE AFTER</span>
                                                     <select
                                                         value={automationSettings.exp_h}
                                                         onChange={(e) => {
                                                             const val = e.target.value;
                                                             setAutomationSettings({ ...automationSettings, exp_h: val });
+                                                            updateAutomationMutation.mutate({ exp_h: val });
                                                         }}
                                                         style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
                                                     >
-                                                        {[...Array(12)].map((_, i) => (
-                                                            <option key={i + 1} value={(i + 1).toString().padStart(2, '0')}>{i + 1}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>MINUTE</span>
-                                                    <select
-                                                        value={automationSettings.exp_m}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            setAutomationSettings({ ...automationSettings, exp_m: val });
-                                                        }}
-                                                        style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
-                                                    >
-                                                        {[...Array(60)].map((_, i) => (
-                                                            <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '950' }}>MERIDIEM</span>
-                                                    <select
-                                                        value={automationSettings.exp_p}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            setAutomationSettings({ ...automationSettings, exp_p: val });
-                                                            updateAutomationMutation.mutate({ exp_p: val });
-                                                        }}
-                                                        style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '16px', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: '900' }}
-                                                    >
-                                                        <option value="AM">AM</option>
-                                                        <option value="PM">PM</option>
+                                                        <option value="1">1 MINUTE (TESTING)</option>
+                                                        <option value="5">5 MINUTES</option>
+                                                        <option value="15">15 MINUTES</option>
+                                                        <option value="30">30 MINUTES</option>
+                                                        <option value="60">1 HOUR</option>
+                                                        <option value="360">6 HOURS</option>
+                                                        <option value="720">12 HOURS</option>
+                                                        <option value="1440">24 HOURS (STABLE)</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -774,7 +752,7 @@ function AdminPage() {
                                                 if (window.confirm("EXECUTE AI MISSION ENGINE?\nThis will PURGE ALL EXISTING QUIZZES and create a fresh batch based on your targets."))
                                                     syncMutation.mutate({ isManual: true, silent: false });
                                             }}
-                                            disabled={syncMutation.isPending}
+                                            disabled={syncMutation.isPending || retryCooldown > 0}
                                             style={{
                                                 background: 'rgba(255,255,255,0.05)',
                                                 border: '1px solid #333',
@@ -784,7 +762,7 @@ function AdminPage() {
                                                 fontSize: '0.85rem',
                                                 fontWeight: '950',
                                                 letterSpacing: '4px',
-                                                cursor: syncMutation.isPending ? 'not-allowed' : 'pointer',
+                                                cursor: syncMutation.isPending || retryCooldown > 0 ? 'not-allowed' : 'pointer',
                                                 flex: 1,
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -793,7 +771,7 @@ function AdminPage() {
                                             }}
                                         >
                                             <Gamepad2 size={24} />
-                                            {syncMutation.isPending ? 'SYNCHRONIZING CORE...' : 'FRESH START (RESET)'}
+                                            {syncMutation.isPending ? 'SYNCHRONIZING CORE...' : (retryCooldown > 0 ? `COOLDOWN (${retryCooldown}s)` : 'FRESH START (RESET)')}
                                         </button>
                                     </div>
                                 </div>

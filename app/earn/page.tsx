@@ -196,7 +196,7 @@ export default function EarnPage() {
 
 function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, onClose: () => void, onComplete: (id: string, correct: number, total: number) => void, isSubmitting: boolean }) {
     const [currentIdx, setCurrentIdx] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(10);
+    const [timeLeft, setTimeLeft] = useState(15);
     const [answers, setAnswers] = useState<number[]>([]);
     const [status, setStatus] = useState<'playing' | 'calculating' | 'success'>('playing');
     const [correctCount, setCorrectCount] = useState(0);
@@ -209,9 +209,8 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
-                    // Time out: move to next or calculate
-                    handleAnswer(-1); // -1 marks as incorrect/timed out
-                    return 10;
+                    handleAnswer(-1); // Time out
+                    return 15;
                 }
                 return prev - 1;
             });
@@ -231,100 +230,162 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
 
         if (currentIdx + 1 < task.questions!.length) {
             setCurrentIdx(currentIdx + 1);
-            setTimeLeft(10);
+            setTimeLeft(15);
         } else {
             setStatus('calculating');
-            // Final calculation and API call
             const finalCorrect = isCorrect ? correctCount + 1 : correctCount;
             setTimeout(() => {
                 setStatus('success');
                 onComplete(task.id, finalCorrect, task.questions!.length);
-            }, 2000);
+            }, 3000); // 3s for professional calculation feel
         }
     };
 
     return (
-        <div className="modal-overlay flex-center" style={{ zIndex: 2000 }}>
-            <div className="glass-panel animate-scale-up" style={{
-                width: '95%', maxWidth: '500px',
-                background: '#000',
-                border: '1px solid #333',
-                padding: '40px',
-                borderRadius: '32px',
+        <div className="modal-overlay flex-center" style={{ zIndex: 2000, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(20px)' }}>
+            <div className="animate-scale-up" style={{
+                width: '95%', maxWidth: '600px',
+                background: '#020617',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                padding: '48px',
+                borderRadius: '40px',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                boxShadow: '0 0 100px rgba(16, 185, 129, 0.05)'
             }}>
+                {/* Tactical Corner Glitches */}
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '40px', height: '40px', borderTop: '2px solid var(--emerald)', borderLeft: '2px solid var(--emerald)', opacity: 0.5 }} />
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', borderTop: '2px solid var(--emerald)', borderRight: '2px solid var(--emerald)', opacity: 0.5 }} />
+
                 {/* Close Button */}
-                <button onClick={onClose} style={{ position: 'absolute', top: '24px', right: '24px', background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
+                <button onClick={onClose} style={{ position: 'absolute', top: '32px', right: '32px', background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', zIndex: 10 }}>
                     <X size={24} />
                 </button>
 
                 {status === 'playing' ? (
                     <>
-                        <div className="flex-between" style={{ marginBottom: '32px' }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                        <div className="flex-between" style={{ marginBottom: '40px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
                                 {[...Array(task.questions!.length)].map((_, i) => (
                                     <div key={i} style={{
-                                        width: '40px', height: '4px',
-                                        background: i <= currentIdx ? 'var(--primary)' : '#222',
-                                        borderRadius: '2px',
-                                        transition: '0.3s'
+                                        flex: 1, height: '6px',
+                                        background: i < currentIdx ? 'var(--emerald)' : i === currentIdx ? 'rgba(16, 185, 129, 0.2)' : '#111',
+                                        borderRadius: '3px',
+                                        transition: '0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: i === currentIdx ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none'
                                     }} />
                                 ))}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: timeLeft <= 3 ? 'var(--error)' : 'var(--primary)', fontWeight: '950', fontSize: '1.2rem' }}>
-                                <Timer size={20} /> {timeLeft}s
+                            <div style={{
+                                marginLeft: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                color: timeLeft <= 5 ? 'var(--error)' : 'var(--emerald)',
+                                fontWeight: '950',
+                                fontSize: '1.4rem',
+                                letterSpacing: '-1px'
+                            }}>
+                                <Timer size={24} /> {timeLeft}s
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '40px' }}>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '4px', marginBottom: '12px' }}>QUESTION {currentIdx + 1}</p>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', lineHeight: 1.3 }}>{currentQuestion.question}</h2>
+                        <div style={{ marginBottom: '48px' }}>
+                            <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '16px' }}>
+                                <Activity size={14} color="var(--primary)" />
+                                <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '950', letterSpacing: '4px' }}>QUESTION {currentIdx + 1} OF {task.questions!.length}</span>
+                            </div>
+                            <h2 style={{ fontSize: '2rem', fontWeight: '950', color: '#fff', lineHeight: 1.2, letterSpacing: '-0.5px' }}>{currentQuestion.question}</h2>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {currentQuestion.options.map((opt, i) => (
                                 <button
                                     key={i}
                                     onClick={() => handleAnswer(i)}
                                     style={{
                                         width: '100%',
-                                        padding: '24px',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid #222',
-                                        borderRadius: '16px',
-                                        color: '#fff',
-                                        fontSize: '0.95rem',
+                                        padding: '28px 32px',
+                                        background: 'rgba(255,255,255,0.02)',
+                                        border: '1px solid #1e293b',
+                                        borderRadius: '24px',
+                                        color: '#cbd5e1',
+                                        fontSize: '1rem',
                                         fontWeight: '700',
                                         textAlign: 'left',
-                                        transition: '0.3s',
-                                        cursor: 'pointer'
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '20px'
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.border = '1px solid var(--primary)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.border = '1px solid #222'}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)';
+                                        e.currentTarget.style.border = '1px solid var(--emerald)';
+                                        e.currentTarget.style.color = '#fff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                                        e.currentTarget.style.border = '1px solid #1e293b';
+                                        e.currentTarget.style.color = '#cbd5e1';
+                                    }}
                                 >
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '950' }} className="flex-center">
+                                        {String.fromCharCode(65 + i)}
+                                    </div>
                                     {opt}
                                 </button>
                             ))}
                         </div>
                     </>
                 ) : status === 'calculating' ? (
-                    <div className="flex-center" style={{ flexDirection: 'column', gap: '24px', padding: '40px 0' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Activity size={40} color="var(--primary)" />
+                    <div className="flex-center" style={{ flexDirection: 'column', gap: '32px', padding: '60px 0' }}>
+                        <div style={{ position: 'relative' }}>
+                            <div className="spinner" style={{ width: '100px', height: '100px', border: '2px solid rgba(16, 185, 129, 0.1)', borderTop: '2px solid var(--emerald)', borderRadius: '50%' }} />
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                                <Activity size={40} color="var(--emerald)" className="animate-pulse" />
+                            </div>
                         </div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', textAlign: 'center' }}>ANALYZING PERFORMANCE</h2>
-                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem' }}>Compiling protocol results and calculating reward metrics...</p>
+                        <div style={{ textAlign: 'center' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff', marginBottom: '12px', letterSpacing: '-1px' }}>ANALYZING PERFORMANCE</h2>
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', letterSpacing: '2px', fontWeight: '900' }}>COMPILING METRICS... {Math.round(Math.random() * 100)}%</p>
+                        </div>
+                        <div style={{ width: '100%', background: '#111', height: '4px', borderRadius: '2px', maxWidth: '300px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: 'var(--emerald)', width: '60%', animation: 'loading-progress 3s ease-in-out' }} />
+                        </div>
                     </div>
                 ) : (
-                    <div className="flex-center" style={{ flexDirection: 'column', gap: '24px', padding: '40px 0' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CheckCircle2 size={40} color="var(--emerald)" />
+                    <div className="flex-center animate-fade-in" style={{ flexDirection: 'column', gap: '40px', padding: '40px 0' }}>
+                        <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 50px rgba(16, 185, 129, 0.1)' }}>
+                            <CheckCircle2 size={60} color="var(--emerald)" strokeWidth={1} />
                         </div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', textAlign: 'center' }}>MISSION TERMINATED</h2>
-                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '1.1rem', fontWeight: '900' }}>SCORE: {correctCount} / {task.questions!.length}</p>
-                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', fontSize: '0.9rem' }}>Efficiency rating established. Rewards are being dispatched to your wallet.</p>
-                        <button onClick={onClose} className="btn" style={{ background: '#fff', color: '#000', padding: '16px 40px', letterSpacing: '2px', width: '100%', marginTop: '20px' }}>EXIT SIMULATION</button>
+                        <div style={{ textAlign: 'center' }}>
+                            <h2 style={{ fontSize: '2.4rem', fontWeight: '950', color: '#fff', letterSpacing: '-2px', marginBottom: '8px' }}>MISSION SUCCESS</h2>
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: '950', letterSpacing: '4px' }}>EFFICIENCY RATING: {Math.round((correctCount / task.questions!.length) * 100)}%</p>
+                        </div>
+
+                        <div className="glass-panel" style={{ width: '100%', padding: '32px', background: 'rgba(16, 185, 129, 0.02)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '24px' }}>
+                            <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>DATA ACQUISITION</span>
+                                <span style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '950' }}>{correctCount} / {task.questions!.length} BLOCKS</span>
+                            </div>
+                            <div className="flex-between">
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>ESTIMATED FLOW</span>
+                                <span style={{ fontSize: '1.2rem', color: 'var(--emerald)', fontWeight: '950' }}>+{task.reward.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <button onClick={onClose} className="btn" style={{
+                            background: '#fff',
+                            color: '#000',
+                            height: '72px',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: '950',
+                            letterSpacing: '4px',
+                            width: '100%',
+                            boxShadow: '0 20px 40px rgba(255,255,255,0.1)'
+                        }}>TERMINATE SESSION</button>
                     </div>
                 )}
             </div>
@@ -343,7 +404,7 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
             const diff = exp - now;
 
             if (diff <= 0) {
-                setTimeLeft("EXPIRED");
+                setTimeLeft("TERM");
                 clearInterval(timer);
             } else {
                 const h = Math.floor(diff / (1000 * 60 * 60));
@@ -355,110 +416,170 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
         return () => clearInterval(timer);
     }, [task.expires_at]);
 
+    const isExpired = timeLeft === "TERM";
+
     return (
-        <div className="glass-panel glass-vibrant" style={{
-            padding: '32px',
-            border: task.is_completed ? '1px solid #111' : '1px solid var(--emerald)',
-            borderRadius: '24px',
+        <div className="glass-panel" style={{
+            padding: 'var(--card-padding, 32px)',
+            border: task.is_completed ? '1px solid #111' : '1px solid rgba(16, 185, 129, 0.2)',
+            borderRadius: '40px',
             background: task.is_completed
                 ? 'rgba(255,255,255,0.01)'
-                : 'linear-gradient(135deg, #064e3b 0%, #020617 100%)',
-            display: 'flex', flexDirection: 'column', gap: '20px',
+                : 'linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(2, 6, 23, 0.95) 100%)',
+            display: 'flex', flexDirection: 'column', gap: '32px',
             transition: 'all 0.4s var(--transition)',
             position: 'relative',
             overflow: 'hidden',
-            opacity: task.is_completed ? 0.5 : 1,
-            boxShadow: task.is_completed ? 'none' : '0 10px 30px rgba(16, 185, 129, 0.1)',
-            minHeight: '380px'
+            opacity: task.is_completed || isExpired ? 0.6 : 1,
+            boxShadow: task.is_completed ? 'none' : '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(16, 185, 129, 0.05)',
+            minHeight: '440px'
         }}>
-            {/* Status Overlays */}
-            {task.is_completed && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, backdropFilter: 'blur(4px)' }}>
-                    <div style={{
-                        background: '#000',
-                        border: '1px solid #222',
-                        padding: '10px 20px',
-                        borderRadius: '12px',
-                        color: 'var(--emerald)',
-                        fontSize: '0.65rem',
-                        fontWeight: '950',
-                        letterSpacing: '3px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        <CheckCircle2 size={14} /> CLAIMED
-                    </div>
-                </div>
+            {/* Animated Liquid Background Overlay */}
+            {!task.is_completed && !isExpired && (
+                <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    left: '-50%',
+                    width: '200%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 60%)',
+                    animation: 'spin 20s linear infinite',
+                    pointerEvents: 'none',
+                    zIndex: 0
+                }} />
             )}
 
-            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+            {/* Status Indicator Bar */}
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '4px',
+                background: task.is_completed ? '#222' : isExpired ? 'var(--error)' : 'linear-gradient(90deg, var(--emerald), var(--primary))',
+                opacity: 0.8
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '28px', height: '100%' }}>
                 <div className="flex-between" style={{ alignItems: 'flex-start' }}>
                     <div style={{
-                        width: '64px', height: '64px',
-                        borderRadius: '16px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: task.type === 'quiz' ? 'var(--primary)' : '#fff'
+                        width: '72px', height: '72px',
+                        borderRadius: '24px',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        color: task.type === 'quiz' ? 'var(--primary)' : '#fff',
+                        boxShadow: 'inset 0 0 20px rgba(255,255,255,0.01)'
                     }} className="flex-center">
-                        {task.type === "ad" && <PlayCircle size={28} strokeWidth={1.5} />}
-                        {task.type === "visit" && <ExternalLink size={28} strokeWidth={1.5} />}
-                        {task.type === "checkin" && <CheckCircle2 size={28} strokeWidth={1.5} />}
-                        {task.type === "quiz" && <Zap size={28} strokeWidth={1.5} fill="var(--primary)" fillOpacity={0.1} />}
+                        {task.type === "ad" && <PlayCircle size={32} strokeWidth={1} />}
+                        {task.type === "visit" && <ExternalLink size={32} strokeWidth={1} />}
+                        {task.type === "checkin" && <CheckCircle2 size={32} strokeWidth={1} />}
+                        {task.type === "quiz" && <Zap size={32} strokeWidth={1} fill="var(--primary)" fillOpacity={0.1} />}
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
                         {timeLeft && (
-                            <div style={{ fontSize: '0.55rem', color: 'var(--gold)', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(234, 179, 8, 0.05)', padding: '4px 8px', borderRadius: '4px' }}>
-                                <Clock size={10} /> {timeLeft}
+                            <div style={{
+                                fontSize: '0.6rem',
+                                color: isExpired ? 'var(--error)' : 'var(--gold)',
+                                fontWeight: '950',
+                                letterSpacing: '2px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: 'rgba(0,0,0,0.5)',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: `1px solid ${isExpired ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)'}`
+                            }}>
+                                <Clock size={12} /> {timeLeft}
                             </div>
                         )}
                         {task.questions && (
-                            <div style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.05)', padding: '4px 8px', borderRadius: '4px' }}>
-                                <Timer size={10} /> {task.questions.length} Q
+                            <div style={{
+                                fontSize: '0.6rem',
+                                color: 'var(--primary)',
+                                fontWeight: '950',
+                                letterSpacing: '2px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: 'rgba(0,0,0,0.5)',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(59, 130, 246, 0.2)'
+                            }}>
+                                <Activity size={12} /> {task.questions.length} DATA BLOCKS
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: '950', color: '#fff', letterSpacing: '-0.5px', marginBottom: '12px', lineHeight: 1.2 }}>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '16px' }}>
+                        <div style={{ width: '4px', height: '12px', background: 'var(--emerald)', borderRadius: '2px' }} />
+                        <span style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '3px' }}>
+                            {task.is_completed ? 'PROTOCOL TERMINATED' : isExpired ? 'TIME OVERFLOW' : 'ACTIVE MISSION'}
+                        </span>
+                    </div>
+
+                    <h3 style={{
+                        fontSize: '1.4rem',
+                        fontWeight: '950',
+                        color: '#fff',
+                        letterSpacing: '-1px',
+                        marginBottom: '16px',
+                        lineHeight: 1.1,
+                        textShadow: '0 2px 10px rgba(0,0,0,0.3)'
+                    }}>
                         {task.title.toUpperCase()}
                     </h3>
 
                     <div className="flex" style={{ alignItems: 'baseline', gap: '8px' }}>
                         <span style={{
                             color: 'var(--emerald)',
-                            fontSize: '2.4rem',
+                            fontSize: '2.8rem',
                             fontWeight: '950',
-                            letterSpacing: '-2px',
-                            textShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
+                            letterSpacing: '-3px',
+                            lineHeight: 1,
+                            textShadow: '0 0 30px rgba(16, 185, 129, 0.2)'
                         }}>{task.reward.toLocaleString()}</span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>FLOW</span>
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.6rem', fontWeight: '950', letterSpacing: '2px' }}>FLOW ACQUISITION</span>
                         </div>
                     </div>
                 </div>
 
                 <button
                     onClick={() => onExecute(task)}
-                    disabled={isCompleting || task.is_completed || timeLeft === "EXPIRED"}
+                    disabled={isCompleting || task.is_completed || isExpired}
                     className="btn"
                     style={{
                         width: '100%',
-                        height: '60px',
+                        height: '72px',
                         fontSize: '0.8rem',
-                        borderRadius: '12px',
-                        background: (task.is_locked || timeLeft === "EXPIRED") ? 'rgba(255,255,255,0.05)' : '#fff',
-                        color: (task.is_locked || timeLeft === "EXPIRED") ? 'rgba(255,255,255,0.2)' : '#000',
+                        borderRadius: '20px',
+                        background: (task.is_locked || isExpired || task.is_completed) ? 'rgba(255,255,255,0.02)' : '#fff',
+                        color: (task.is_locked || isExpired || task.is_completed) ? 'rgba(255,255,255,0.1)' : '#000',
                         fontWeight: '950',
-                        letterSpacing: '3px',
+                        letterSpacing: '4px',
                         marginTop: 'auto',
-                        border: (task.is_locked || timeLeft === "EXPIRED") ? '1px solid #222' : 'none',
-                        cursor: (task.is_locked || timeLeft === "EXPIRED") ? 'not-allowed' : 'pointer'
+                        border: (task.is_locked || isExpired || task.is_completed) ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                        cursor: (task.is_locked || isExpired || task.is_completed) ? 'not-allowed' : 'pointer',
+                        transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: (task.is_locked || isExpired || task.is_completed) ? 'none' : '0 15px 35px rgba(255,255,255,0.1)'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isCompleting && !task.is_completed && !isExpired && !task.is_locked) {
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            e.currentTarget.style.boxShadow = '0 20px 45px rgba(255,255,255,0.15)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = (task.is_locked || isExpired || task.is_completed) ? 'none' : '0 15px 35px rgba(255,255,255,0.1)';
                     }}
                 >
-                    {isCompleting ? "EXECUTING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : timeLeft === "EXPIRED" ? "EXPIRED" : "DEPLOY MISSION"}
+                    {isCompleting ? "INITIALIZING..." : task.is_locked ? "LOCKED (PREMIUM)" : task.is_completed ? "COMPLETED" : isExpired ? "TIME EXPIRY" : "DEPLOY PROTOCOL"}
                 </button>
             </div>
         </div>
