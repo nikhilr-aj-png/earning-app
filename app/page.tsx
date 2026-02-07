@@ -66,7 +66,7 @@ export default function Home() {
     }
   };
   useEffect(() => {
-    // Detect recovery token from email link
+    // 1. Detect recovery token from email link
     const hash = window.location.hash;
     if (hash && hash.includes('type=recovery')) {
       const params = new URLSearchParams(hash.replace('#', '?'));
@@ -75,9 +75,19 @@ export default function Home() {
         setOtp(accessToken);
         setStep('forgot_otp');
         setShowAuth(true);
-        // Clear hash to prevent re-triggering
         window.history.replaceState(null, '', window.location.pathname);
       }
+    }
+
+    // 2. Detect referral code from URL query
+    const urlParams = new URLSearchParams(window.location.search);
+    const referralParam = urlParams.get('ref');
+    if (referralParam) {
+      setRefCode(referralParam);
+      setIsLogin(false); // Switch to Register mode
+      setShowAuth(true); // Open auth section
+      // Optional: Clear param from URL for clean look
+      window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
 

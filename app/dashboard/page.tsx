@@ -286,12 +286,12 @@ export default function Dashboard() {
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                         }}>
-                            earnflow.in/register?ref={user.referral_code}
+                            earnflow.in/?ref={user.referral_code}
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <button
                                 onClick={() => {
-                                    const refLink = `https://earnflow.in/register?ref=${user.referral_code}`;
+                                    const refLink = `https://earnflow.in/?ref=${user.referral_code}`;
                                     navigator.clipboard.writeText(refLink);
                                     showToast("REFERRAL LINK COPIED", "success");
                                 }}
@@ -303,7 +303,7 @@ export default function Dashboard() {
                             </button>
                             <button
                                 onClick={() => {
-                                    const refLink = `https://earnflow.in/register?ref=${user.referral_code}`;
+                                    const refLink = `https://earnflow.in/?ref=${user.referral_code}`;
                                     const message = encodeURIComponent(`🚀 Join EARNFLOW and start earning today! \n\nRegister here: ${refLink}`);
                                     window.open(`https://wa.me/?text=${message}`, '_blank');
                                 }}
