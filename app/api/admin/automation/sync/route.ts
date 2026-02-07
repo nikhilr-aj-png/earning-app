@@ -46,7 +46,8 @@ export async function POST(request: Request) {
         // 4. DENSITY & WINDOW CHECK
         const { data: currentTasks, error: countError } = await supabaseAdmin
             .from('tasks')
-            .select('id, target_audience');
+            .select('id, target_audience')
+            .eq('type', 'quiz'); // CRITICAL: Only count quizzes for replenishment
 
         if (countError) throw countError;
 
@@ -133,12 +134,15 @@ export async function POST(request: Request) {
         ${prompts.join('\n')}
         `;
 
-        const modelNames = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"];
+        const modelNames = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"];
         let responseText = "";
         let lastError = "";
         for (const modelName of modelNames) {
             try {
                 const model = genAI.getGenerativeModel({ model: modelName });
+                // Add a small delay between retries to avoid immediate quota hit
+                if (lastError) await new Promise(r => setTimeout(r, 1000));
+
                 const result = await model.generateContent(compositePrompt);
                 responseText = result.response.text();
                 if (responseText) break;
@@ -149,10 +153,11 @@ export async function POST(request: Request) {
             }
         }
 
-        if (!responseText) throw new Error(`AI core failed to respond. [Last Model Error: ${lastError}]. Please check your GEMINI_API_KEY or if your region supports Gemini.`);
+        if (!responseText) throw new Error(`API LIMIT REACHED: Gemini core is currently busy (Error 429). Please wait 60 seconds and try again.`);
 
         // Robust JSON Extraction
-        const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+        // Sometimes AI returns markdown like ```json ... ```
+        const jsonMatch = responseText.replace(/```json/g, '').replace(/```/g, '').match(/\[[\s\S]*\]/);
         if (!jsonMatch) throw new Error("AI responded but format was invalid. Response: " + responseText.substring(0, 100));
 
         const generated = JSON.parse(jsonMatch[0]);
