@@ -234,7 +234,7 @@ export default function Home() {
                 Play, Compete <br /> & Win Big
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '32px' }}>
-                Enter the Arena to challenge others in skill-based games. Participate in Lucky Color prediction or King & Queen tournaments to multiply your earnings exponentially.
+                Enter the Arena to challenge others in skill-based games. Participate in King & Queen tournaments to multiply your earnings exponentially.
               </p>
               <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <li style={{ color: '#fff', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '12px' }}>

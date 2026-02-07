@@ -201,6 +201,7 @@ export default function Dashboard() {
 
                 {/* Operations Menu */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
                     <Link href="/game" className="glass-panel flex-between" style={{ padding: '24px', textDecoration: 'none', borderRadius: '4px', border: '1px solid #222' }}>
                         <div className="flex-center" style={{ gap: '20px' }}>
                             <div style={{

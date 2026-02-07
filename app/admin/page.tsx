@@ -35,7 +35,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 function AdminPage() {
     const { user, loading, refreshUser } = useUser();
-    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'casino' | 'automation' | 'financials'>('stats');
+    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'automation' | 'financials' | 'arena' | 'games'>('stats');
     const [editingUser, setEditingUser] = useState<any>(null);
     const [userFilter, setUserFilter] = useState<'all' | 'free' | 'premium' | 'admin'>('all');
     const [editingTask, setEditingTask] = useState<any>(null);
@@ -120,10 +120,6 @@ function AdminPage() {
             alert(data.message.toUpperCase());
             queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
         },
-        onSuccess: (data) => {
-            alert(data.message.toUpperCase());
-            queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
-        },
         onError: (err: any) => {
             alert("ACTION FAILED: " + err.message);
         }
@@ -147,6 +143,154 @@ function AdminPage() {
         onError: (err: any) => {
             alert("UPI ACTION FAILED: " + err.message);
         }
+    });
+
+    // Game Management State
+    const [showGameModal, setShowGameModal] = useState(false);
+    const [editingGame, setEditingGame] = useState<any>(null);
+    const [gameForm, setGameForm] = useState({ title: '', description: '', image_url: '', route_path: '', status: 'active', priority: 0 });
+
+    const { data: gamesList } = useQuery({
+        queryKey: ['admin-games'],
+        queryFn: async () => {
+            const res = await fetch('/api/admin/games/list');
+            const data = await res.json();
+            if (!Array.isArray(data)) return [];
+            return data;
+        },
+        enabled: view === 'games'
+    });
+
+    const createGameMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            const res = await fetch('/api/admin/games/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to create game');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-games'] });
+            setShowGameModal(false);
+            alert("GAME CREATED SUCCESSFULLY");
+        },
+        onError: (err: any) => alert(err.message)
+    });
+
+    const updateGameMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            const res = await fetch('/api/admin/games/update', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to update game');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-games'] });
+            setShowGameModal(false);
+            alert("GAME UPDATED SUCCESSFULLY");
+        },
+        onError: (err: any) => alert(err.message)
+    });
+
+    const deleteGameMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await fetch(`/api/admin/games/delete?id=${id}`, { method: 'DELETE' });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-games'] });
+            alert("GAME DELETED");
+        }
+    });
+
+    // PERDICTION SYSTEM STATE
+    const [showPredictionModal, setShowPredictionModal] = useState(false);
+    const [predictionForm, setPredictionForm] = useState({
+        question: 'Which card winner?',
+        option_1_label: 'KING',
+        option_1_image: '/assets/cards/king.png',
+        option_2_label: 'QUEEN',
+        option_2_image: '/assets/cards/queen.png',
+        min_bet: 10,
+        target_audience: 'all',
+        expiry_minutes: 5,
+        resolution_method: 'auto'
+    });
+
+    const { data: predictionEvents } = useQuery({
+        queryKey: ['admin-predictions'],
+        queryFn: async () => {
+            const res = await fetch('/api/admin/predictions/list');
+            const data = await res.json();
+            if (!Array.isArray(data)) {
+                // Likely an error object if table missing
+                console.error("Failed to load predictions:", data);
+                return [];
+            }
+            return data;
+        },
+        enabled: view === 'games'
+    });
+
+    const createPredictionMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            const res = await fetch('/api/admin/predictions/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Failed to create event');
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-predictions'] });
+            setShowPredictionModal(false);
+            alert("CARD GAME EVENT CREATED");
+        },
+        onError: (err: any) => alert(`CREATION FAILED: ${err.message}`)
+    });
+
+    const resolvePredictionMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            const res = await fetch('/api/admin/predictions/resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Failed to resolve event');
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-predictions'] });
+            alert("EVENT RESOLVED");
+        },
+        onError: (err: any) => alert(`RESOLUTION FAILED: ${err.message}`)
+    });
+
+    // Arena Controls
+    const arenaMutation = useMutation({
+        mutationFn: async ({ forceWinner, autoProfit }: { forceWinner?: string, autoProfit?: boolean }) => {
+            const res = await fetch('/api/admin/arena/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                body: JSON.stringify({ forceWinner, autoProfit })
+            });
+            return res.json();
+        },
+        onSuccess: () => alert("ARENA SETTINGS UPDATED"),
+        onError: (e) => alert(e.message)
     });
 
     // Sync query data to local state when query finishes
@@ -364,7 +508,7 @@ function AdminPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
-                {['stats', 'users', 'tasks', 'automation', 'casino', 'financials'].map((t) => (
+                {['stats', 'users', 'tasks', 'automation', 'financials', 'games'].map((t) => (
                     <button
                         key={t} onClick={() => setView(t as any)}
                         style={{
@@ -846,10 +990,249 @@ function AdminPage() {
                     </div>
                 )}
 
-            {view === 'casino' && (
-                <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', border: '1px solid #fff', borderRadius: '4px' }}>
-                    <Activity size={32} color="#fff" strokeWidth={1} style={{ marginBottom: '24px' }} />
-                    <h3 style={{ fontSize: '0.8rem', fontWeight: '900', color: '#fff', marginBottom: '24px', letterSpacing: '4px' }}>ARENA LOAD MONITOR</h3>
+
+
+            {view === 'games' && (
+                <div className="animate-fade-in">
+
+
+                    {/* Prediction Games Section */}
+                    <div className="flex-between" style={{ marginTop: '48px', marginBottom: '24px' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>LIVE PREDICTION EVENTS</h2>
+                        <button
+                            onClick={() => setShowPredictionModal(true)}
+                            className="btn"
+                            style={{
+                                height: '40px', padding: '0 20px', borderRadius: '10px',
+                                background: 'transparent', border: '1px solid var(--gold)',
+                                color: 'var(--gold)', fontSize: '0.75rem', fontWeight: '950'
+                            }}
+                        >
+                            + CREATE CARD GAME
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                        {predictionEvents?.map((event: any) => (
+                            <div key={event.id} className="glass-panel" style={{ padding: '24px', border: '1px solid #333' }}>
+                                <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                    <span style={{ fontSize: '0.6rem', padding: '4px 8px', borderRadius: '4px', background: event.status === 'active' ? 'var(--emerald)' : '#333', color: '#fff', fontWeight: 'bold' }}>
+                                        {event.status.toUpperCase()}
+                                    </span>
+                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
+                                        EXP: {new Date(event.expires_at).toLocaleTimeString()}
+                                    </span>
+                                </div>
+                                <h4 style={{ color: '#fff', marginBottom: '16px', fontSize: '0.9rem' }}>{event.question}</h4>
+                                <div className="flex-between" style={{ gap: '12px' }}>
+                                    <div style={{ textAlign: 'center', flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginBottom: '4px' }}>OPTION 1</p>
+                                        <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_1} POOL</p>
+                                    </div>
+                                    <div style={{ textAlign: 'center', flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginBottom: '4px' }}>OPTION 2</p>
+                                        <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_2} POOL</p>
+                                    </div>
+                                </div>
+                                {event.status === 'active' && (
+                                    <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                                        <button
+                                            onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_1' })}
+                                            style={{ flex: 1, padding: '8px', background: 'var(--primary)', border: 'none', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}
+                                        >
+                                            WIN: KING
+                                        </button>
+                                        <button
+                                            onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_2' })}
+                                            style={{ flex: 1, padding: '8px', background: 'var(--secondary)', border: 'none', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}
+                                        >
+                                            WIN: QUEEN
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+
+                    {/* Game Create/Edit Modal */}
+                    {showGameModal && (
+                        <div style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                            zIndex: 2000, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <div className="glass-panel" style={{ width: '90%', maxWidth: '500px', padding: '32px', borderRadius: '24px', background: '#000', border: '1px solid #333' }}>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', marginBottom: '24px' }}>
+                                    {editingGame ? 'EDIT GAME' : 'NEW GAME CONFIGURATION'}
+                                </h2>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <input
+                                        placeholder="Game Title"
+                                        value={gameForm.title}
+                                        onChange={e => setGameForm({ ...gameForm, title: e.target.value })}
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                                    />
+                                    <textarea
+                                        placeholder="Description"
+                                        value={gameForm.description}
+                                        onChange={e => setGameForm({ ...gameForm, description: e.target.value })}
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none', minHeight: '80px' }}
+                                    />
+                                    <input
+                                        placeholder="Image URL (e.g. /assets/games/thumb.jpg)"
+                                        value={gameForm.image_url}
+                                        onChange={e => setGameForm({ ...gameForm, image_url: e.target.value })}
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                                    />
+                                    <input
+                                        placeholder="Route Path (e.g. /game/king-queen)"
+                                        value={gameForm.route_path}
+                                        onChange={e => setGameForm({ ...gameForm, route_path: e.target.value })}
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                                    />
+                                    <div className="flex-between" style={{ gap: '16px' }}>
+                                        <select
+                                            value={gameForm.status}
+                                            onChange={e => setGameForm({ ...gameForm, status: e.target.value })}
+                                            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                                        >
+                                            <option value="active" style={{ color: '#000' }}>Active</option>
+                                            <option value="coming_soon" style={{ color: '#000' }}>Coming Soon</option>
+                                            <option value="maintenance" style={{ color: '#000' }}>Maintenance</option>
+                                        </select>
+                                        <input
+                                            type="number"
+                                            placeholder="Priority (0-10)"
+                                            value={gameForm.priority}
+                                            onChange={e => setGameForm({ ...gameForm, priority: parseInt(e.target.value) || 0 })}
+                                            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            if (editingGame) {
+                                                updateGameMutation.mutate({ ...gameForm, id: editingGame.id });
+                                            } else {
+                                                createGameMutation.mutate(gameForm);
+                                            }
+                                        }}
+                                        className="btn"
+                                        style={{ height: '56px', borderRadius: '16px', background: 'var(--primary)', color: '#000', marginTop: '16px' }}
+                                    >
+                                        {editingGame ? 'SAVE CHANGES' : 'LAUNCH GAME'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowGameModal(false)}
+                                        style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '0.8rem', cursor: 'pointer' }}
+                                    >
+                                        CANCEL
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Prediction Event Modal */}
+                    {showPredictionModal && (
+                        <div style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                            zIndex: 2000, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <div className="glass-panel" style={{ width: '90%', maxWidth: '400px', padding: '32px', borderRadius: '24px', background: '#000', border: '1px solid #333' }}>
+                                <h3 style={{ color: '#fff', marginBottom: '24px', fontSize: '1.2rem', fontWeight: '950' }}>NEW CARD GAME EVENT</h3>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>QUESTION</label>
+                                        <input
+                                            value={predictionForm.question}
+                                            disabled // Fixed as per request
+                                            style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>OPTION 1</label>
+                                            <div style={{ marginTop: '8px', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '20px', height: '20px', background: 'var(--primary)', borderRadius: '50%' }} />
+                                                <span style={{ color: '#fff', fontSize: '0.8rem' }}>KING</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>OPTION 2</label>
+                                            <div style={{ marginTop: '8px', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '20px', height: '20px', background: 'var(--secondary)', borderRadius: '50%' }} />
+                                                <span style={{ color: '#fff', fontSize: '0.8rem' }}>QUEEN</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>MIN BET</label>
+                                            <input
+                                                type="number"
+                                                value={predictionForm.min_bet}
+                                                onChange={e => setPredictionForm({ ...predictionForm, min_bet: parseInt(e.target.value) })}
+                                                style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>EXPIRY</label>
+                                            <select
+                                                value={predictionForm.expiry_minutes}
+                                                onChange={e => setPredictionForm({ ...predictionForm, expiry_minutes: parseInt(e.target.value) })}
+                                                style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
+                                            >
+                                                <option value="1">1 Minute</option>
+                                                <option value="5">5 Minutes</option>
+                                                <option value="15">15 Minutes</option>
+                                                <option value="30">30 Minutes</option>
+                                                <option value="60">1 Hour</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>RESOLUTION MODE</label>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                            <button
+                                                onClick={() => setPredictionForm({ ...predictionForm, resolution_method: 'auto' })}
+                                                style={{ flex: 1, padding: '12px', background: predictionForm.resolution_method === 'auto' ? 'var(--emerald)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                AUTO (LOWEST POOL)
+                                            </button>
+                                            <button
+                                                onClick={() => setPredictionForm({ ...predictionForm, resolution_method: 'manual' })}
+                                                style={{ flex: 1, padding: '12px', background: predictionForm.resolution_method === 'manual' ? 'var(--gold)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                MANUAL ADMIN
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => createPredictionMutation.mutate(predictionForm)}
+                                        className="btn"
+                                        style={{ width: '100%', padding: '16px', marginTop: '16px', background: '#fff', color: '#000', borderRadius: '12px', fontWeight: '950' }}
+                                    >
+                                        LAUNCH EVENT
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPredictionModal(false)}
+                                        style={{ width: '100%', padding: '16px', background: 'transparent', color: 'var(--text-dim)', border: 'none', cursor: 'pointer' }}
+                                    >
+                                        CANCEL
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -1176,6 +1559,41 @@ function UserEditModal({ user, onClose, onSave, onDelete, isSaving }: { user: an
                     </div>
                 </div>
             </div>
+            {view === 'arena' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', marginBottom: '24px', letterSpacing: '2px' }}>ARENA CONTROL CENTER</h2>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                            <div style={{ padding: '24px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '16px', textAlign: 'center' }}>
+                                <h3 style={{ color: 'var(--primary)', fontWeight: '950', fontSize: '1.2rem' }}>FORCE KING WIN</h3>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', margin: '12px 0' }}>OVERRIDES NEXT ROUND OUTCOME</p>
+                                <button onClick={() => arenaMutation.mutate({ forceWinner: 'king' })} className="btn" style={{ width: '100%', background: 'var(--primary)' }}>SET KING</button>
+                            </div>
+
+                            <div style={{ padding: '24px', background: 'rgba(236, 72, 153, 0.1)', border: '1px solid var(--secondary)', borderRadius: '16px', textAlign: 'center' }}>
+                                <h3 style={{ color: 'var(--secondary)', fontWeight: '950', fontSize: '1.2rem' }}>FORCE QUEEN WIN</h3>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', margin: '12px 0' }}>OVERRIDES NEXT ROUND OUTCOME</p>
+                                <button onClick={() => arenaMutation.mutate({ forceWinner: 'queen' })} className="btn" style={{ width: '100%', background: 'var(--secondary)' }}>SET QUEEN</button>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid var(--emerald)', borderRadius: '16px' }}>
+                            <div className="flex-between">
+                                <div>
+                                    <h3 style={{ color: 'var(--emerald)', fontWeight: '950', fontSize: '1.2rem' }}>AUTO PROFIT MODE</h3>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>SYSTEM AUTOMATICALLY MAKES THE "LOWEST POOL" WIN</p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <button onClick={() => arenaMutation.mutate({ autoProfit: true })} className="btn" style={{ background: '#111', border: '1px solid var(--emerald)', color: '#fff' }}>ENABLE</button>
+                                    <button onClick={() => arenaMutation.mutate({ autoProfit: false })} className="btn" style={{ background: '#111', border: '1px solid var(--error)', color: '#fff' }}>DISABLE</button>
+                                    <button onClick={() => arenaMutation.mutate({ forceWinner: 'random' })} className="btn" style={{ background: '#fff', color: '#000' }}>RESET TO RANDOM</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

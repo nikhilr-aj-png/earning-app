@@ -1,267 +1,424 @@
 "use client";
-
-export const dynamic = 'force-dynamic';
-
 import { useUser } from "@/context/UserContext";
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins, Trophy, Zap, Clock, ShieldCheck, Activity, Plane, Palette, AlertTriangle } from "lucide-react";
+import { Zap, Play, Trophy, Star, Activity, ArrowRight, Gamepad2, X } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/context/ToastContext";
 
-export default function ArcadePage() {
-    const { user, refreshUser, loading } = useUser();
+export default function GameHub() {
+    const { user, loading } = useUser();
     const router = useRouter();
-    const { showToast } = useToast();
-    const queryClient = useQueryClient();
-    const [gameTab, setGameTab] = useState<'aviator' | 'color'>('aviator');
-    const [betAmount, setBetAmount] = useState(10);
-    const [isBetting, setIsBetting] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
-    // Fetch Current Round
-    const { data: round } = useQuery({
-        queryKey: ['arcade-round'],
+    const { data: games, isLoading } = useQuery({
+        queryKey: ['games-list'],
         queryFn: async () => {
-            const res = await fetch("/api/arcade/round");
-            return res.json();
-        },
-        refetchInterval: 2000 // Poll every 2s for live totals
-    });
-
-    const betMutation = useMutation({
-        mutationFn: async (payload: { roundId: string, choice: string, amount: number }) => {
-            const res = await fetch("/api/arcade/bet", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "x-user-id": user?.id || "" },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) throw new Error("Bet failed");
-            return res.json();
-        },
-        onSuccess: () => {
-            refreshUser();
-            setIsBetting(false);
-            queryClient.invalidateQueries({ queryKey: ['arcade-round'] });
+            const res = await fetch('/api/games/list');
+            const data = await res.json();
+            if (!Array.isArray(data)) throw new Error(data.error || 'Failed to load games');
+            return data;
         }
     });
 
-    const handleResolve = useCallback(async (id: string) => {
-        const res = await fetch("/api/arcade/resolve", {
-            method: "POST",
-            body: JSON.stringify({ roundId: id })
-        });
-        if (res.ok) {
-            queryClient.invalidateQueries({ queryKey: ['arcade-round'] });
-            refreshUser();
-        }
-    }, [queryClient, refreshUser]);
+    const { data: predictions } = useQuery({
+        queryKey: ['active-predictions'],
+        queryFn: async () => {
+            const res = await fetch('/api/game/prediction/list');
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+        },
+        refetchInterval: 5000 // Refresh every 5s for live pools/timer
+    });
 
-    // Auth Protection
     useEffect(() => {
         if (!loading && !user) {
             router.push('/');
         }
     }, [user, loading, router]);
 
-    // Timer Logic
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    if (round?.id) handleResolve(round.id);
-                    return 30;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [round, handleResolve]);
-
-    if (loading || !user) return null; // Prevent flicker
-
-    const placeBet = (choice: string) => {
-        if (!user || user.coins < betAmount) return showToast("INSUFFICIENT CAPITAL FOR ALLOCATION", "error");
-        setIsBetting(true);
-        betMutation.mutate({ roundId: round?.id, choice, amount: betAmount });
-    };
+    if (loading || !user) return null;
 
     return (
-        <div className="animate-fade-in" style={{ width: '100%', padding: '24px 8px', paddingBottom: '120px', position: 'relative', overflow: 'hidden' }}>
+        <div className="animate-fade-in" style={{ padding: '24px 8px', paddingBottom: '120px', minHeight: '100vh', position: 'relative' }}>
             {/* Background Blooms */}
-            <div style={{ position: 'fixed', top: '5%', right: '-15%', width: '500px', height: '500px', background: 'var(--violet)', filter: 'blur(180px)', opacity: 0.08, pointerEvents: 'none', zIndex: 0 }} />
-            <div style={{ position: 'fixed', bottom: '15%', left: '-15%', width: '400px', height: '400px', background: 'var(--sapphire)', filter: 'blur(160px)', opacity: 0.08, pointerEvents: 'none', zIndex: 0 }} />
+            <div style={{ position: 'fixed', top: '10%', right: '-10%', width: '500px', height: '500px', background: 'var(--violet)', filter: 'blur(180px)', opacity: 0.1, pointerEvents: 'none', zIndex: 0 }} />
+            <div style={{ position: 'fixed', bottom: '10%', left: '-10%', width: '500px', height: '500px', background: 'var(--sapphire)', filter: 'blur(180px)', opacity: 0.1, pointerEvents: 'none', zIndex: 0 }} />
 
             {/* Header */}
-            <div className="flex-between" style={{ marginBottom: '40px', position: 'relative', zIndex: 1 }}>
+            <div className="flex-between" style={{ marginBottom: '40px', position: 'relative', zIndex: 1, padding: '0 16px' }}>
                 <div>
                     <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--rose)', boxShadow: '0 0 15px var(--rose)', animation: 'pulse 1s infinite' }} />
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '4px' }}>LIVE OPERATIONS</span>
+                        <div style={{ padding: '6px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px' }}>
+                            <Gamepad2 size={16} color="var(--primary)" />
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '4px' }}>ENTERTAINMENT ZONE</span>
                     </div>
-                    <h1 className="font-heading" style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px' }}>Arena</h1>
+                    <h1 className="font-heading" style={{ fontSize: '2.5rem', fontWeight: '950', letterSpacing: '-2px' }}>Game Hub</h1>
                 </div>
-                <div className="glass-panel flex-center" style={{ padding: '16px 28px', gap: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg-secondary)', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
-                    <Clock size={20} color="var(--primary)" strokeWidth={2.5} />
-                    <span style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '2px', color: '#fff' }}>00:{timeLeft.toString().padStart(2, '0')}</span>
+                {/* User Balance Compact */}
+                <div className="glass-panel flex-center" style={{ padding: '10px 16px', gap: '8px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
+                    <div style={{ width: '8px', height: '8px', background: 'var(--emerald)', borderRadius: '50%', boxShadow: '0 0 10px var(--emerald)' }} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff' }}>{user.coins.toLocaleString()}</span>
                 </div>
             </div>
 
-            {/* Game Selection Tabs - Extreme Vibrant */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '48px', padding: '8px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '24px', border: '1px solid var(--glass-border)', position: 'relative', zIndex: 1 }}>
-                <button
-                    onClick={() => setGameTab('aviator')}
-                    style={{
-                        flex: 1, padding: '18px', borderRadius: '16px', border: 'none',
-                        background: gameTab === 'aviator' ? 'var(--grad-vibrant)' : 'transparent',
-                        color: '#fff', fontWeight: '950', fontSize: '0.8rem', letterSpacing: '2px',
-                        transition: 'all 0.6s var(--transition)',
-                        boxShadow: gameTab === 'aviator' ? '0 15px 35px rgba(168, 85, 247, 0.3)' : 'none'
-                    }}
-                >
-                    KING & QUEEN
-                </button>
-                <button
-                    onClick={() => setGameTab('color')}
-                    style={{
-                        flex: 1, padding: '18px', borderRadius: '16px', border: 'none',
-                        background: gameTab === 'color' ? 'var(--grad-vibrant)' : 'transparent',
-                        color: '#fff', fontWeight: '950', fontSize: '0.8rem', letterSpacing: '2px',
-                        transition: 'all 0.6s var(--transition)',
-                        boxShadow: gameTab === 'color' ? '0 15px 35px rgba(168, 85, 247, 0.3)' : 'none'
-                    }}
-                >
-                    LUCKY COLOR
-                </button>
-            </div>
-
-            <div style={{ position: 'relative', zIndex: 1 }}>
-                {gameTab === 'aviator' ? (
-                    <div className="animate-fade-in">
-                        {/* Wager Allocation - Vibrant Grid */}
-                        <div className="glass-panel" style={{ padding: '40px', marginBottom: '48px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
-                            <p style={{ fontSize: '0.7rem', fontWeight: '950', color: 'var(--text-muted)', marginBottom: '32px', letterSpacing: '4px' }}>WAGER ALLOCATION</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                                {[10, 50, 100, 500].map(amt => (
-                                    <button
-                                        key={amt}
-                                        onClick={() => setBetAmount(amt)}
-                                        className="glass-panel"
-                                        style={{
-                                            padding: '20px 0', border: '2px solid',
-                                            borderColor: betAmount === amt ? 'var(--primary)' : 'transparent',
-                                            background: betAmount === amt ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
-                                            color: betAmount === amt ? '#000' : '#fff',
-                                            fontWeight: '950', fontSize: '1rem', borderRadius: '16px',
-                                            transition: '0.3s'
-                                        }}
-                                    >
-                                        {amt}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Card Interfaces - Ultra Vibrant */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '48px' }}>
-                            {[
-                                { id: 'A', name: 'KING', icon: <ShieldCheck size={40} />, accent: 'var(--sapphire)' },
-                                { id: 'B', name: 'QUEEN', icon: <Trophy size={40} />, accent: 'var(--gold)' }
-                            ].map((card) => {
-                                const total = card.id === 'A' ? round?.total_bet_a : round?.total_bet_b;
-                                const isHeavier = card.id === 'A' ? round?.total_bet_a > round?.total_bet_b : round?.total_bet_b > round?.total_bet_a;
-                                const isSelected = false; // Mock
-
-                                return (
-                                    <div key={card.id} onClick={() => placeBet(card.id)} className="glass-panel glass-vibrant" style={{
-                                        padding: '48px 24px', textAlign: 'center', cursor: 'pointer',
-                                        background: `linear-gradient(180deg, ${card.accent}11 0%, rgba(0,0,0,0.8) 100%)`,
-                                        border: `1.5px solid ${isHeavier ? 'rgba(255,255,255,0.1)' : card.accent}`,
-                                        borderRadius: '32px', transition: '0.5s',
-                                        boxShadow: isHeavier ? 'none' : `0 20px 50px ${card.accent}33`,
-                                        transform: isHeavier ? 'scale(0.95)' : 'scale(1)',
-                                        opacity: isHeavier ? 0.7 : 1
-                                    }}>
-                                        <div style={{
-                                            width: '80px', height: '80px', margin: '0 auto 24px',
-                                            background: card.accent, borderRadius: '24px',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: card.id === 'A' ? '#fff' : '#000',
-                                            boxShadow: `0 10px 25px ${card.accent}66`
-                                        }}>
-                                            {card.icon}
-                                        </div>
-                                        <h2 style={{ fontSize: '1.75rem', fontWeight: '950', letterSpacing: '4px', color: '#fff', marginBottom: '24px' }}>{card.name}</h2>
-
-                                        <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <div style={{ fontSize: '2.5rem', fontWeight: '950', color: '#fff', letterSpacing: '-2px' }}>
-                                                {total?.toLocaleString() || 0}
-                                            </div>
-                                            <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '2px' }}>POOL VOLUME</p>
-                                        </div>
-
-                                        <div style={{ marginTop: '24px', fontSize: '0.7rem', fontWeight: '950', color: isHeavier ? 'var(--rose)' : 'var(--emerald)', letterSpacing: '2px' }}>
-                                            {isHeavier ? 'CRITICAL RISK' : 'OPTIMIZED PROFIT'}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+            {/* Game Grid */}
+            <div style={{ position: 'relative', zIndex: 1, padding: '0 8px' }}>
+                {isLoading ? (
+                    <div className="flex-center" style={{ height: '300px', flexDirection: 'column', gap: '16px' }}>
+                        <div className="loader" style={{ borderTopColor: 'var(--primary)' }} />
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '2px' }}>LOADING EXPERIENCES...</p>
                     </div>
                 ) : (
-                    <div className="animate-fade-in">
-                        {/* Lucky Color - Radiant Rainbow Grid */}
-                        <div className="glass-panel glass-vibrant" style={{ padding: '60px 40px', background: 'var(--bg-secondary)', borderRadius: '32px', marginBottom: '48px', border: '1px solid var(--glass-border)' }}>
-                            <p style={{ fontSize: '0.8rem', fontWeight: '950', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '48px', letterSpacing: '6px' }}>SPECTRUM VECTOR</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                                <button onClick={() => placeBet('green')} style={{ height: '140px', background: 'linear-gradient(135deg, #22c55e 0%, #064e3b 100%)', border: 'none', borderRadius: '24px', boxShadow: '0 20px 40px rgba(34, 197, 94, 0.3)', transition: '0.3s' }} className="flex-center">
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>GREEN</p>
-                                        <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', fontWeight: '950' }}>2.0X</p>
-                                    </div>
-                                </button>
-                                <button onClick={() => placeBet('red')} style={{ height: '140px', background: 'linear-gradient(135deg, #f43f5e 0%, #9f1239 100%)', border: 'none', borderRadius: '24px', boxShadow: '0 20px 40px rgba(244, 63, 94, 0.3)', transition: '0.3s' }} className="flex-center">
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>RED</p>
-                                        <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', fontWeight: '950' }}>2.0X</p>
-                                    </div>
-                                </button>
-                                <button onClick={() => placeBet('violet')} style={{ height: '140px', background: 'linear-gradient(135deg, #a855f7 0%, #6b21a8 100%)', border: 'none', borderRadius: '24px', boxShadow: '0 20px 40px rgba(168, 85, 247, 0.3)', transition: '0.3s' }} className="flex-center">
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', letterSpacing: '1px' }}>VIOLET</p>
-                                        <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', fontWeight: '950' }}>4.5X</p>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
 
-                        {/* Trend Log - Radiant Tags */}
-                        <div className="glass-panel" style={{ padding: '32px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: '950', marginBottom: '24px', letterSpacing: '4px', textAlign: 'center', color: 'var(--text-muted)' }}>OPERATIONAL TRENDS</h4>
-                            <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px', justifyContent: 'center' }}>
-                                {[1, 2, 3, 4, 5, 6, 7, 8].map(h => (
-                                    <div key={h} style={{
-                                        minWidth: '48px', height: '48px', borderRadius: '50%',
-                                        background: h % 2 === 0 ? 'var(--emerald)' : 'var(--rose)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: `0 0 15px ${h % 2 === 0 ? 'var(--emerald)' : 'var(--rose)'}44`,
-                                        color: '#fff', fontWeight: '950'
+                        {/* 1. CARD GAMES (Individual Play Cards) */}
+                        {predictions && predictions.length > 0 && (
+                            <div className="animate-slide-up">
+                                <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                    <div className="flex-center" style={{ gap: '8px' }}>
+                                        <Activity size={18} color="var(--rose)" className="animate-pulse" />
+                                        <h2 style={{ fontSize: '1.2rem', fontWeight: '950', color: '#fff', letterSpacing: '1px' }}>CARD GAMES</h2>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: 'bold' }}>{predictions.length} LIVE</span>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                                    {predictions.map((event: any, index: number) => {
+                                        const expires = new Date(event.expires_at);
+                                        const timeLeft = Math.max(0, expires.getTime() - Date.now());
+                                        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                                        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+                                        return (
+                                            <div key={event.id} className="animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+                                                <div className="glass-panel glass-vibrant" style={{
+                                                    borderRadius: '24px',
+                                                    border: '1px solid var(--glass-border)',
+                                                    overflow: 'hidden',
+                                                    position: 'relative',
+                                                    transition: 'transform 0.3s, box-shadow 0.3s',
+                                                    height: '100%',
+                                                    display: 'flex',
+                                                    flexDirection: 'column'
+                                                }}>
+                                                    {/* Game Image Area */}
+                                                    <div style={{
+                                                        height: '200px',
+                                                        background: 'linear-gradient(135deg, #dc2626 0%, #7c2d12 100%)',
+                                                        position: 'relative',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        borderBottom: '1px solid rgba(255,255,255,0.05)'
+                                                    }}>
+                                                        <div style={{
+                                                            position: 'absolute', top: '16px', right: '16px',
+                                                            background: 'var(--rose)', color: '#fff',
+                                                            fontSize: '0.6rem', fontWeight: '950', padding: '4px 10px',
+                                                            borderRadius: 'full', letterSpacing: '1px',
+                                                            boxShadow: '0 4px 10px rgba(244, 63, 94, 0.4)'
+                                                        }}>
+                                                            {hours}h {minutes}m LEFT
+                                                        </div>
+
+                                                        {/* Card Preview */}
+                                                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                                            <div style={{
+                                                                width: '70px', height: '95px', background: '#fff',
+                                                                borderRadius: '8px', display: 'flex', alignItems: 'center',
+                                                                justifyContent: 'center', fontSize: '3rem', fontWeight: '900',
+                                                                color: 'var(--primary)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                                                            }}>
+                                                                K
+                                                            </div>
+                                                            <span style={{ fontSize: '2rem', color: '#fff', fontWeight: '900' }}>vs</span>
+                                                            <div style={{
+                                                                width: '70px', height: '95px', background: '#fff',
+                                                                borderRadius: '8px', display: 'flex', alignItems: 'center',
+                                                                justifyContent: 'center', fontSize: '3rem', fontWeight: '900',
+                                                                color: 'var(--secondary)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                                                            }}>
+                                                                Q
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Content */}
+                                                    <div style={{ padding: '28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                        <h3 style={{ fontSize: '1.4rem', fontWeight: '950', color: '#fff', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+                                                            {event.question}
+                                                        </h3>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '8px' }}>
+                                                            Min Entry: <span style={{ color: 'var(--emerald)', fontWeight: 'bold' }}>{event.min_bet} FLOW</span>
+                                                        </p>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '32px', flex: 1 }}>
+                                                            Total Pool: <span style={{ color: '#fff', fontWeight: 'bold' }}>{((event.pool_1 || 0) + (event.pool_2 || 0)).toLocaleString()} FLOW</span>
+                                                        </p>
+
+                                                        <button
+                                                            onClick={() => setSelectedEvent(event)}
+                                                            className="btn"
+                                                            style={{
+                                                                width: '100%', height: '56px', borderRadius: '16px',
+                                                                background: 'var(--rose)', color: '#fff',
+                                                                fontSize: '0.9rem', fontWeight: '900',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'
+                                                            }}
+                                                        >
+                                                            PLAY NOW <Play size={18} fill="currentColor" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 2. STANDARD GAMES */}
+                        <div>
+                            <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', color: '#fff', letterSpacing: '1px' }}>ALL GAMES</h2>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+                                {games?.map((game: any, index: number) => (
+                                    <div key={game.id} className="animate-fade-in" style={{
+                                        animationDelay: `${index * 100}ms`
                                     }}>
-                                        {h * 4}
+                                        <div className="glass-panel glass-vibrant" style={{
+                                            borderRadius: '24px',
+                                            border: '1px solid var(--glass-border)',
+                                            overflow: 'hidden',
+                                            position: 'relative',
+                                            transition: 'transform 0.3s, box-shadow 0.3s',
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column'
+                                        }}>
+                                            {/* Game Image Area (Placeholder Gradient for now) */}
+                                            <div style={{
+                                                height: '200px',
+                                                background: index % 2 === 0 ? 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)' : 'linear-gradient(135deg, #4c1d95 0%, #0f172a 100%)',
+                                                position: 'relative',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                borderBottom: '1px solid rgba(255,255,255,0.05)'
+                                            }}>
+                                                {game.status === 'active' && (
+                                                    <div style={{
+                                                        position: 'absolute', top: '16px', right: '16px',
+                                                        background: 'var(--emerald)', color: '#fff',
+                                                        fontSize: '0.6rem', fontWeight: '950', padding: '4px 10px',
+                                                        borderRadius: 'full', letterSpacing: '1px',
+                                                        boxShadow: '0 4px 10px rgba(16, 185, 129, 0.4)'
+                                                    }}>
+                                                        LIVE
+                                                    </div>
+                                                )}
+                                                {game.status === 'coming_soon' && (
+                                                    <div style={{
+                                                        position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
+                                                        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        zIndex: 10
+                                                    }}>
+                                                        <div className="badge-gold" style={{ border: '1px solid var(--text-dim)', color: 'var(--text-dim)' }}>COMING SOON</div>
+                                                    </div>
+                                                )}
+
+                                                {/* Icon Placeholder since we assume limited assets initially */}
+                                                <Trophy size={64} color="rgba(255,255,255,0.1)" strokeWidth={1} />
+                                            </div>
+
+                                            {/* Content */}
+                                            <div style={{ padding: '28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                <h3 style={{ fontSize: '1.4rem', fontWeight: '950', color: '#fff', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+                                                    {game.title}
+                                                </h3>
+                                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '32px', flex: 1 }}>
+                                                    {game.description}
+                                                </p>
+
+                                                {game.status === 'active' ? (
+                                                    <Link href={game.route_path} className="btn" style={{
+                                                        width: '100%', height: '56px', borderRadius: '16px',
+                                                        background: 'var(--primary)', color: '#000',
+                                                        fontSize: '0.9rem', fontWeight: '900',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'
+                                                    }}>
+                                                        PLAY NOW <Play size={18} fill="currentColor" />
+                                                    </Link>
+                                                ) : (
+                                                    <button disabled className="btn" style={{
+                                                        width: '100%', height: '56px', borderRadius: '16px',
+                                                        background: 'rgba(255,255,255,0.05)', color: 'var(--text-dim)',
+                                                        fontSize: '0.9rem', fontWeight: '900',
+                                                        cursor: 'not-allowed', border: '1px solid rgba(255,255,255,0.05)'
+                                                    }}>
+                                                        LOCKED
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
+
                     </div>
                 )}
             </div>
 
-            {/* Platform Integrity */}
-            <div style={{ marginTop: '56px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                <div className="flex-center" style={{ gap: '12px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '950', letterSpacing: '2px' }}>
-                    <ShieldCheck size={18} color="var(--emerald)" />
-                    <span>PROFESSIONAL GRADE ENCRYPTION ACTIVE</span>
+            {/* Betting Modal */}
+            {selectedEvent && (
+                <div
+                    className="modal-overlay flex-center"
+                    style={{ zIndex: 1000, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)' }}
+                    onClick={() => setSelectedEvent(null)}
+                >
+                    <div
+                        className="glass-panel animate-scale-up"
+                        style={{ width: '95%', maxWidth: '500px', borderRadius: '24px', background: '#000', border: '1px solid #333', overflow: 'hidden' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <PredictionCard event={selectedEvent} user={user} onClose={() => setSelectedEvent(null)} />
+                    </div>
                 </div>
+            )}
+        </div>
+    );
+}
+
+function PredictionCard({ event, user, onClose }: { event: any, user: any, onClose: () => void }) {
+    const queryClient = useQueryClient();
+    const expires = new Date(event.expires_at);
+    const timeLeft = Math.max(0, expires.getTime() - Date.now());
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+    const betMutation = useMutation({
+        mutationFn: async ({ amount, choice }: { amount: number, choice: string }) => {
+            const res = await fetch('/api/game/prediction/bet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_id: event.id,
+                    user_id: user.id,
+                    amount,
+                    choice
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Bet failed');
+            return data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['active-predictions'] });
+            onClose();
+            window.location.reload();
+            alert(`BET PLACED! Balance: ${data.newBalance}`);
+        },
+        onError: (err: any) => alert(err.message)
+    });
+
+    const handleBet = (amount: number, choice: 'option_1' | 'option_2') => {
+        if (confirm(`Confirm ${amount} FLOW bet on ${choice === 'option_1' ? 'KING' : 'QUEEN'}?`)) {
+            betMutation.mutate({ amount, choice });
+        }
+    };
+
+    return (
+        <div style={{ position: 'relative' }}>
+            {betMutation.isPending && (
+                <div className="flex-center" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, flexDirection: 'column' }}>
+                    <div className="loader" />
+                    <p style={{ marginTop: '16px', fontSize: '0.8rem', color: 'var(--gold)' }}>PLACING BET...</p>
+                </div>
+            )}
+
+            {/* Header */}
+            <div style={{ padding: '24px', textAlign: 'center', borderBottom: '1px solid #222', position: 'relative' }}>
+                <button
+                    onClick={onClose}
+                    style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                >
+                    <X size={24} />
+                </button>
+                <div className="flex-center" style={{ gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ width: '8px', height: '8px', background: 'var(--rose)', borderRadius: '50%', boxShadow: '0 0 10px var(--rose)' }} className="animate-pulse" />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--rose)', fontWeight: '900', letterSpacing: '1px' }}>ENDING IN {hours}h {minutes}m</span>
+                </div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>{event.question}</h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Min Entry: <span style={{ color: 'var(--emerald)' }}>{event.min_bet} FLOW</span></p>
+            </div>
+
+            {/* Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr' }}>
+                {/* KING SIDE */}
+                <div style={{ padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '140px', height: '190px', position: 'relative', marginBottom: '20px', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(59, 130, 246, 0.3)' }}>
+                        <Image
+                            src="/assets/king.png"
+                            alt="King Card"
+                            fill
+                            style={{ objectFit: 'cover' }}
+                        />
+                    </div>
+                    <span style={{ fontSize: '1rem', fontWeight: '900', color: 'var(--primary)', marginBottom: '20px' }}>KING</span>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '12px' }}>
+                        {[10, 50, 100].map(amt => (
+                            <button
+                                key={amt}
+                                onClick={() => handleBet(amt, 'option_1')}
+                                className="btn"
+                                style={{ padding: '12px 20px', background: 'var(--primary)', color: '#000', borderRadius: '12px', fontWeight: '900', fontSize: '0.85rem' }}
+                            >
+                                BUY {amt}
+                            </button>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>POOL: {(event.pool_1 || 0).toLocaleString()}</p>
+                </div>
+
+                <div style={{ width: '1px', background: '#222' }} />
+
+                {/* QUEEN SIDE */}
+                <div style={{ padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '140px', height: '190px', position: 'relative', marginBottom: '20px', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(236, 72, 153, 0.3)' }}>
+                        <Image
+                            src="/assets/queen.png"
+                            alt="Queen Card"
+                            fill
+                            style={{ objectFit: 'cover' }}
+                        />
+                    </div>
+                    <span style={{ fontSize: '1rem', fontWeight: '900', color: 'var(--secondary)', marginBottom: '20px' }}>QUEEN</span>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '12px' }}>
+                        {[10, 50, 100].map(amt => (
+                            <button
+                                key={amt}
+                                onClick={() => handleBet(amt, 'option_2')}
+                                className="btn"
+                                style={{ padding: '12px 20px', background: 'var(--secondary)', color: '#000', borderRadius: '12px', fontWeight: '900', fontSize: '0.85rem' }}
+                            >
+                                BUY {amt}
+                            </button>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>POOL: {(event.pool_2 || 0).toLocaleString()}</p>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', textAlign: 'center', borderTop: '1px solid #222' }}>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>TOTAL POOL: <span style={{ color: '#fff', fontWeight: 'bold' }}>{((event.pool_1 || 0) + (event.pool_2 || 0)).toLocaleString()} FLOW</span></p>
             </div>
         </div>
     );
