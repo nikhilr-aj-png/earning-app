@@ -33,8 +33,19 @@ export async function GET(request: Request) {
 
         if (error) throw error;
 
-        // If no settings exist, return defaults but don't save yet
-        return NextResponse.json(settings || DEFAULT_SETTINGS);
+        if (!settings) {
+            console.log("Config requested but missing. Initializing defaults...");
+            const { data: newSettings, error: createError } = await supabaseAdmin
+                .from('automation_settings')
+                .insert([DEFAULT_SETTINGS])
+                .select()
+                .single();
+
+            if (createError) throw new Error("Failed to auto-seed configuration: " + createError.message);
+            return NextResponse.json(newSettings);
+        }
+
+        return NextResponse.json(settings);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

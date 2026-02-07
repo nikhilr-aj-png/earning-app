@@ -19,13 +19,34 @@ export async function POST(request: Request) {
 
         if (!profile?.is_admin) return NextResponse.json({ error: 'Limited Access: Admin Only' }, { status: 403 });
 
-        // 2. Fetch Automation Settings
-        const { data: settings, error: settingsError } = await supabaseAdmin
+        // 2. Fetch Automation Settings (Self-Healing)
+        let { data: settings, error: settingsError } = await supabaseAdmin
             .from('automation_settings')
             .select('*')
-            .single();
+            .maybeSingle();
 
-        if (settingsError || !settings) throw new Error("Automation settings not found");
+        if (settingsError) throw settingsError;
+
+        if (!settings) {
+            console.log("Automation settings missing. Initializing defaults...");
+            const { data: newSettings, error: createError } = await supabaseAdmin
+                .from('automation_settings')
+                .insert([{
+                    is_enabled: false,
+                    free_task_count: 5,
+                    premium_task_count: 5,
+                    free_reward: 50,
+                    premium_reward: 150,
+                    exp_h: '11',
+                    exp_m: '59',
+                    exp_p: 'PM'
+                }])
+                .select()
+                .single();
+
+            if (createError) throw new Error("Failed to auto-initialize settings: " + createError.message);
+            settings = newSettings;
+        }
         if (!settings.is_enabled) return NextResponse.json({ success: false, message: "Automation is disabled. Please activate it first." });
 
         // 3. PURGE EXPIRED MISSIONS (Always run first)
@@ -38,10 +59,6 @@ export async function POST(request: Request) {
 
         if (purgeError) console.error("Purge Error:", purgeError);
 
-        if (isManual) {
-            console.log("Manual Reset Triggered: Purging all quiz tasks for replenishment...");
-            await supabaseAdmin.from('tasks').delete().eq('type', 'quiz');
-        }
 
         // 4. DENSITY & WINDOW CHECK
         const { data: currentTasks, error: countError } = await supabaseAdmin
@@ -134,21 +151,33 @@ export async function POST(request: Request) {
         ${prompts.join('\n')}
         `;
 
-        const modelNames = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"];
+        const modelNames = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
         let responseText = "";
         let lastError = "";
+        let isRateLimited = false;
+
         for (const modelName of modelNames) {
             try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                // Add a small delay between retries to avoid immediate quota hit
-                if (lastError) await new Promise(r => setTimeout(r, 1000));
+                // If the previous model hit a 429, wait 5 seconds before trying the next one
+                if (isRateLimited) {
+                    console.log("Rate limit detected. Sleeping 5s before fallback...");
+                    await new Promise(r => setTimeout(r, 5000));
+                }
 
+                const model = genAI.getGenerativeModel({ model: modelName });
                 const result = await model.generateContent(compositePrompt);
                 responseText = result.response.text();
                 if (responseText) break;
             } catch (err: any) {
                 lastError = err.message || "Unknown Gemini Error";
                 console.warn(`Model ${modelName} failed: ${lastError}`);
+
+                if (lastError.includes("429") || lastError.toLowerCase().includes("quota") || lastError.toLowerCase().includes("busy")) {
+                    isRateLimited = true;
+                } else {
+                    // If it's not a rate limit, don't wait as long for fallback
+                    isRateLimited = false;
+                }
                 continue;
             }
         }
@@ -182,6 +211,18 @@ export async function POST(request: Request) {
             .select();
 
         if (insertError) throw new Error("Database Insertion Failed: " + JSON.stringify(insertError));
+
+        // 6. Manual Cleanup (Atomic)
+        if (isManual) {
+            console.log("Atomic Sync: AI Success. Purging old quizzes to replace with new batch...");
+            // Delete all OLD quizzes that are NOT the ones we just inserted
+            const insertedIds = inserted?.map((t: any) => t.id) || [];
+            await supabaseAdmin
+                .from('tasks')
+                .delete()
+                .eq('type', 'quiz')
+                .not('id', 'in', `(${insertedIds.join(',')})`);
+        }
 
         // 6. Finalize Sync
         await supabaseAdmin.from('automation_settings').update({ last_sync: now }).eq('id', settings.id);

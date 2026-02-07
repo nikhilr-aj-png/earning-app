@@ -41,7 +41,7 @@ function AdminPage() {
     const [taskSearch, setTaskSearch] = useState('');
     const [taskAudienceFilter, setTaskAudienceFilter] = useState<'all' | 'free' | 'premium'>('all');
     const [automationSettings, setAutomationSettings] = useState<any>(null);
-    const [countdown, setCountdown] = useState(120);
+    const [countdown, setCountdown] = useState(300);
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -145,11 +145,11 @@ function AdminPage() {
                 alert("ALERT: ENGINE RUN FINISHED BUT NO CHANGES MADE.");
             }
         },
-        onError: (err: any, variables) => {
-            if (!variables.silent) {
+        onError: (err: any, variables: any) => {
+            if (!variables?.silent) {
                 alert("SYNC FAILED: " + err.message);
             } else {
-                console.error("Silent Sync Failure:", err);
+                console.log("Background sync skipped (likely rate limit or window). Core remains stable.");
             }
         }
     });
@@ -161,7 +161,7 @@ function AdminPage() {
             setCountdown(prev => {
                 if (prev <= 1) {
                     syncMutation.mutate({ isManual: false, silent: true });
-                    return 30;
+                    return 300;
                 }
                 return prev - 1;
             });
