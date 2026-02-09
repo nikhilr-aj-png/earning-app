@@ -276,29 +276,43 @@ export async function POST(request: Request) {
 
         if (!Array.isArray(generated) || generated.length === 0) throw new Error("Generation resulted in empty list.");
 
-        // CRITICAL: Strict Balancing Guard
-        // Even if AI over-generates, we filter and slice to EXACTLY the delta needed.
-        const balancedFree = generated.filter((t: any) => t.target_audience === 'free').slice(0, freeDelta);
-        const balancedPremium = generated.filter((t: any) => t.target_audience === 'premium' || t.target_audience === 'pref').slice(0, premiumDelta);
-        const balancedPool = [...balancedFree, ...balancedPremium];
+        const tasksToInsert = [];
 
-        trace.push(`BALANCING: Received ${generated.length} from source. Filtered to ${balancedFree.length} Free / ${balancedPremium.length} Premium.`);
+        // Distribute items into insertion queue strictly based on deltas
+        const availableFree = generated.filter((t: any) => t.target_audience === 'free');
+        const availablePremium = generated.filter((t: any) => t.target_audience === 'premium' || t.target_audience === 'pref');
 
-        const tasksToInsert = balancedPool.map((t: any) => {
-            const isPremium = t.target_audience === 'premium';
-            return {
-                title: t.title?.substring(0, 40) || "Untitled Mission",
-                // Force exact reward from settings to avoid AI drift
-                reward: isPremium ? (settings.premium_reward || 150) : (settings.free_reward || 50),
+        trace.push(`DISTRIBUTION: AI returned ${availableFree.length} Free / ${availablePremium.length} Premium.`);
+
+        // 1. Replenish FREE
+        for (let i = 0; i < freeDelta; i++) {
+            const template = availableFree[i] || (responseText === "" ? generated[i % generated.length] : availableFree[0]);
+            tasksToInsert.push({
+                title: (i > availableFree.length - 1 ? `PRO: ${template.title}` : template.title).substring(0, 40),
+                reward: settings.free_reward || 50,
                 type: "quiz",
-                target_audience: isPremium ? 'premium' : 'free',
-                questions: t.questions || [],
-                url: null,
+                target_audience: 'free',
+                questions: template.questions || [],
                 expires_at: expires_at,
                 cooldown: 1440
-            };
-        });
-        trace.push(`INSERT: Prepared ${tasksToInsert.length} tasks for DB`);
+            });
+        }
+
+        // 2. Replenish PREMIUM
+        for (let i = 0; i < premiumDelta; i++) {
+            const template = availablePremium[i] || (responseText === "" ? generated[availableFree.length + (i % (generated.length - availableFree.length))] : availablePremium[0]);
+            tasksToInsert.push({
+                title: (i > availablePremium.length - 1 ? `EXPERT: ${template.title}` : template.title).substring(0, 40),
+                reward: settings.premium_reward || 150,
+                type: "quiz",
+                target_audience: 'premium',
+                questions: template.questions || [],
+                expires_at: expires_at,
+                cooldown: 1440
+            });
+        }
+
+        trace.push(`FINAL_INSERT_READY: Prepared exactly ${tasksToInsert.length} tasks (${freeDelta} Free, ${premiumDelta} Premium)`);
 
         console.log(`Inserting ${tasksToInsert.length} tasks...`);
         const { data: inserted, error: insertError } = await supabaseAdmin

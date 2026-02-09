@@ -20,6 +20,7 @@
   --sapphire: #3b82f6;
   --sapphire-glow: rgba(59, 130, 246, 0.2);
   --rose: #f43f5e;
+  --secondary: #f43f5e;
   --violet: #a855f7;
 
   /* Gradients */
@@ -39,7 +40,7 @@
   --radius-lg: 32px;
 
   --transition: cubic-bezier(0.4, 0, 0.2, 1);
-  --max-width: 99%;
+  --max-width: 100%;
 }
 
 * {
@@ -49,6 +50,15 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body {
+  overflow-x: hidden !important;
+  width: 100%;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: var(--bg-primary);
   background-image:
@@ -56,7 +66,6 @@ body {
     radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
   color: var(--text-main);
   font-family: var(--font-inter), sans-serif;
-  overflow-x: hidden;
   line-height: 1.6;
   display: flex;
   flex-direction: column;
@@ -112,12 +121,13 @@ h4,
 
 /* Responsive Container */
 main {
-  width: 99%;
+  width: 100%;
   max-width: var(--max-width);
   min-height: 100vh;
   position: relative;
   padding-bottom: 120px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 @media (min-width: 1024px) {
@@ -334,13 +344,25 @@ a {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scale-up {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .animate-scale-up {
@@ -348,17 +370,38 @@ a {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes loading-progress {
-  0% { width: 0%; }
-  100% { width: 100%; }
+  0% {
+    width: 0%;
+  }
+
+  100% {
+    width: 100%;
+  }
 }
 
 @keyframes pulse-glow {
-  0% { opacity: 0.5; filter: blur(2px) brightness(1); }
-  50% { opacity: 0.8; filter: blur(4px) brightness(1.2); }
-  100% { opacity: 0.5; filter: blur(2px) brightness(1); }
+  0% {
+    opacity: 0.5;
+    filter: blur(2px) brightness(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    filter: blur(4px) brightness(1.2);
+  }
+
+  100% {
+    opacity: 0.5;
+    filter: blur(2px) brightness(1);
+  }
 }

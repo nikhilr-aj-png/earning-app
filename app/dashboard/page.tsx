@@ -137,63 +137,75 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '40px' }}>
                 {/* Performance Metrics */}
                 {/* Recent Activity Log */}
-                <div className="glass-panel" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #222', minHeight: '300px', display: 'flex', flexDirection: 'column' }}>
-                    <div className="flex-between" style={{ marginBottom: '16px' }}>
+                <div className="glass-panel" style={{ padding: '20px', borderRadius: '4px', border: '1px solid #222', display: 'flex', flexDirection: 'column' }}>
+                    <div className="flex-between" style={{ marginBottom: '12px' }}>
                         <div className="flex-center" style={{ gap: '8px' }}>
                             <div style={{ width: '4px', height: '12px', background: 'var(--primary)', borderRadius: '2px' }} />
-                            <h3 style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '2px', color: '#fff' }}>RECENT ACTIVITY</h3>
+                            <h3 style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '2px', color: '#fff' }}>RECENT ACTIVITY</h3>
                         </div>
-                        <History size={18} color="var(--text-dim)" />
+                        <History size={16} color="var(--text-dim)" />
                     </div>
 
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{
+                        flex: 1,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        gap: '8px'
+                    }}>
                         {transactions.length > 0 ? (
                             transactions.slice(0, 6).map((tx: any, index: number) => (
                                 <div key={tx.id || index} className="animate-fade-in" style={{
-                                    padding: '12px 16px',
+                                    padding: '10px',
                                     background: 'rgba(255,255,255,0.02)',
                                     border: '1px solid rgba(255,255,255,0.05)',
                                     borderRadius: '4px',
                                     display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    animationDelay: `${index * 50}ms`
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    gap: '4px',
+                                    animationDelay: `${index * 50}ms`,
+                                    position: 'relative',
+                                    minHeight: '66px',
+                                    overflow: 'hidden'
                                 }}>
-                                    <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
-                                        <div style={{
-                                            width: '32px',
-                                            height: '32px',
-                                            borderRadius: '4px',
-                                            background: tx.amount >= 0 ? 'rgba(52, 211, 153, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}>
-                                            {tx.type === 'earn' ? <Zap size={14} color="var(--primary)" /> : <Activity size={14} color="var(--text-dim)" />}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div style={{ width: '22px', height: '22px', borderRadius: '3px', background: 'rgba(52, 211, 153, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Zap size={10} color="var(--primary)" />
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#fff', letterSpacing: '0.5px' }}>
-                                                {tx.description.split('|')[1]?.trim() || tx.description.split(']')[1]?.trim() || tx.type.toUpperCase()}
-                                            </span>
-                                            <span style={{ fontSize: '0.55rem', color: 'var(--text-dim)', fontWeight: '600' }}>
-                                                {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {tx.type.toUpperCase()}
-                                            </span>
+                                        <div style={{
+                                            fontSize: '0.7rem',
+                                            fontWeight: '950',
+                                            color: tx.amount >= 0 ? 'var(--emerald)' : 'var(--rose)',
+                                            letterSpacing: '0.5px'
+                                        }}>
+                                            {tx.amount >= 0 ? '+' : ''}{tx.amount}
                                         </div>
                                     </div>
-                                    <div style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: '950',
-                                        color: tx.amount >= 0 ? 'var(--emerald)' : 'var(--rose)',
-                                        letterSpacing: '1px'
-                                    }}>
-                                        {tx.amount >= 0 ? '+' : ''}{tx.amount}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                        <div style={{
+                                            fontSize: '0.6rem',
+                                            fontWeight: '900',
+                                            color: '#fff',
+                                            letterSpacing: '0.2px',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            maxWidth: '100%'
+                                        }}>
+                                            {tx.description.includes('Result:')
+                                                ? tx.description.split('|')[1]?.trim() || tx.description.split(']')[1]?.trim()
+                                                : tx.type === 'earn' ? 'MISSION SUCCESS' : tx.description.split(']')[1]?.trim() || tx.type.toUpperCase()}
+                                        </div>
+                                        <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '700', textTransform: 'uppercase' }}>
+                                            {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {tx.type}
+                                        </span>
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="flex-center" style={{ flex: 1, flexDirection: 'column', gap: '12px', opacity: 0.3 }}>
-                                <History size={32} />
-                                <p style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT DATA DETECTED</p>
+                            <div className="flex-center" style={{ flex: 1, gridColumn: 'span 3', flexDirection: 'column', gap: '8px', opacity: 0.3, minHeight: '140px' }}>
+                                <History size={24} />
+                                <p style={{ fontSize: '0.6rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT DATA</p>
                             </div>
                         )}
                     </div>

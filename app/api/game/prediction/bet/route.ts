@@ -25,14 +25,34 @@ export async function POST(req: Request) {
         if (event.status !== 'active') return NextResponse.json({ error: 'Event is closed' }, { status: 400 });
         if (new Date(event.expires_at) < new Date()) return NextResponse.json({ error: 'Event has expired' }, { status: 400 });
 
+        // 1b. Check Bet Mode & Min Bet
+        const minBet = event.min_bet || 10;
+        const betMode = event.bet_mode || 'flexible';
+
+        if (betMode === 'fixed') {
+            if (amount !== minBet) {
+                return NextResponse.json({ error: `Fixed Bet Mode: You must bet exactly ${minBet} coins.` }, { status: 400 });
+            }
+        } else {
+            if (amount < minBet) {
+                return NextResponse.json({ error: `Minimum bet amount is ${minBet} coins.` }, { status: 400 });
+            }
+        }
+
         // 2. Check User Balance (Main Project)
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('coins')
+            .select('coins, is_premium')
             .eq('id', user_id)
             .single();
 
         if (profileError || !profile) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+        // 1c. Check Target Audience
+        if (event.target_audience === 'premium' && !profile.is_premium) {
+            return NextResponse.json({ error: 'This event is restricted to Premium users.' }, { status: 403 });
+        }
+
         if (profile.coins < amount) return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
 
         // 3. Deduct Balance (Main Project)

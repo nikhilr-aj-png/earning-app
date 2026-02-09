@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         const { error: updateError } = await supabaseGame
             .from('prediction_events')
             .update({
-                status: 'completed',
+                status: 'resolved',
                 winner: winner
             })
             .eq('id', event_id);

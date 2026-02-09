@@ -9,12 +9,15 @@ export async function POST(req: Request) {
         // Defaults if not provided
         const {
             question = "Which card winner?",
+            option_1_label = "KING",
             option_1_image = "/assets/cards/king.png",
+            option_2_label = "QUEEN",
             option_2_image = "/assets/cards/queen.png",
             min_bet = 10,
             target_audience = "all",
-            expiry_minutes = 60, // Default 1 hour
-            resolution_method = "auto"
+            expiry_minutes = 60,
+            resolution_method = "auto",
+            bet_mode = "flexible"
         } = body;
 
         // Calculate Expiry Timestamp
@@ -24,12 +27,15 @@ export async function POST(req: Request) {
             .from('prediction_events')
             .insert([{
                 question,
+                option_1_label,
                 option_1_image,
+                option_2_label,
                 option_2_image,
                 min_bet,
                 target_audience,
                 expires_at,
-                resolution_method
+                resolution_method,
+                bet_mode
             }])
             .select()
             .single();

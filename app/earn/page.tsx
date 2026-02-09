@@ -124,8 +124,8 @@ export default function EarnPage() {
                 </div>
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                    gap: '24px'
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gap: '12px'
                 }}>
                     {tasks.filter(t => !t.is_completed).length > 0 ? (
                         tasks.filter(t => !t.is_completed).map((task: Task) => (
@@ -172,20 +172,26 @@ export default function EarnPage() {
                 </div>
             )}
 
-
             {activeQuiz && (
                 <QuizModal
                     task={activeQuiz}
                     onClose={() => setActiveQuiz(null)}
                     onComplete={(id, correct, total) => completeTaskMutation.mutate({ taskId: id, correctCount: correct, totalCount: total })}
                     isSubmitting={completeTaskMutation.isPending}
+                    mutationData={completeTaskMutation.data}
                 />
             )}
         </div>
     );
 }
 
-function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, onClose: () => void, onComplete: (id: string, correct: number, total: number) => void, isSubmitting: boolean }) {
+function QuizModal({ task, onClose, onComplete, isSubmitting, mutationData }: {
+    task: Task,
+    onClose: () => void,
+    onComplete: (id: string, correct: number, total: number) => void,
+    isSubmitting: boolean,
+    mutationData?: any
+}) {
     const [currentIdx, setCurrentIdx] = useState(0);
     const [timeLeft, setTimeLeft] = useState(15);
     const [answers, setAnswers] = useState<number[]>([]);
@@ -235,8 +241,8 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
     return (
         <div className="modal-overlay flex-center" style={{ zIndex: 2000, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(20px)' }}>
             <div className="animate-scale-up" style={{
-                width: '75%', maxWidth: '600px',
-                maxHeight: '80vh', overflowY: 'auto',
+                width: '90%', maxWidth: '1400px',
+                maxHeight: '85vh', overflowY: 'auto',
                 background: '#020617',
                 border: '1px solid rgba(16, 185, 129, 0.2)',
                 padding: '32px',
@@ -248,10 +254,6 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '40px', height: '40px', borderTop: '2px solid var(--emerald)', borderLeft: '2px solid var(--emerald)', opacity: 0.5 }} />
                 <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', borderTop: '2px solid var(--emerald)', borderRight: '2px solid var(--emerald)', opacity: 0.5 }} />
 
-                {/* Close Button */}
-                <button onClick={onClose} style={{ position: 'absolute', top: '32px', right: '32px', background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', zIndex: 10 }}>
-                    <X size={24} />
-                </button>
 
                 {status === 'playing' ? (
                     <>
@@ -361,8 +363,12 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
                                 <span style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '950' }}>{correctCount} / {task.questions!.length} BLOCKS</span>
                             </div>
                             <div className="flex-between">
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>ESTIMATED FLOW</span>
-                                <span style={{ fontSize: '1.2rem', color: 'var(--emerald)', fontWeight: '950' }}>+{task.reward.toLocaleString()}</span>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '2px' }}>FLOW ACQUIRED</span>
+                                <span style={{ fontSize: '1.2rem', color: 'var(--emerald)', fontWeight: '950' }}>
+                                    +{mutationData?.reward
+                                        ? mutationData.reward.toLocaleString()
+                                        : Math.ceil(task.reward * (correctCount / task.questions!.length)).toLocaleString()}
+                                </span>
                             </div>
                         </div>
 
@@ -376,7 +382,7 @@ function QuizModal({ task, onClose, onComplete, isSubmitting }: { task: Task, on
                             letterSpacing: '4px',
                             width: '100%',
                             boxShadow: '0 20px 40px rgba(255,255,255,0.1)'
-                        }}>TERMINATE SESSION</button>
+                        }}>CLAIM FLOW</button>
                     </div>
                 )}
             </div>
@@ -411,19 +417,18 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
 
     return (
         <div className="glass-panel" style={{
-            padding: 'var(--card-padding, 32px)',
+            padding: '16px',
             border: task.is_completed ? '1px solid #111' : '1px solid rgba(16, 185, 129, 0.2)',
-            borderRadius: '40px',
+            borderRadius: '24px',
             background: task.is_completed
                 ? 'rgba(255,255,255,0.01)'
                 : 'linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(2, 6, 23, 0.95) 100%)',
-            display: 'flex', flexDirection: 'column', gap: '32px',
+            display: 'flex', flexDirection: 'column', gap: '16px',
             transition: 'all 0.4s var(--transition)',
             position: 'relative',
             overflow: 'hidden',
             opacity: task.is_completed || isExpired ? 0.6 : 1,
             boxShadow: task.is_completed ? 'none' : '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(16, 185, 129, 0.05)',
-            minHeight: '440px'
         }}>
             {/* Animated Liquid Background Overlay */}
             {!task.is_completed && !isExpired && (
@@ -454,17 +459,17 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
             <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '28px', height: '100%' }}>
                 <div className="flex-between" style={{ alignItems: 'flex-start' }}>
                     <div style={{
-                        width: '72px', height: '72px',
-                        borderRadius: '24px',
+                        width: '44px', height: '44px',
+                        borderRadius: '12px',
                         background: 'rgba(255,255,255,0.02)',
                         border: '1px solid rgba(255,255,255,0.05)',
                         color: task.type === 'quiz' ? 'var(--primary)' : '#fff',
                         boxShadow: 'inset 0 0 20px rgba(255,255,255,0.01)'
                     }} className="flex-center">
-                        {task.type === "ad" && <PlayCircle size={32} strokeWidth={1} />}
-                        {task.type === "visit" && <ExternalLink size={32} strokeWidth={1} />}
-                        {task.type === "checkin" && <CheckCircle2 size={32} strokeWidth={1} />}
-                        {task.type === "quiz" && <Zap size={32} strokeWidth={1} fill="var(--primary)" fillOpacity={0.1} />}
+                        {task.type === "ad" && <PlayCircle size={20} strokeWidth={1} />}
+                        {task.type === "visit" && <ExternalLink size={20} strokeWidth={1} />}
+                        {task.type === "checkin" && <CheckCircle2 size={20} strokeWidth={1} />}
+                        {task.type === "quiz" && <Zap size={20} strokeWidth={1} fill="var(--primary)" fillOpacity={0.1} />}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
@@ -514,28 +519,28 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                     </div>
 
                     <h3 style={{
-                        fontSize: '1.4rem',
+                        fontSize: '1rem',
                         fontWeight: '950',
                         color: '#fff',
-                        letterSpacing: '-1px',
-                        marginBottom: '16px',
+                        letterSpacing: '-0.5px',
+                        marginBottom: '8px',
                         lineHeight: 1.1,
                         textShadow: '0 2px 10px rgba(0,0,0,0.3)'
                     }}>
                         {task.title.toUpperCase()}
                     </h3>
 
-                    <div className="flex" style={{ alignItems: 'baseline', gap: '8px' }}>
+                    <div className="flex" style={{ alignItems: 'baseline', gap: '4px' }}>
                         <span style={{
                             color: 'var(--emerald)',
-                            fontSize: '2.8rem',
+                            fontSize: '1.6rem',
                             fontWeight: '950',
-                            letterSpacing: '-3px',
+                            letterSpacing: '-1px',
                             lineHeight: 1,
                             textShadow: '0 0 30px rgba(16, 185, 129, 0.2)'
                         }}>{task.reward.toLocaleString()}</span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: 'var(--text-dim)', fontSize: '0.6rem', fontWeight: '950', letterSpacing: '2px' }}>FLOW ACQUISITION</span>
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.5rem', fontWeight: '950', letterSpacing: '1px' }}>FLOW</span>
                         </div>
                     </div>
                 </div>
@@ -546,18 +551,18 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                     className="btn"
                     style={{
                         width: '100%',
-                        height: '72px',
-                        fontSize: '0.8rem',
-                        borderRadius: '20px',
+                        height: '44px',
+                        fontSize: '0.65rem',
+                        borderRadius: '12px',
                         background: (task.is_locked || isExpired || task.is_completed) ? 'rgba(255,255,255,0.02)' : '#fff',
                         color: (task.is_locked || isExpired || task.is_completed) ? 'rgba(255,255,255,0.1)' : '#000',
                         fontWeight: '950',
-                        letterSpacing: '4px',
+                        letterSpacing: '2px',
                         marginTop: 'auto',
                         border: (task.is_locked || isExpired || task.is_completed) ? '1px solid rgba(255,255,255,0.05)' : 'none',
                         cursor: (task.is_locked || isExpired || task.is_completed) ? 'not-allowed' : 'pointer',
                         transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: (task.is_locked || isExpired || task.is_completed) ? 'none' : '0 15px 35px rgba(255,255,255,0.1)'
+                        boxShadow: (task.is_locked || isExpired || task.is_completed) ? 'none' : '0 10px 25px rgba(255,255,255,0.1)'
                     }}
                     onMouseEnter={(e) => {
                         if (!isCompleting && !task.is_completed && !isExpired && !task.is_locked) {

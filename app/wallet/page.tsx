@@ -6,11 +6,11 @@ import { useUser } from "@/context/UserContext";
 
 export interface Transaction {
     id: string;
-    userId: string;
+    user_id: string;
     amount: number;
-    type: 'earn' | 'game_win' | 'game_loss' | 'withdraw' | 'bonus';
+    type: 'earn' | 'game_win' | 'game_loss' | 'withdraw' | 'bonus' | 'deposit' | 'premium_upgrade';
     description: string;
-    createdAt: string;
+    created_at: string;
 }
 
 import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap, Shield } from "lucide-react";
@@ -34,7 +34,7 @@ export default function WalletPage() {
     const { data: userProfile, refetch: refetchProfile } = useQuery({
         queryKey: ['user-profile-upi', user?.id],
         queryFn: async () => {
-            const res = await fetch('/api/user/profile', { headers: { 'x-user-id': user?.id || '' } });
+            const res = await fetch('/api/user', { headers: { 'x-user-id': user?.id || '' } });
             return res.json();
         },
         enabled: !!user
@@ -306,41 +306,43 @@ export default function WalletPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {transactions.length === 0 ? (
+                    {transactions.filter(tx => tx.type === 'deposit' || tx.type === 'withdraw').length === 0 ? (
                         <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', border: '1px solid #222', borderRadius: '4px' }}>
                             <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT OPERATIONS DETECTED.</p>
                         </div>
                     ) : (
-                        transactions.map((tx: Transaction) => (
-                            <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)' }}>
-                                <div className="flex-center" style={{ gap: '20px' }}>
-                                    <div style={{
-                                        padding: '12px', borderRadius: '8px',
-                                        background: tx.amount > 0 ? 'var(--emerald-glow)' : 'var(--glass-bg)',
-                                        border: tx.amount > 0 ? '1px solid var(--emerald)' : '1px solid var(--glass-border)',
-                                        color: tx.amount > 0 ? 'var(--emerald)' : '#fff',
-                                        boxShadow: tx.amount > 0 ? '0 0 15px rgba(16, 185, 129, 0.1)' : 'none'
-                                    }}>
-                                        {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={2} /> : <ArrowUpRight size={20} strokeWidth={2} />}
+                        transactions
+                            .filter(tx => tx.type === 'deposit' || tx.type === 'withdraw')
+                            .map((tx: Transaction) => (
+                                <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)' }}>
+                                    <div className="flex-center" style={{ gap: '20px' }}>
+                                        <div style={{
+                                            padding: '12px', borderRadius: '8px',
+                                            background: tx.amount > 0 ? 'var(--emerald-glow)' : 'var(--glass-bg)',
+                                            border: tx.amount > 0 ? '1px solid var(--emerald)' : '1px solid var(--glass-border)',
+                                            color: tx.amount > 0 ? 'var(--emerald)' : '#fff',
+                                            boxShadow: tx.amount > 0 ? '0 0 15px rgba(16, 185, 129, 0.1)' : 'none'
+                                        }}>
+                                            {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={2} /> : <ArrowUpRight size={20} strokeWidth={2} />}
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '0.85rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px', color: '#fff' }}>{tx.description.toUpperCase()}</h4>
+                                            <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.created_at)}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 style={{ fontSize: '0.85rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px', color: '#fff' }}>{tx.description.toUpperCase()}</h4>
-                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.createdAt)}</p>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{
+                                            fontSize: '1.25rem', fontWeight: '950',
+                                            color: tx.amount > 0 ? 'var(--emerald)' : '#fff', letterSpacing: '-1px'
+                                        }}>
+                                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                        </span>
+                                        <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: '900', marginTop: '2px' }}>
+                                            ₹{(Math.abs(tx.amount) / 10).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </p>
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <span style={{
-                                        fontSize: '1.25rem', fontWeight: '950',
-                                        color: tx.amount > 0 ? 'var(--emerald)' : '#fff', letterSpacing: '-1px'
-                                    }}>
-                                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
-                                    </span>
-                                    <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: '900', marginTop: '2px' }}>
-                                        ₹{(Math.abs(tx.amount) / 10).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </p>
-                                </div>
-                            </div>
-                        ))
+                            ))
                     )}
                 </div>
             </div>

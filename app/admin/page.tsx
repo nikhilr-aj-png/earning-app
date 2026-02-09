@@ -32,10 +32,12 @@ import {
 } from 'lucide-react';
 import Link from "next/link";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useToast } from "@/context/ToastContext";
 
 function AdminPage() {
     const { user, loading, refreshUser } = useUser();
-    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'automation' | 'financials' | 'arena' | 'games'>('stats');
+    const { showToast } = useToast();
+    const [view, setView] = useState<'stats' | 'users' | 'tasks' | 'automation' | 'withdrawals' | 'upi_requests' | 'gaming' | 'systems'>('stats');
     const [editingUser, setEditingUser] = useState<any>(null);
     const [userFilter, setUserFilter] = useState<'all' | 'free' | 'premium' | 'admin'>('all');
     const [editingTask, setEditingTask] = useState<any>(null);
@@ -44,6 +46,10 @@ function AdminPage() {
     const [automationSettings, setAutomationSettings] = useState<any>(null);
     const [countdown, setCountdown] = useState(60);
     const [retryCooldown, setRetryCooldown] = useState(0);
+    const [isPruning, setIsPruning] = useState(false);
+    const [isPruningPredictions, setIsPruningPredictions] = useState(false);
+    const [isPruningTransactions, setIsPruningTransactions] = useState(false);
+    const [isPruningActivities, setIsPruningActivities] = useState(false);
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -94,7 +100,7 @@ function AdminPage() {
         enabled: !!user,
     });
 
-    const { data: financialData, isLoading: financialsLoading } = useQuery({
+    const { data: financialData, isLoading: financialsLoading, isError: financialsError, error: financialRespError } = useQuery({
         queryKey: ['admin-financials'],
         queryFn: async () => {
             const res = await fetch('/api/admin/financials', { headers: { 'x-user-id': user?.id || '' } });
@@ -102,7 +108,7 @@ function AdminPage() {
             if (!res.ok) throw new Error(data.error || 'Failed to fetch financials');
             return data;
         },
-        enabled: !!user && view === 'financials',
+        enabled: !!user && (view === 'withdrawals' || view === 'upi_requests'),
     });
 
     const processWithdrawalMutation = useMutation({
@@ -125,6 +131,7 @@ function AdminPage() {
         }
     });
 
+
     const processUpiMutation = useMutation({
         mutationFn: async ({ targetUserId, action }: { targetUserId: string, action: 'approve' | 'reject' }) => {
             const res = await fetch('/api/admin/upi/process', {
@@ -145,86 +152,21 @@ function AdminPage() {
         }
     });
 
-    // Game Management State
-    const [showGameModal, setShowGameModal] = useState(false);
-    const [editingGame, setEditingGame] = useState<any>(null);
-    const [gameForm, setGameForm] = useState({ title: '', description: '', image_url: '', route_path: '', status: 'active', priority: 0 });
-
-    const { data: gamesList } = useQuery({
-        queryKey: ['admin-games'],
-        queryFn: async () => {
-            const res = await fetch('/api/admin/games/list');
-            const data = await res.json();
-            if (!Array.isArray(data)) return [];
-            return data;
-        },
-        enabled: view === 'games'
-    });
-
-    const createGameMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const res = await fetch('/api/admin/games/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Failed to create game');
-            }
-            return res.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-games'] });
-            setShowGameModal(false);
-            alert("GAME CREATED SUCCESSFULLY");
-        },
-        onError: (err: any) => alert(err.message)
-    });
-
-    const updateGameMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const res = await fetch('/api/admin/games/update', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Failed to update game');
-            }
-            return res.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-games'] });
-            setShowGameModal(false);
-            alert("GAME UPDATED SUCCESSFULLY");
-        },
-        onError: (err: any) => alert(err.message)
-    });
-
-    const deleteGameMutation = useMutation({
-        mutationFn: async (id: string) => {
-            await fetch(`/api/admin/games/delete?id=${id}`, { method: 'DELETE' });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-games'] });
-            alert("GAME DELETED");
-        }
-    });
-
     // PERDICTION SYSTEM STATE
     const [showPredictionModal, setShowPredictionModal] = useState(false);
     const [predictionForm, setPredictionForm] = useState({
         question: 'Which card winner?',
         option_1_label: 'KING',
-        option_1_image: '/assets/cards/king.png',
+        option_1_image: '/assets/king.png',
         option_2_label: 'QUEEN',
-        option_2_image: '/assets/cards/queen.png',
+        option_2_image: '/assets/queen.png',
         min_bet: 10,
         target_audience: 'all',
         expiry_minutes: 5,
-        resolution_method: 'auto'
+        resolution_method: 'auto',
+        bet_mode: 'flexible',
+        player_type: 'all',
+        manual_winner: 'option_1'
     });
 
     const { data: predictionEvents } = useQuery({
@@ -239,8 +181,9 @@ function AdminPage() {
             }
             return data;
         },
-        enabled: view === 'games'
+        enabled: view === 'gaming'
     });
+
 
     const createPredictionMutation = useMutation({
         mutationFn: async (payload: any) => {
@@ -279,19 +222,6 @@ function AdminPage() {
         onError: (err: any) => alert(`RESOLUTION FAILED: ${err.message}`)
     });
 
-    // Arena Controls
-    const arenaMutation = useMutation({
-        mutationFn: async ({ forceWinner, autoProfit }: { forceWinner?: string, autoProfit?: boolean }) => {
-            const res = await fetch('/api/admin/arena/control', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
-                body: JSON.stringify({ forceWinner, autoProfit })
-            });
-            return res.json();
-        },
-        onSuccess: () => alert("ARENA SETTINGS UPDATED"),
-        onError: (e) => alert(e.message)
-    });
 
     // Sync query data to local state when query finishes
     useEffect(() => {
@@ -507,58 +437,97 @@ function AdminPage() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
-                {['stats', 'users', 'tasks', 'automation', 'financials', 'games'].map((t) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '4px', marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '4px', border: '1px solid #222' }}>
+                {['stats', 'users', 'tasks', 'automation', 'withdrawals', 'upi_requests', 'gaming', 'systems'].map((t) => (
                     <button
                         key={t} onClick={() => setView(t as any)}
                         style={{
-                            padding: '14px 2px', borderRadius: '2px', border: 'none', fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px',
+                            padding: '14px 2px', borderRadius: '2px', border: 'none', fontSize: '0.45rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px',
                             background: view === t ? '#fff' : 'transparent',
                             color: view === t ? '#000' : 'var(--text-dim)',
                             transition: '0.3s'
                         }}
                     >
-                        {t}
+                        {t.replace('_', ' ')}
                     </button>
                 ))}
             </div>
 
             {/* Views */}
             {view === 'stats' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(59, 130, 246, 0.05)', position: 'relative', overflow: 'hidden' }}>
-                        <Users size={20} color="var(--sapphire)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
-                        <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>{adminStats?.totalUsers || 0}</h2>
-                        <div className="flex-between">
-                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>OPERATIONAL IDENTITIES</p>
-                            <span style={{ fontSize: '0.55rem', color: 'var(--emerald)', fontWeight: '900', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>+12% AVG</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(59, 130, 246, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                            <Users size={20} color="var(--sapphire)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>{adminStats?.totalUsers || 0}</h2>
+                            <div className="flex-between">
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>OPERATIONAL IDENTITIES</p>
+                                <span style={{ fontSize: '0.55rem', color: 'var(--emerald)', fontWeight: '900', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>+12% AVG</span>
+                            </div>
+                            <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--sapphire)', filter: 'blur(60px)', opacity: 0.1 }} />
                         </div>
-                        <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--sapphire)', filter: 'blur(60px)', opacity: 0.1 }} />
+
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                            <Database size={20} color="var(--emerald)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
+                                {((adminStats?.totalCoinsDistributed || 0) / 10).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                            </h2>
+                            <div className="flex-between">
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>LIQUIDITY DISTRIBUTED (₹)</p>
+                                <TrendingUp size={14} color="var(--emerald)" />
+                            </div>
+                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: '8px', opacity: 0.6 }}>BASE FLOW: {adminStats?.totalCoinsDistributed || 0}</p>
+                            <div style={{ position: 'absolute', bottom: -20, right: -20, width: '100px', height: '100px', background: 'var(--emerald)', filter: 'blur(60px)', opacity: 0.1 }} />
+                        </div>
+
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(234, 179, 8, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                            <ShieldCheck size={20} color="var(--gold)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
+                                {adminTasks.length || 0}
+                            </h2>
+                            <div className="flex-between">
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>ACTIVE AI DEPLOYMENTS</p>
+                                <Zap size={14} color="var(--gold)" />
+                            </div>
+                            <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--gold)', filter: 'blur(60px)', opacity: 0.1 }} />
+                        </div>
                     </div>
 
-                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }}>
-                        <Database size={20} color="var(--emerald)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
-                        <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
-                            {((adminStats?.totalCoinsDistributed || 0) / 10).toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                        </h2>
-                        <div className="flex-between">
-                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>LIQUIDITY DISTRIBUTED (₹)</p>
-                            <TrendingUp size={14} color="var(--emerald)" />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid #333', background: 'rgba(255, 68, 68, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                            <Clock size={20} color="var(--error)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: (adminStats?.pendingWithdrawals > 0) ? 'var(--error)' : '#fff', marginBottom: '8px' }}>
+                                {adminStats?.pendingWithdrawals || 0}
+                            </h2>
+                            <div className="flex-between">
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>WITHDRAW PENDING</p>
+                                {adminStats?.pendingWithdrawals > 0 && <AlertCircle size={14} color="var(--error)" />}
+                            </div>
+                            <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--error)', filter: 'blur(60px)', opacity: 0.1 }} />
                         </div>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: '8px', opacity: 0.6 }}>BASE FLOW: {adminStats?.totalCoinsDistributed || 0}</p>
-                        <div style={{ position: 'absolute', bottom: -20, right: -20, width: '100px', height: '100px', background: 'var(--emerald)', filter: 'blur(60px)', opacity: 0.1 }} />
-                    </div>
 
-                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(234, 179, 8, 0.05)', position: 'relative', overflow: 'hidden' }}>
-                        <Activity size={20} color="var(--gold)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
-                        <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
-                            {adminTasks.length || 0}
-                        </h2>
-                        <div className="flex-between">
-                            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>ACTIVE AI DEPLOYMENTS</p>
-                            <Zap size={14} color="var(--gold)" />
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid #333', background: 'rgba(59, 130, 246, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                            <Settings size={20} color="var(--sapphire)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: (adminStats?.pendingUpiChanges > 0) ? 'var(--sapphire)' : '#fff', marginBottom: '8px' }}>
+                                {adminStats?.pendingUpiChanges || 0}
+                            </h2>
+                            <div className="flex-between">
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>UPI CHANGE PENDING</p>
+                                {adminStats?.pendingUpiChanges > 0 && <Activity size={14} color="var(--sapphire)" />}
+                            </div>
                         </div>
-                        <div style={{ position: 'absolute', top: -20, right: -20, width: '100px', height: '100px', background: 'var(--gold)', filter: 'blur(60px)', opacity: 0.1 }} />
+
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid #333', background: 'rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                            <Zap size={20} color="var(--emerald)" strokeWidth={1.5} style={{ marginBottom: '16px' }} />
+                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', letterSpacing: '-3px', color: '#fff', marginBottom: '8px' }}>
+                                {adminStats?.activeDaily || 0}
+                            </h2>
+                            <div className="flex-between">
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '950', letterSpacing: '4px' }}>ACTIVE USER (24H)</p>
+                                <Users size={14} color="var(--emerald)" />
+                            </div>
+                            <div style={{ position: 'absolute', bottom: -20, right: -20, width: '100px', height: '100px', background: 'var(--emerald)', filter: 'blur(60px)', opacity: 0.1 }} />
+                        </div>
                     </div>
                 </div>
             )}
@@ -660,7 +629,6 @@ function AdminPage() {
                                             </div>
                                             <div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff' }}>{t.title.toUpperCase()}</h4>
                                                     <span style={{ fontSize: '0.5rem', fontWeight: '950', background: isExpired ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: isExpired ? 'var(--error)' : 'var(--emerald)', padding: '2px 8px', borderRadius: '100px', border: `1px solid ${isExpired ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}` }}>
                                                         {isExpired ? 'EXPIRED' : 'ACTIVE'}
                                                     </span>
@@ -770,17 +738,17 @@ function AdminPage() {
                             {/* Diagnostics Row */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '48px', paddingBottom: '32px', borderBottom: '1px solid #111' }}>
                                 <div className="glass-panel" style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #222' }}>
-                                    <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>MISSION DENSITY</p>
+                                    <p style={{ fontSize: '0.45rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '2px', marginBottom: '8px' }}>MISSION DENSITY (QUIZZES)</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                                             <span style={{ fontSize: '1rem', fontWeight: '950', color: '#fff' }}>
-                                                {adminTasks?.filter((t: any) => t.target_audience === 'free' && (!t.expires_at || new Date(t.expires_at) > new Date())).length || 0}
+                                                {adminTasks?.filter((t: any) => t.type === 'quiz' && t.target_audience === 'free' && (!t.expires_at || new Date(t.expires_at) > new Date())).length || 0}
                                             </span>
                                             <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '1px' }}>/ {automationSettings?.free_task_count || 0} FREE</span>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                                             <span style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)' }}>
-                                                {adminTasks?.filter((t: any) => t.target_audience === 'premium' && (!t.expires_at || new Date(t.expires_at) > new Date())).length || 0}
+                                                {adminTasks?.filter((t: any) => t.type === 'quiz' && t.target_audience === 'premium' && (!t.expires_at || new Date(t.expires_at) > new Date())).length || 0}
                                             </span>
                                             <span style={{ fontSize: '0.55rem', fontWeight: '950', color: 'var(--text-dim)', letterSpacing: '1px' }}>/ {automationSettings?.premium_task_count || 0} PREMIUM</span>
                                         </div>
@@ -988,386 +956,434 @@ function AdminPage() {
                             )}
                         </div>
                     </div>
-                )}
+                )
+            }
 
 
 
-            {view === 'games' && (
-                <div className="animate-fade-in">
-
-
-                    {/* Prediction Games Section */}
-                    <div className="flex-between" style={{ marginTop: '48px', marginBottom: '24px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>LIVE PREDICTION EVENTS</h2>
-                        <button
-                            onClick={() => setShowPredictionModal(true)}
-                            className="btn"
-                            style={{
-                                height: '40px', padding: '0 20px', borderRadius: '10px',
-                                background: 'transparent', border: '1px solid var(--gold)',
-                                color: 'var(--gold)', fontSize: '0.75rem', fontWeight: '950'
-                            }}
-                        >
-                            + CREATE CARD GAME
-                        </button>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                        {predictionEvents?.map((event: any) => (
-                            <div key={event.id} className="glass-panel" style={{ padding: '24px', border: '1px solid #333' }}>
-                                <div className="flex-between" style={{ marginBottom: '16px' }}>
-                                    <span style={{ fontSize: '0.6rem', padding: '4px 8px', borderRadius: '4px', background: event.status === 'active' ? 'var(--emerald)' : '#333', color: '#fff', fontWeight: 'bold' }}>
-                                        {event.status.toUpperCase()}
-                                    </span>
-                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
-                                        EXP: {new Date(event.expires_at).toLocaleTimeString()}
-                                    </span>
-                                </div>
-                                <h4 style={{ color: '#fff', marginBottom: '16px', fontSize: '0.9rem' }}>{event.question}</h4>
-                                <div className="flex-between" style={{ gap: '12px' }}>
-                                    <div style={{ textAlign: 'center', flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginBottom: '4px' }}>OPTION 1</p>
-                                        <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_1} POOL</p>
-                                    </div>
-                                    <div style={{ textAlign: 'center', flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginBottom: '4px' }}>OPTION 2</p>
-                                        <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_2} POOL</p>
-                                    </div>
-                                </div>
-                                {event.status === 'active' && (
-                                    <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
-                                        <button
-                                            onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_1' })}
-                                            style={{ flex: 1, padding: '8px', background: 'var(--primary)', border: 'none', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}
-                                        >
-                                            WIN: KING
-                                        </button>
-                                        <button
-                                            onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_2' })}
-                                            style={{ flex: 1, padding: '8px', background: 'var(--secondary)', border: 'none', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}
-                                        >
-                                            WIN: QUEEN
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-
-
-                    {/* Game Create/Edit Modal */}
-                    {showGameModal && (
-                        <div style={{
-                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                            zIndex: 2000, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <div className="glass-panel" style={{ width: '90%', maxWidth: '500px', padding: '32px', borderRadius: '24px', background: '#000', border: '1px solid #333' }}>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', marginBottom: '24px' }}>
-                                    {editingGame ? 'EDIT GAME' : 'NEW GAME CONFIGURATION'}
-                                </h2>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <input
-                                        placeholder="Game Title"
-                                        value={gameForm.title}
-                                        onChange={e => setGameForm({ ...gameForm, title: e.target.value })}
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                                    />
-                                    <textarea
-                                        placeholder="Description"
-                                        value={gameForm.description}
-                                        onChange={e => setGameForm({ ...gameForm, description: e.target.value })}
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none', minHeight: '80px' }}
-                                    />
-                                    <input
-                                        placeholder="Image URL (e.g. /assets/games/thumb.jpg)"
-                                        value={gameForm.image_url}
-                                        onChange={e => setGameForm({ ...gameForm, image_url: e.target.value })}
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                                    />
-                                    <input
-                                        placeholder="Route Path (e.g. /game/king-queen)"
-                                        value={gameForm.route_path}
-                                        onChange={e => setGameForm({ ...gameForm, route_path: e.target.value })}
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                                    />
-                                    <div className="flex-between" style={{ gap: '16px' }}>
-                                        <select
-                                            value={gameForm.status}
-                                            onChange={e => setGameForm({ ...gameForm, status: e.target.value })}
-                                            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                                        >
-                                            <option value="active" style={{ color: '#000' }}>Active</option>
-                                            <option value="coming_soon" style={{ color: '#000' }}>Coming Soon</option>
-                                            <option value="maintenance" style={{ color: '#000' }}>Maintenance</option>
-                                        </select>
-                                        <input
-                                            type="number"
-                                            placeholder="Priority (0-10)"
-                                            value={gameForm.priority}
-                                            onChange={e => setGameForm({ ...gameForm, priority: parseInt(e.target.value) || 0 })}
-                                            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid #333', padding: '16px', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                                        />
-                                    </div>
-
-                                    <button
-                                        onClick={() => {
-                                            if (editingGame) {
-                                                updateGameMutation.mutate({ ...gameForm, id: editingGame.id });
-                                            } else {
-                                                createGameMutation.mutate(gameForm);
-                                            }
-                                        }}
-                                        className="btn"
-                                        style={{ height: '56px', borderRadius: '16px', background: 'var(--primary)', color: '#000', marginTop: '16px' }}
-                                    >
-                                        {editingGame ? 'SAVE CHANGES' : 'LAUNCH GAME'}
-                                    </button>
-                                    <button
-                                        onClick={() => setShowGameModal(false)}
-                                        style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '0.8rem', cursor: 'pointer' }}
-                                    >
-                                        CANCEL
-                                    </button>
-                                </div>
+            {view === 'gaming' && (
+                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <div className="glass-panel" style={{ padding: '32px 40px', border: '1px solid #333', background: 'rgba(255,255,255,0.01)', borderRadius: '12px' }}>
+                        <div className="flex-between" style={{ marginBottom: '32px' }}>
+                            <div>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>GAMING HUB</h2>
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginTop: '8px', letterSpacing: '1px' }}>PREDICTION EVENT COMMAND CENTER</p>
                             </div>
                         </div>
-                    )}
 
-                    {/* Prediction Event Modal */}
-                    {showPredictionModal && (
-                        <div style={{
-                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                            zIndex: 2000, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <div className="glass-panel" style={{ width: '90%', maxWidth: '400px', padding: '32px', borderRadius: '24px', background: '#000', border: '1px solid #333' }}>
-                                <h3 style={{ color: '#fff', marginBottom: '24px', fontSize: '1.2rem', fontWeight: '950' }}>NEW CARD GAME EVENT</h3>
+                        <div className="animate-fade-in">
+                            <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: '950', color: '#fff', letterSpacing: '2px' }}>LIVE PREDICTION EVENTS</h2>
+                                <button
+                                    onClick={() => setShowPredictionModal(true)}
+                                    className="btn"
+                                    style={{
+                                        height: '40px', padding: '0 20px', borderRadius: '10px',
+                                        background: 'transparent', border: '1px solid var(--gold)',
+                                        color: 'var(--gold)', fontSize: '0.75rem', fontWeight: '950'
+                                    }}
+                                >
+                                    + CREATE CARD GAME
+                                </button>
+                            </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                    <div>
-                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>QUESTION</label>
-                                        <input
-                                            value={predictionForm.question}
-                                            disabled // Fixed as per request
-                                            style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
-                                        />
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>OPTION 1</label>
-                                            <div style={{ marginTop: '8px', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '20px', height: '20px', background: 'var(--primary)', borderRadius: '50%' }} />
-                                                <span style={{ color: '#fff', fontSize: '0.8rem' }}>KING</span>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                                {predictionEvents?.map((event: any) => (
+                                    <div key={event.id} className="glass-panel" style={{ padding: '24px', border: '1px solid #333' }}>
+                                        <div className="flex-between" style={{ marginBottom: '16px' }}>
+                                            <span style={{ fontSize: '0.6rem', padding: '4px 8px', borderRadius: '4px', background: event.status === 'active' ? 'var(--emerald)' : '#333', color: '#fff', fontWeight: 'bold' }}>
+                                                {event.status.toUpperCase()}
+                                            </span>
+                                            <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
+                                                EXP: {new Date(event.expires_at).toLocaleTimeString()}
+                                            </span>
+                                        </div>
+                                        <h4 style={{ color: '#fff', marginBottom: '16px', fontSize: '0.9rem' }}>{event.question}</h4>
+                                        <div className="flex-between" style={{ gap: '12px' }}>
+                                            <div style={{ textAlign: 'center', flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginBottom: '4px' }}>OPTION 1</p>
+                                                <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_1} POOL</p>
+                                            </div>
+                                            <div style={{ textAlign: 'center', flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                                                <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginBottom: '4px' }}>OPTION 2</p>
+                                                <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_2} POOL</p>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>OPTION 2</label>
-                                            <div style={{ marginTop: '8px', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '20px', height: '20px', background: 'var(--secondary)', borderRadius: '50%' }} />
-                                                <span style={{ color: '#fff', fontSize: '0.8rem' }}>QUEEN</span>
+                                        {event.status === 'active' && (
+                                            <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_1' })}
+                                                    style={{ flex: 1, padding: '12px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '950', letterSpacing: '2px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)' }}
+                                                >
+                                                    WIN: KING
+                                                </button>
+                                                <button
+                                                    onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_2' })}
+                                                    style={{ flex: 1, padding: '12px', background: 'var(--secondary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '950', letterSpacing: '2px', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)' }}
+                                                >
+                                                    WIN: QUEEN
+                                                </button>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>MIN BET</label>
-                                            <input
-                                                type="number"
-                                                value={predictionForm.min_bet}
-                                                onChange={e => setPredictionForm({ ...predictionForm, min_bet: parseInt(e.target.value) })}
-                                                style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>EXPIRY</label>
-                                            <select
-                                                value={predictionForm.expiry_minutes}
-                                                onChange={e => setPredictionForm({ ...predictionForm, expiry_minutes: parseInt(e.target.value) })}
-                                                style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
-                                            >
-                                                <option value="1">1 Minute</option>
-                                                <option value="5">5 Minutes</option>
-                                                <option value="15">15 Minutes</option>
-                                                <option value="30">30 Minutes</option>
-                                                <option value="60">1 Hour</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>RESOLUTION MODE</label>
-                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                                            <button
-                                                onClick={() => setPredictionForm({ ...predictionForm, resolution_method: 'auto' })}
-                                                style={{ flex: 1, padding: '12px', background: predictionForm.resolution_method === 'auto' ? 'var(--emerald)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
-                                            >
-                                                AUTO (LOWEST POOL)
-                                            </button>
-                                            <button
-                                                onClick={() => setPredictionForm({ ...predictionForm, resolution_method: 'manual' })}
-                                                style={{ flex: 1, padding: '12px', background: predictionForm.resolution_method === 'manual' ? 'var(--gold)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
-                                            >
-                                                MANUAL ADMIN
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={() => createPredictionMutation.mutate(predictionForm)}
-                                        className="btn"
-                                        style={{ width: '100%', padding: '16px', marginTop: '16px', background: '#fff', color: '#000', borderRadius: '12px', fontWeight: '950' }}
-                                    >
-                                        LAUNCH EVENT
-                                    </button>
-                                    <button
-                                        onClick={() => setShowPredictionModal(false)}
-                                        style={{ width: '100%', padding: '16px', background: 'transparent', color: 'var(--text-dim)', border: 'none', cursor: 'pointer' }}
-                                    >
-                                        CANCEL
-                                    </button>
-                                </div>
+                                ))}
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
-            {view === 'financials' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                    {/* Revenue Stats */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--emerald)', background: 'rgba(16, 185, 129, 0.05)' }}>
-                            <div className="flex-between" style={{ marginBottom: '16px' }}>
-                                <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '2px' }}>TOTAL REVENUE</p>
-                                <TrendingUp size={20} color="var(--emerald)" />
-                            </div>
-                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', color: '#fff' }}>
-                                ₹{(financialData?.stats?.totalRevenue || 0).toLocaleString()}
-                            </h2>
-                        </div>
-                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)', background: 'rgba(234, 179, 8, 0.05)' }}>
-                            <div className="flex-between" style={{ marginBottom: '16px' }}>
-                                <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--gold)', letterSpacing: '2px' }}>PREMIUM INCOME</p>
-                                <Zap size={20} color="var(--gold)" />
-                            </div>
-                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', color: '#fff' }}>
-                                ₹{(financialData?.stats?.premiumRevenue || 0).toLocaleString()}
-                            </h2>
-                        </div>
-                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--sapphire)', background: 'rgba(59, 130, 246, 0.05)' }}>
-                            <div className="flex-between" style={{ marginBottom: '16px' }}>
-                                <p style={{ fontSize: '0.6rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px' }}>FLOW CIRCULATION</p>
-                                <Activity size={20} color="var(--sapphire)" />
-                            </div>
-                            <h2 style={{ fontSize: '2.8rem', fontWeight: '950', color: '#fff' }}>
-                                {(financialData?.stats?.totalCoinsDistributed || 0).toLocaleString()}
-                            </h2>
-                        </div>
-                    </div>
+            {/* Prediction Event Modal */}
+            {
+                showPredictionModal && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 2000, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(10px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0'
+                    }}>
+                        <div className="glass-panel" style={{ width: '100%', height: '100%', padding: '40px', borderRadius: '0', background: '#000', border: 'none', overflowY: 'auto' }}>
+                            <h3 style={{ color: '#fff', marginBottom: '32px', fontSize: '1.6rem', fontWeight: '950', textAlign: 'center', letterSpacing: '2px' }}>NEW CARD GAME EVENT</h3>
 
-                    {/* Withdrawal Queue */}
-                    <div>
-                        <div className="flex-between" style={{ marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>WITHDRAWAL QUEUE</h2>
-                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
-                                {financialData?.withdrawals?.filter((w: any) => w.status === 'pending').length || 0} PENDING REQUESTS
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {financialsLoading ? (
-                                <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Syncing Ledger...</p>
-                            ) : financialData?.withdrawals?.length === 0 ? (
-                                <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
-                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO WITHDRAWAL REQUESTS FOUND.</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div>
+                                    <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>QUESTION</label>
+                                    <input
+                                        value={predictionForm.question}
+                                        disabled // Fixed as per request
+                                        style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
+                                    />
                                 </div>
-                            ) : (
-                                financialData?.withdrawals?.map((tx: any) => (
-                                    <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', background: 'rgba(0,0,0,0.2)' }}>
-                                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                                            <div style={{
-                                                width: '48px', height: '48px', borderRadius: '12px',
-                                                background: tx.status === 'pending' ? 'rgba(234, 179, 8, 0.1)' : tx.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                border: `1px solid ${tx.status === 'pending' ? 'var(--gold)' : tx.status === 'completed' ? 'var(--emerald)' : 'var(--error)'}`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                            }}>
-                                                {tx.status === 'pending' ? <Clock size={20} color="var(--gold)" /> : tx.status === 'completed' ? <CheckCircle2 size={20} color="var(--emerald)" /> : <X size={20} color="var(--error)" />}
-                                            </div>
-                                            <div>
-                                                <h4 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>
-                                                    {Math.abs(tx.amount).toLocaleString()} FLOW <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>(₹{Math.abs(tx.amount) / 10})</span>
-                                                </h4>
-                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>{tx.profiles?.email}</p>
-                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
-                                                    <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>{new Date(tx.created_at).toLocaleString()}</p>
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <div style={{ display: 'flex', gap: '12px' }}>
-                                            {tx.status === 'pending' ? (
-                                                <>
-                                                    <button
-                                                        onClick={() => {
-                                                            if (window.confirm("CONFIRM PAYOUT?\nThis will mark the transaction as completed.")) {
-                                                                processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'approve' });
-                                                            }
-                                                        }}
-                                                        disabled={processWithdrawalMutation.isPending}
-                                                        className="btn"
-                                                        style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--emerald)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
-                                                    >
-                                                        APPROVE
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            const reason = prompt("REJECTION REASON (Optional):");
-                                                            if (reason !== null) {
-                                                                processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'reject', rejectionReason: reason });
-                                                            }
-                                                        }}
-                                                        disabled={processWithdrawalMutation.isPending}
-                                                        className="btn"
-                                                        style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
-                                                    >
-                                                        REJECT
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <span style={{
-                                                    padding: '8px 16px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '1px',
-                                                    background: tx.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                    color: tx.status === 'completed' ? 'var(--emerald)' : 'var(--error)',
-                                                    border: `1px solid ${tx.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
-                                                }}>
-                                                    {tx.status.toUpperCase()}
-                                                </span>
-                                            )}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>OPTION 1</label>
+                                        <div style={{ marginTop: '8px', padding: '8px', background: '#111', border: '1px solid #333', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '32px', height: '42px', position: 'relative', borderRadius: '4px', overflow: 'hidden', border: '1px solid #444' }}>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={predictionForm.option_1_image || "/assets/king.png"} alt="K" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                            <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>KING</span>
                                         </div>
                                     </div>
-                                ))
-                            )}
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>OPTION 2</label>
+                                        <div style={{ marginTop: '8px', padding: '8px', background: '#111', border: '1px solid #333', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '32px', height: '42px', position: 'relative', borderRadius: '4px', overflow: 'hidden', border: '1px solid #444' }}>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={predictionForm.option_2_image || "/assets/queen.png"} alt="Q" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                            <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>QUEEN</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                                            {predictionForm.bet_mode === 'fixed' ? 'FIXED BET' : 'MIN BET'}
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={predictionForm.min_bet}
+                                            onChange={e => setPredictionForm({ ...predictionForm, min_bet: parseInt(e.target.value) })}
+                                            style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>EXPIRY</label>
+                                        <select
+                                            value={predictionForm.expiry_minutes}
+                                            onChange={e => setPredictionForm({ ...predictionForm, expiry_minutes: parseInt(e.target.value) })}
+                                            style={{ width: '100%', padding: '12px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '8px' }}
+                                        >
+                                            <option value="1">1 Minute</option>
+                                            <option value="5">5 Minutes</option>
+                                            <option value="15">15 Minutes</option>
+                                            <option value="30">30 Minutes</option>
+                                            <option value="60">1 Hour</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>RESOLUTION MODE</label>
+                                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                        <button
+                                            onClick={() => setPredictionForm({ ...predictionForm, resolution_method: 'auto' })}
+                                            style={{ flex: 1, padding: '12px', background: predictionForm.resolution_method === 'auto' ? 'var(--emerald)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            AUTO (LOWEST POOL)
+                                        </button>
+                                        <button
+                                            onClick={() => setPredictionForm({ ...predictionForm, resolution_method: 'manual' })}
+                                            style={{ flex: 1, padding: '12px', background: predictionForm.resolution_method === 'manual' ? 'var(--gold)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            MANUAL ADMIN
+                                        </button>
+                                    </div>
+                                </div>
+
+
+                                <div>
+                                    <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>BET MODE (Strategy)</label>
+                                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                        <button
+                                            onClick={() => setPredictionForm({ ...predictionForm, bet_mode: 'fixed' })}
+                                            style={{ flex: 1, padding: '12px', background: predictionForm.bet_mode === 'fixed' ? 'var(--primary)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            FIXED BET (Exact Amount)
+                                        </button>
+                                        <button
+                                            onClick={() => setPredictionForm({ ...predictionForm, bet_mode: 'flexible' })}
+                                            style={{ flex: 1, padding: '12px', background: predictionForm.bet_mode === 'flexible' ? 'var(--sapphire)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            MINIMUM BET (Flexible)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>TARGET AUDIENCE</label>
+                                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                        <button
+                                            onClick={() => setPredictionForm({ ...predictionForm, target_audience: 'all' })}
+                                            style={{ flex: 1, padding: '12px', background: predictionForm.target_audience === 'all' ? 'var(--emerald)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            ALL USERS
+                                        </button>
+                                        <button
+                                            onClick={() => setPredictionForm({ ...predictionForm, target_audience: 'premium' })}
+                                            style={{ flex: 1, padding: '12px', background: predictionForm.target_audience === 'premium' ? 'var(--gold)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            PREMIUM ONLY
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* BET MODE - DISABLED - Requires database migration
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>BET MODE</label>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                            <button
+                                                onClick={() => setPredictionForm({ ...predictionForm, bet_mode: 'fixed' })}
+                                                style={{ flex: 1, padding: '12px', background: predictionForm.bet_mode === 'fixed' ? 'var(--primary)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                FIXED BET
+                                            </button>
+                                            <button
+                                                onClick={() => setPredictionForm({ ...predictionForm, bet_mode: 'flexible' })}
+                                                style={{ flex: 1, padding: '12px', background: predictionForm.bet_mode === 'flexible' ? 'var(--sapphire)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                FLEXIBLE BET
+                                            </button>
+                                        </div>
+                                    </div>
+                                    */}
+
+                                {/* PLAYER TYPE - DISABLED - Requires database migration
+                                    <div>
+                                        <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>PLAYER TYPE</label>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                            <button
+                                                onClick={() => setPredictionForm({ ...predictionForm, player_type: 'all' })}
+                                                style={{ flex: 1, padding: '12px', background: predictionForm.player_type === 'all' ? 'var(--emerald)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                ALL USERS
+                                            </button>
+                                            <button
+                                                onClick={() => setPredictionForm({ ...predictionForm, player_type: 'premium' })}
+                                                style={{ flex: 1, padding: '12px', background: predictionForm.player_type === 'premium' ? 'var(--gold)' : '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                PREMIUM ONLY
+                                            </button>
+                                        </div>
+                                    </div>
+                                    */}
+
+                                {/* MANUAL WINNER - DISABLED - Requires database migration
+                                    {predictionForm.resolution_method === 'manual' && (
+                                        <div>
+                                            <label style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 'bold' }}>PRE-SELECT WINNER (CAN CHANGE AFTER LAUNCH)</label>
+                                            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                                <button
+                                                    onClick={() => setPredictionForm({ ...predictionForm, manual_winner: 'option_1' })}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '16px',
+                                                        background: predictionForm.manual_winner === 'option_1' ? 'linear-gradient(135deg, var(--primary), rgba(59, 130, 246, 0.7))' : '#111',
+                                                        border: `2px solid ${predictionForm.manual_winner === 'option_1' ? 'var(--primary)' : '#333'}`,
+                                                        borderRadius: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: 'bold',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '8px'
+                                                    }}
+                                                >
+                                                    <div style={{ width: '16px', height: '16px', background: 'var(--primary)', borderRadius: '50%' }} />
+                                                    KING WINS
+                                                </button>
+                                                <button
+                                                    onClick={() => setPredictionForm({ ...predictionForm, manual_winner: 'option_2' })}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '16px',
+                                                        background: predictionForm.manual_winner === 'option_2' ? 'linear-gradient(135deg, var(--secondary), rgba(236, 72, 153, 0.7))' : '#111',
+                                                        border: `2px solid ${predictionForm.manual_winner === 'option_2' ? 'var(--secondary)' : '#333'}`,
+                                                        borderRadius: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: 'bold',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '8px'
+                                                    }}
+                                                >
+                                                    <div style={{ width: '16px', height: '16px', background: 'var(--secondary)', borderRadius: '50%' }} />
+                                                    QUEEN WINS
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    */}
+
+                                <button
+                                    onClick={() => createPredictionMutation.mutate(predictionForm)}
+                                    className="btn"
+                                    style={{ width: '100%', padding: '16px', marginTop: '16px', background: '#fff', color: '#000', borderRadius: '12px', fontWeight: '950' }}
+                                >
+                                    LAUNCH EVENT
+                                </button>
+                                <button
+                                    onClick={() => setShowPredictionModal(false)}
+                                    style={{ width: '100%', padding: '16px', background: 'transparent', color: 'var(--text-dim)', border: 'none', cursor: 'pointer' }}
+                                >
+                                    CANCEL
+                                </button>
+                            </div>
                         </div>
                     </div>
+                )
+            }
 
-                    {/* UPI Settlements Queue */}
+            {
+                view === 'withdrawals' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                        <div>
+                            <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>WITHDRAWAL QUEUE</h2>
+                                <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
+                                    {financialData?.withdrawals?.filter((w: any) => w.status === 'pending').length || 0} PENDING REQUESTS
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {financialsError ? (
+                                    <div className="glass-panel" style={{ padding: '24px', border: '1px solid var(--error)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                                        <p style={{ color: 'var(--error)', fontSize: '0.75rem', fontWeight: '900' }}>ERROR: {financialRespError?.message || 'FAILED TO LOAD DATA'}</p>
+                                    </div>
+                                ) : financialsLoading || !financialData?.withdrawals ? (
+                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Syncing Ledger...</p>
+                                ) : financialData.withdrawals.length === 0 ? (
+                                    <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
+                                        <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO WITHDRAWAL REQUESTS FOUND.</p>
+                                    </div>
+                                ) : (
+                                    financialData?.withdrawals?.map((tx: any) => (
+                                        <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', background: 'rgba(0,0,0,0.2)' }}>
+                                            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                                                <div style={{
+                                                    width: '48px', height: '48px', borderRadius: '12px',
+                                                    background: tx.status === 'pending' ? 'rgba(234, 179, 8, 0.1)' : tx.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                    border: `1px solid ${tx.status === 'pending' ? 'var(--gold)' : tx.status === 'completed' ? 'var(--emerald)' : 'var(--error)'}`,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                }}>
+                                                    {tx.status === 'pending' ? <Clock size={20} color="var(--gold)" /> : tx.status === 'completed' ? <CheckCircle2 size={20} color="var(--emerald)" /> : <X size={20} color="var(--error)" />}
+                                                </div>
+                                                <div>
+                                                    <h4 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>
+                                                        {Math.abs(tx.amount).toLocaleString()} FLOW <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>(₹{Math.abs(tx.amount) / 10})</span>
+                                                    </h4>
+                                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                        <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '950' }}>{tx.profiles?.name?.toUpperCase()}</p>
+                                                        <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>{tx.profiles?.email}</p>
+                                                        <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>{new Date(tx.created_at).toLocaleString()}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                {tx.status === 'pending' ? (
+                                                    <>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (window.confirm("CONFIRM PAYOUT?\nThis will mark the transaction as completed.")) {
+                                                                    processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'approve' });
+                                                                }
+                                                            }}
+                                                            disabled={processWithdrawalMutation.isPending}
+                                                            className="btn"
+                                                            style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--emerald)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
+                                                        >
+                                                            APPROVE
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                const reason = prompt("REJECTION REASON (Optional):");
+                                                                if (reason !== null) {
+                                                                    processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'reject', rejectionReason: reason });
+                                                                }
+                                                            }}
+                                                            disabled={processWithdrawalMutation.isPending}
+                                                            className="btn"
+                                                            style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
+                                                        >
+                                                            REJECT
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <span style={{
+                                                        padding: '8px 16px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '1px',
+                                                        background: tx.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                        color: tx.status === 'completed' ? 'var(--emerald)' : 'var(--error)',
+                                                        border: `1px solid ${tx.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                                                    }}>
+                                                        {tx.status.toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+            {view === 'upi_requests' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                     <div>
                         <div className="flex-between" style={{ marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>UPI SETTLEMENTS</h2>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>UPI CHANGE REQUESTS</h2>
                             <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
-                                {financialData?.upiRequests?.length || 0} CHANGE REQUESTS
+                                {financialData?.upiRequests?.length || 0} PENDING CHANGES
                             </div>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {financialsLoading ? (
+                            {financialsError ? (
+                                <div className="glass-panel" style={{ padding: '24px', border: '1px solid var(--error)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                                    <p style={{ color: 'var(--error)', fontSize: '0.75rem', fontWeight: '900' }}>ERROR: {financialRespError?.message || 'FAILED TO SCAN REQUESTS'}</p>
+                                </div>
+                            ) : financialsLoading || !financialData?.upiRequests ? (
                                 <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Scanning Requests...</p>
-                            ) : financialData?.upiRequests?.length === 0 ? (
+                            ) : financialData.upiRequests.length === 0 ? (
                                 <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
                                     <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO UPI CHANGE REQUESTS.</p>
                                 </div>
@@ -1381,16 +1397,18 @@ function AdminPage() {
                                                 border: '1px solid var(--sapphire)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                                             }}>
-                                                <ShieldCheck size={20} color="var(--sapphire)" />
+                                                <Settings size={20} color="var(--sapphire)" />
                                             </div>
                                             <div>
-                                                <h4 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>
-                                                    {req.new_upi_id}
+                                                <h4 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--sapphire)', marginBottom: '4px' }}>
+                                                    NEW: {req.new_upi_id}
                                                 </h4>
                                                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>OLD: {req.upi_id}</p>
+                                                    <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '950' }}>{req.name?.toUpperCase()}</p>
                                                     <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
-                                                    <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '800' }}>{req.email}</p>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>OLD: {req.upi_id || 'NOT SET'}</p>
+                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>{req.email}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1398,7 +1416,7 @@ function AdminPage() {
                                         <div style={{ display: 'flex', gap: '12px' }}>
                                             <button
                                                 onClick={() => {
-                                                    if (window.confirm(`APPROVE UPI CHANGE?\n${req.upi_id} -> ${req.new_upi_id}`)) {
+                                                    if (window.confirm(`APPROVE UPI CHANGE?\n${req.upi_id || 'NONE'} -> ${req.new_upi_id}`)) {
                                                         processUpiMutation.mutate({ targetUserId: req.id, action: 'approve' });
                                                     }
                                                 }}
@@ -1429,6 +1447,207 @@ function AdminPage() {
                 </div>
             )}
 
+            {view === 'systems' && (
+                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <div className="glass-panel" style={{ padding: '40px', border: '1px solid #333', background: 'rgba(255,255,255,0.01)' }}>
+                        <div style={{ marginBottom: '32px' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>SYSTEM MAINTENANCE</h2>
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginTop: '8px', letterSpacing: '1px' }}>PRUNE EXPIRED DATA AND OPTIMIZE PERFORMANCE</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>EXPIRED QUIZ PRUNING</h3>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Permanently remove all quizzes that have passed their expiration date. This is a safe operation and will not affect user balances or active missions.</p>
+                                </div>
+                                <button
+                                    disabled={isPruning}
+                                    onClick={async () => {
+                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all expired quizzes from the database.")) return;
+
+                                        setIsPruning(true);
+                                        try {
+                                            const res = await fetch('/api/admin/systems/cleanup', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'x-user-id': user?.id || ''
+                                                },
+                                                body: JSON.stringify({ action: 'prune_quizzes' })
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                alert(`SUCCESS: ${data.message}`);
+                                                queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+                                            } else {
+                                                alert(`ERROR: ${data.error}`);
+                                            }
+                                        } catch (e) {
+                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                        } finally {
+                                            setIsPruning(false);
+                                        }
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        padding: '16px 32px',
+                                        background: isPruning ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                        border: `1px solid ${isPruning ? '#444' : 'var(--error)'}`,
+                                        color: isPruning ? 'var(--text-dim)' : 'var(--error)',
+                                        fontWeight: '950',
+                                        fontSize: '0.75rem',
+                                        letterSpacing: '2px'
+                                    }}
+                                >
+                                    {isPruning ? 'PRUNING DATA...' : 'PRUNE EXPIRED QUIZZES'}
+                                </button>
+                            </div>
+
+                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>COMPLETED CARD GAMES</h3>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Permanently remove all prediction events that are completed and their associated bet history. This will not affect active games.</p>
+                                </div>
+                                <button
+                                    disabled={isPruningPredictions}
+                                    onClick={async () => {
+                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all completed prediction events and their bets.")) return;
+                                        setIsPruningPredictions(true);
+                                        try {
+                                            const res = await fetch('/api/admin/systems/cleanup', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                                                body: JSON.stringify({ action: 'prune_predictions' })
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                alert(`SUCCESS: ${data.message}`);
+                                                queryClient.invalidateQueries({ queryKey: ['admin-predictions'] });
+                                            } else {
+                                                alert(`ERROR: ${data.error}`);
+                                            }
+                                        } catch (e) {
+                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                        } finally {
+                                            setIsPruningPredictions(false);
+                                        }
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        padding: '16px 32px',
+                                        background: isPruningPredictions ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                        border: `1px solid ${isPruningPredictions ? '#444' : 'var(--error)'}`,
+                                        color: isPruningPredictions ? 'var(--text-dim)' : 'var(--error)',
+                                        fontWeight: '950',
+                                        fontSize: '0.75rem',
+                                        letterSpacing: '2px'
+                                    }}
+                                >
+                                    {isPruningPredictions ? 'PRUNING DATA...' : 'PRUNE COMPLETED GAMES'}
+                                </button>
+                            </div>
+
+                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>HISTORICAL TRANSACTIONS</h3>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Clear transaction logs (deposits, withdrawals, rewards) older than 30 days. This does not affect current user balances.</p>
+                                </div>
+                                <button
+                                    disabled={isPruningTransactions}
+                                    onClick={async () => {
+                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete transaction logs older than 30 days.")) return;
+                                        setIsPruningTransactions(true);
+                                        try {
+                                            const res = await fetch('/api/admin/systems/cleanup', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                                                body: JSON.stringify({ action: 'prune_transactions' })
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                alert(`SUCCESS: ${data.message}`);
+                                                queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
+                                            } else {
+                                                alert(`ERROR: ${data.error}`);
+                                            }
+                                        } catch (e) {
+                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                        } finally {
+                                            setIsPruningTransactions(false);
+                                        }
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        padding: '16px 32px',
+                                        background: isPruningTransactions ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                        border: `1px solid ${isPruningTransactions ? '#444' : 'var(--error)'}`,
+                                        color: isPruningTransactions ? 'var(--text-dim)' : 'var(--error)',
+                                        fontWeight: '950',
+                                        fontSize: '0.75rem',
+                                        letterSpacing: '2px'
+                                    }}
+                                >
+                                    {isPruningTransactions ? 'PRUNING DATA...' : 'PRUNE OLD TRANSACTIONS'}
+                                </button>
+                            </div>
+
+                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>ACTIVITY HISTORY</h3>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Clear all game activity logs, including 2-Card Game history and completed arcade rounds. Recommended for periodic maintenance.</p>
+                                </div>
+                                <button
+                                    disabled={isPruningActivities}
+                                    onClick={async () => {
+                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all game activity logs and finished arcade rounds.")) return;
+                                        setIsPruningActivities(true);
+                                        try {
+                                            const res = await fetch('/api/admin/systems/cleanup', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                                                body: JSON.stringify({ action: 'prune_game_history' })
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                alert(`SUCCESS: ${data.message}`);
+                                            } else {
+                                                alert(`ERROR: ${data.error}`);
+                                            }
+                                        } catch (e) {
+                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                        } finally {
+                                            setIsPruningActivities(false);
+                                        }
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        padding: '16px 32px',
+                                        background: isPruningActivities ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                        border: `1px solid ${isPruningActivities ? '#444' : 'var(--error)'}`,
+                                        color: isPruningActivities ? 'var(--text-dim)' : 'var(--error)',
+                                        fontWeight: '950',
+                                        fontSize: '0.75rem',
+                                        letterSpacing: '2px'
+                                    }}
+                                >
+                                    {isPruningActivities ? 'PRUNING DATA...' : 'PRUNE ACTIVITY LOGS'}
+                                </button>
+                            </div>
+
+                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #111', background: 'rgba(255, 255, 255, 0.02)', opacity: 0.5, cursor: 'not-allowed' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--text-dim)', marginBottom: '8px' }}>USER SENSITIVE DATA (PROTECTED)</h3>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>DELETION OF WALLET DATA, LOGIN LOGS, AND PROFILES IS RESTRICTED BY CORE PROTOCOL.</p>
+                                    </div>
+                                    <div style={{ padding: '8px 16px', border: '1px solid #333', borderRadius: '4px', fontSize: '0.6rem', color: 'var(--text-dim)' }}>LOCKED</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -1559,41 +1778,6 @@ function UserEditModal({ user, onClose, onSave, onDelete, isSaving }: { user: an
                     </div>
                 </div>
             </div>
-            {view === 'arena' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)' }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '950', marginBottom: '24px', letterSpacing: '2px' }}>ARENA CONTROL CENTER</h2>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                            <div style={{ padding: '24px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '16px', textAlign: 'center' }}>
-                                <h3 style={{ color: 'var(--primary)', fontWeight: '950', fontSize: '1.2rem' }}>FORCE KING WIN</h3>
-                                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', margin: '12px 0' }}>OVERRIDES NEXT ROUND OUTCOME</p>
-                                <button onClick={() => arenaMutation.mutate({ forceWinner: 'king' })} className="btn" style={{ width: '100%', background: 'var(--primary)' }}>SET KING</button>
-                            </div>
-
-                            <div style={{ padding: '24px', background: 'rgba(236, 72, 153, 0.1)', border: '1px solid var(--secondary)', borderRadius: '16px', textAlign: 'center' }}>
-                                <h3 style={{ color: 'var(--secondary)', fontWeight: '950', fontSize: '1.2rem' }}>FORCE QUEEN WIN</h3>
-                                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', margin: '12px 0' }}>OVERRIDES NEXT ROUND OUTCOME</p>
-                                <button onClick={() => arenaMutation.mutate({ forceWinner: 'queen' })} className="btn" style={{ width: '100%', background: 'var(--secondary)' }}>SET QUEEN</button>
-                            </div>
-                        </div>
-
-                        <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid var(--emerald)', borderRadius: '16px' }}>
-                            <div className="flex-between">
-                                <div>
-                                    <h3 style={{ color: 'var(--emerald)', fontWeight: '950', fontSize: '1.2rem' }}>AUTO PROFIT MODE</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>SYSTEM AUTOMATICALLY MAKES THE "LOWEST POOL" WIN</p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button onClick={() => arenaMutation.mutate({ autoProfit: true })} className="btn" style={{ background: '#111', border: '1px solid var(--emerald)', color: '#fff' }}>ENABLE</button>
-                                    <button onClick={() => arenaMutation.mutate({ autoProfit: false })} className="btn" style={{ background: '#111', border: '1px solid var(--error)', color: '#fff' }}>DISABLE</button>
-                                    <button onClick={() => arenaMutation.mutate({ forceWinner: 'random' })} className="btn" style={{ background: '#fff', color: '#000' }}>RESET TO RANDOM</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

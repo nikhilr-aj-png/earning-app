@@ -70,7 +70,9 @@ export async function POST(request: Request) {
                     user_id: userId,
                     amount: totalReward,
                     type: 'earn',
-                    description: `[CLAIMED:${taskId}] Result: ${correctCount}/${totalCount} | ${task.title}`
+                    description: totalCount !== undefined
+                        ? `[CLAIMED:${taskId}] Result: ${correctCount}/${totalCount} | ${task.title}`
+                        : `[CLAIMED:${taskId}] | ${task.title}`
                 }
             ]);
 

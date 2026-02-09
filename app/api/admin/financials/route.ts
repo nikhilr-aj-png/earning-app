@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: Request) {
     try {
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         // VERIFY ADMIN PRIVILEGES
-        const { data: profile, error: profileError } = await supabaseMain
+        const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('is_admin')
             .eq('id', userId)
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         // So we need to sum premium amounts directly.
         // And sum deposit amounts and divide by 10.
 
-        const { data: premiums, error: premError } = await supabaseMain
+        const { data: premiums, error: premError } = await supabaseAdmin
             .from('transactions')
             .select('amount')
             .eq('type', 'premium_upgrade');
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
         if (premError) throw premError;
         const premiumRevenue = premiums.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
 
-        const { data: deposits, error: depError } = await supabaseMain
+        const { data: deposits, error: depError } = await supabaseAdmin
             .from('transactions')
             .select('amount')
             .eq('type', 'deposit');
@@ -51,19 +51,36 @@ export async function GET(request: Request) {
         const totalCoinsDistributed = deposits.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
 
         // 2. Fetch Pending Withdrawals
-        const { data: withdrawals, error: wdError } = await supabaseMain
+        const { data: txList, error: wdError } = await supabaseAdmin
             .from('transactions')
-            .select('*, profiles(name, email)')
+            .select('*')
             .eq('type', 'withdraw')
             .order('created_at', { ascending: false });
 
         if (wdError) throw wdError;
 
+        let withdrawals: any[] = [];
+        if (txList && txList.length > 0) {
+            const userIds = Array.from(new Set(txList.map((t: any) => t.user_id)));
+            const { data: profiles, error: pErr } = await supabaseAdmin
+                .from('profiles')
+                .select('id, name, email')
+                .in('id', userIds);
+
+            if (pErr) throw pErr;
+
+            withdrawals = txList.map((tx: any) => ({
+                ...tx,
+                profiles: profiles?.find((p: any) => p.id === tx.user_id) || null
+            }));
+        }
+
         // 3. Fetch Pending UPI Requests
-        const { data: upiRequests, error: upiError } = await supabaseMain
+        const { data: upiRequests, error: upiError } = await supabaseAdmin
             .from('profiles')
             .select('id, name, email, upi_id, new_upi_id, upi_request_date')
             .not('new_upi_id', 'is', null)
+            .neq('new_upi_id', '')
             .order('upi_request_date', { ascending: false });
 
         if (upiError) throw upiError;
