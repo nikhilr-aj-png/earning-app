@@ -46,11 +46,54 @@ export async function POST(req: Request) {
         const totalPool = (Number(finalEvent.pool_1) || 0) + (Number(finalEvent.pool_2) || 0);
         const winningPool = winner === 'option_1' ? (Number(finalEvent.pool_1) || 0) : (Number(finalEvent.pool_2) || 0);
 
-        // 5. Distribute Winnings (If there are winners)
+        // 5. Distribute Winnings
         let processedCount = 0;
+        let refundMode = false;
 
+        // REFUND LOGIC: If nobody bet on the winner, REFUND EVERYONE
+        if (winningPool === 0 && totalPool > 0) {
+            refundMode = true;
+            // Fetch ALL bets to refund
+            const { data: allBets } = await supabaseGame
+                .from('prediction_bets')
+                .select('*')
+                .eq('event_id', event_id);
+
+            if (allBets && allBets.length > 0) {
+                // Parallelize updates for speed
+                await Promise.all(allBets.map(async (bet: any) => {
+                    // Refund to Wallet (Main)
+                    await supabase.rpc('increment_user_coins', {
+                        u_id: bet.user_id,
+                        amount: bet.amount
+                    });
+
+                    // Log Transaction (Main)
+                    await supabase.from('transactions').insert({
+                        user_id: bet.user_id,
+                        amount: bet.amount,
+                        type: 'refund',
+                        description: `REFUND: ${finalEvent.title} (No Winners)`
+                    });
+
+                    // Update Bet Status (Game)
+                    await supabaseGame
+                        .from('prediction_bets')
+                        .update({ status: 'refunded', payout: bet.amount })
+                        .eq('id', bet.id);
+
+                    processedCount++;
+                }));
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: `Event refunded (No winners). processed: ${processedCount}`
+            });
+        }
+
+        // STANDARD PAYOUT LOGIC
         if (winningPool > 0) {
-            // Fetch all winning bets
             const { data: winningBets } = await supabaseGame
                 .from('prediction_bets')
                 .select('*')
@@ -58,50 +101,63 @@ export async function POST(req: Request) {
                 .eq('choice', winner);
 
             if (winningBets && winningBets.length > 0) {
-                // Process Payouts
-                for (const bet of winningBets) {
-                    // Parimutuel: (UserBet / WinningPool) * TotalPool
+                // Parallel Processing
+                await Promise.all(winningBets.map(async (bet: any) => {
                     const share = Number(bet.amount) / winningPool;
                     const payout = Math.floor(share * totalPool);
 
                     if (payout > 0) {
-                        // A. Credit User Wallet (Main DB)
-                        const { data: profile } = await supabase.from('profiles').select('coins').eq('id', bet.user_id).single();
-                        if (profile) {
-                            await supabase.from('profiles').update({ coins: profile.coins + payout }).eq('id', bet.user_id);
+                        try {
+                            // A. Credit User Wallet (Main DB) - using RPC for atomicity if available, else update
+                            const { error: walletError } = await supabase.rpc('increment_user_coins', {
+                                u_id: bet.user_id,
+                                amount: payout
+                            });
+
+                            // Fallback if RPC missing
+                            if (walletError) {
+                                const { data: profile } = await supabase.from('profiles').select('coins').eq('id', bet.user_id).single();
+                                if (profile) {
+                                    await supabase.from('profiles').update({ coins: profile.coins + payout }).eq('id', bet.user_id);
+                                }
+                            }
+
+                            // B. Log Transaction (Main DB)
+                            await supabase.from('transactions').insert({
+                                user_id: bet.user_id,
+                                amount: payout,
+                                type: 'win',
+                                description: `WIN: ${finalEvent.title} (${Number(bet.amount)} -> ${payout})`
+                            });
+
+                            // C. Update Bet Status (Game DB)
+                            await supabaseGame
+                                .from('prediction_bets')
+                                .update({ status: 'won', payout: payout })
+                                .eq('id', bet.id);
+
+                            processedCount++;
+                        } catch (err) {
+                            console.error(`Failed to process payout for bet ${bet.id}`, err);
                         }
-
-                        // B. Update Bet Status (Game DB)
-                        await supabaseGame
-                            .from('prediction_bets')
-                            .update({ status: 'won', payout: payout })
-                            .eq('id', bet.id);
-
-                        processedCount++;
                     }
-                }
+                }));
             }
         }
 
         // 6. Mark Losers
         const loserOption = winner === 'option_1' ? 'option_2' : 'option_1';
-        const { data: losingBets } = await supabaseGame
+        const { error: loserError } = await supabaseGame
             .from('prediction_bets')
-            .select('id')
+            .update({ status: 'lost', payout: 0 })
             .eq('event_id', event_id)
             .eq('choice', loserOption);
 
-        if (losingBets && losingBets.length > 0) {
-            const loserIds = losingBets.map(b => b.id);
-            await supabaseGame
-                .from('prediction_bets')
-                .update({ status: 'lost', payout: 0 })
-                .in('id', loserIds);
-        }
+        if (loserError) console.error("Error marking losers:", loserError);
 
         return NextResponse.json({
             success: true,
-            message: `Event resolved. Winners: ${processedCount}. Pool: ${totalPool}`
+            message: `Event resolved. Winners Paid: ${processedCount}. Pool: ${totalPool}`
         });
 
     } catch (error: any) {

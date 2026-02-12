@@ -56,6 +56,17 @@ function AdminPage() {
         if (user) refreshUser();
     }, [user, refreshUser]);
 
+    // AUTO-LOOP DRIVER: Keep the game alive even if only Admin is open
+    useQuery({
+        queryKey: ['admin-game-loop'],
+        queryFn: async () => {
+            const res = await fetch('/api/game/loop');
+            return res.json();
+        },
+        refetchInterval: 10000, // Poll every 10s
+        refetchOnWindowFocus: true
+    });
+
     // Queries
     const { data: adminStats } = useQuery({
         queryKey: ['admin-stats'],
@@ -991,8 +1002,8 @@ function AdminPage() {
                                 {predictionEvents?.map((event: any) => (
                                     <div key={event.id} className="glass-panel" style={{ padding: '24px', border: '1px solid #333' }}>
                                         <div className="flex-between" style={{ marginBottom: '16px' }}>
-                                            <span style={{ fontSize: '0.6rem', padding: '4px 8px', borderRadius: '4px', background: event.status === 'active' ? 'var(--emerald)' : '#333', color: '#fff', fontWeight: 'bold' }}>
-                                                {event.status.toUpperCase()}
+                                            <span style={{ fontSize: '0.6rem', padding: '4px 8px', borderRadius: '4px', background: event.status === 'active' && new Date(event.expires_at) > new Date() ? 'var(--emerald)' : (event.status === 'completed' ? 'var(--primary)' : '#ef4444'), color: '#fff', fontWeight: 'bold' }}>
+                                                {event.status === 'active' && new Date(event.expires_at) <= new Date() ? 'EXPIRED' : event.status.toUpperCase()}
                                             </span>
                                             <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
                                                 EXP: {new Date(event.expires_at).toLocaleTimeString()}
@@ -1009,7 +1020,7 @@ function AdminPage() {
                                                 <p style={{ fontWeight: 'bold', color: '#fff' }}>{event.pool_2} POOL</p>
                                             </div>
                                         </div>
-                                        {event.status === 'active' && (
+                                        {event.status === 'active' && new Date(event.expires_at) > new Date() && (
                                             <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
                                                 <button
                                                     onClick={() => resolvePredictionMutation.mutate({ event_id: event.id, winner: 'option_1' })}
@@ -1025,6 +1036,30 @@ function AdminPage() {
                                                 </button>
                                             </div>
                                         )}
+
+                                        <div style={{ marginTop: '16px' }}>
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm('Are you sure you want to DELETE this event? This cannot be undone.')) {
+                                                        try {
+                                                            const res = await fetch('/api/admin/predictions/delete', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ event_id: event.id })
+                                                            });
+                                                            const data = await res.json();
+                                                            if (!res.ok) throw new Error(data.error || 'Delete failed');
+                                                            queryClient.invalidateQueries({ queryKey: ['admin-predictions'] });
+                                                        } catch (e: any) {
+                                                            alert(`Failed to delete: ${e.message}`);
+                                                        }
+                                                    }
+                                                }}
+                                                style={{ width: '100%', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '950', letterSpacing: '2px', cursor: 'pointer' }}
+                                            >
+                                                DELETE EVENT
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

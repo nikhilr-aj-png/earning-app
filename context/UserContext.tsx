@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/useUserStore';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from './ToastContext';
 
 interface User {
@@ -42,6 +43,20 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         // Always set loading to false after checking localStorage to allow the app to proceed
         setLoading(false);
     }, [setLoading]);
+
+    // GLOBAL POLLING: Refresh user data every 10s to keep balance/status in sync site-wide
+    useQuery({
+        queryKey: ['global-user-sync'],
+        queryFn: async () => {
+            if (!user?.id) return null;
+            // Re-use refresh logic but return something for query
+            await refreshUser();
+            return true;
+        },
+        enabled: !!user?.id,
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true
+    });
 
     const login = useCallback(async (email: string, password: string) => {
         try {

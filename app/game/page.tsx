@@ -1,14 +1,15 @@
 "use client";
 import { useUser } from "@/context/UserContext";
+import { useToast } from "@/context/ToastContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Play, Trophy, History, Gamepad2, X, ChevronLeft, Crown } from "lucide-react";
+import { Play, Trophy, History, Gamepad2, X, ChevronLeft, Crown, Clock } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function GameHub() {
-    const { user, loading } = useUser();
+    const { user, loading, refreshUser } = useUser();
     const router = useRouter();
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
@@ -44,6 +45,70 @@ export default function GameHub() {
         },
         enabled: !!user?.id
     });
+
+    const queryClient = useQueryClient();
+    const [resolutionData, setResolutionData] = useState<any>(null);
+    const [timeOffset, setTimeOffset] = useState(0);
+
+    // AUTO-LOOP: Poll every 5s to progress game state & Sync Data
+    useQuery({
+        queryKey: ['game-loop-tick'],
+        queryFn: async () => {
+            const res = await fetch('/api/game/loop');
+            const data = await res.json();
+
+            // 1. Sync Time
+            if (data.server_time) {
+                const serverTime = new Date(data.server_time).getTime();
+                const clientTime = Date.now();
+                setTimeOffset(serverTime - clientTime);
+            }
+
+            // 2. Real-time Updates: Handle Resolution with 3s Delay
+            if (data.status === 'resolved' && data.resolved_games?.length > 0) {
+                // A. Show Result Overlay immediately
+                setResolutionData(data.resolved_games[0]);
+
+                // B. Wait 3 seconds for "Reveal Animation"
+                setTimeout(async () => {
+                    setResolutionData(null); // Clear overlay 
+
+                    // C. Refresh Data (Fetch New Game + History)
+                    await Promise.all([
+                        queryClient.invalidateQueries({ queryKey: ['active-predictions'] }),
+                        queryClient.invalidateQueries({ queryKey: ['games-list'] }),
+                        queryClient.invalidateQueries({ queryKey: ['bet-history'] }),
+                        queryClient.invalidateQueries({ queryKey: ['bet-check'] }), // Ensure card unlocks for new game
+                        refreshUser()
+                    ]);
+                }, 3000);
+            }
+            else if (data.status === 'restarted') {
+                // Immediate refresh if just restarted (fallback)
+                queryClient.invalidateQueries({ queryKey: ['active-predictions'] });
+            }
+            return true;
+        },
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true
+    });
+
+    // Auto-Switch to New Game logic
+    useEffect(() => {
+        // If the modal is open (selectedEvent exists) AND we have a new active prediction
+        // AND the current selectedEvent is expired/resolved... switch to the new one.
+        if (selectedEvent && predictions && predictions.length > 0) {
+            const latestGame = predictions[0];
+            // If current game ID is different from latest (meaning we moved to next round)
+            if (selectedEvent.id !== latestGame.id) {
+                // Only switch if current is expired or we just finished resolution
+                const now = Date.now() + timeOffset;
+                if (new Date(selectedEvent.expires_at).getTime() < now) {
+                    setSelectedEvent(latestGame);
+                }
+            }
+        }
+    }, [predictions, selectedEvent, timeOffset]);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -141,12 +206,12 @@ export default function GameHub() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontSize: '1.3rem',
+                                            fontSize: '0.9rem',
                                             fontWeight: '900',
                                             color: '#000',
                                             boxShadow: `0 4px 12px ${wonKing ? 'rgba(59, 130, 246, 0.5)' : 'rgba(236, 72, 153, 0.5)'}`
                                         }}>
-                                            {wonKing ? 'K' : 'Q'}
+                                            {wonKing ? 'KING' : 'QUEEN'}
                                         </div>
                                         <span style={{
                                             fontSize: '0.68rem',
@@ -253,7 +318,7 @@ export default function GameHub() {
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                         {allGames.map((game: any, index: number) => (
-                            <GameCard key={game.id || index} game={game} index={index} setSelectedEvent={setSelectedEvent} />
+                            <GameCard key={game.id || index} game={game} index={index} setSelectedEvent={setSelectedEvent} timeOffset={timeOffset} />
                         ))}
                     </div>
                 )}
@@ -267,7 +332,13 @@ export default function GameHub() {
                     onClick={() => setSelectedEvent(null)}
                 >
                     <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '40px' }}>
-                        <PredictionCard event={selectedEvent} user={user} onClose={() => setSelectedEvent(null)} />
+                        <PredictionCard
+                            event={selectedEvent}
+                            user={user}
+                            onClose={() => setSelectedEvent(null)}
+                            timeOffset={timeOffset}
+                            resolutionData={resolutionData} // PASS THE RESULT
+                        />
                     </div>
                 </div>
             )}
@@ -275,12 +346,21 @@ export default function GameHub() {
     );
 }
 
-function GameCard({ game, index, setSelectedEvent }: any) {
+function GameCard({ game, index, setSelectedEvent, timeOffset }: any) {
     if (game.type === 'prediction') {
+        const [now, setNow] = useState(Date.now() + (timeOffset || 0));
+
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setNow(Date.now() + (timeOffset || 0));
+            }, 100); // Update every 100ms for smoothness
+            return () => clearInterval(interval);
+        }, [timeOffset]);
+
         const expires = new Date(game.expires_at);
-        const timeLeft = Math.max(0, expires.getTime() - Date.now());
-        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const timeLeft = Math.max(0, expires.getTime() - now);
+        const minutes = Math.floor(timeLeft / 60000);
+        const seconds = Math.floor((timeLeft % 60000) / 1000);
 
         return (
             <div className="animate-fade-in" style={{ animationDelay: `${index * 80}ms` }}>
@@ -299,8 +379,8 @@ function GameCard({ game, index, setSelectedEvent }: any) {
                 }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                        e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(244, 63, 94, 0.25)';
-                        e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.3)';
+                        e.currentTarget.style.boxShadow = '0 20px 50px -10px rgba(244, 63, 94, 0.3)';
+                        e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.4)';
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0) scale(1)';
@@ -319,13 +399,11 @@ function GameCard({ game, index, setSelectedEvent }: any) {
                         borderBottom: '1px solid rgba(255,255,255,0.05)',
                         overflow: 'hidden'
                     }}>
-                        {/* Abstract Background Elements */}
                         {/* Target Audience Badge */}
                         <div style={{
                             position: 'absolute', top: '12px', left: '12px',
                             background: game.target_audience === 'premium' ? 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)' :
-                                game.target_audience === 'free' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' :
-                                    'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                             color: game.target_audience === 'premium' ? '#000' : '#fff',
                             fontSize: '0.6rem', fontWeight: '950', padding: '4px 10px',
                             borderRadius: '8px', letterSpacing: '0.8px',
@@ -333,23 +411,29 @@ function GameCard({ game, index, setSelectedEvent }: any) {
                             zIndex: 10,
                             textTransform: 'uppercase'
                         }}>
-                            {game.target_audience === 'all' ? 'EVERYONE' : game.target_audience}
+                            {game.target_audience === 'premium' ? 'PREMIUM' : 'EVERYONE'}
                         </div>
 
                         {/* Countdown Badge */}
                         <div style={{
                             position: 'absolute', top: '12px', right: '12px',
-                            background: 'rgba(244, 63, 94, 0.9)',
+                            background: timeLeft > 0 ? 'rgba(244, 63, 94, 0.9)' : 'rgba(100, 100, 100, 0.9)',
                             backdropFilter: 'blur(8px)',
                             color: '#fff',
                             fontSize: '0.65rem', fontWeight: '800', padding: '6px 10px',
                             borderRadius: '12px', letterSpacing: '0.5px',
-                            boxShadow: '0 4px 12px rgba(244, 63, 94, 0.4)',
+                            boxShadow: timeLeft > 0 ? '0 4px 12px rgba(244, 63, 94, 0.4)' : 'none',
                             zIndex: 10,
                             display: 'flex', alignItems: 'center', gap: '4px'
                         }}>
-                            <div className="animate-pulse" style={{ width: '6px', height: '6px', background: '#fff', borderRadius: '50%' }} />
-                            {hours}h {minutes}m
+                            {timeLeft > 0 ? (
+                                <>
+                                    <Clock size={12} strokeWidth={3} />
+                                    {minutes}m {seconds}s
+                                </>
+                            ) : (
+                                "EXPIRED"
+                            )}
                         </div>
 
                         <div style={{ display: 'flex', gap: '20px', alignItems: 'center', zIndex: 1 }}>
@@ -363,7 +447,8 @@ function GameCard({ game, index, setSelectedEvent }: any) {
                                 position: 'relative',
                                 boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
                                 border: '2px solid rgba(255,255,255,0.1)',
-                                transform: 'rotate(-6deg)'
+                                transform: 'rotate(-6deg)',
+                                transition: 'transform 0.3s ease'
                             }}>
                                 <Image
                                     src={game.option_1_image || "/assets/king.png"}
@@ -392,7 +477,8 @@ function GameCard({ game, index, setSelectedEvent }: any) {
                                 position: 'relative',
                                 boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
                                 border: '2px solid rgba(255,255,255,0.1)',
-                                transform: 'rotate(6deg)'
+                                transform: 'rotate(6deg)',
+                                transition: 'transform 0.3s ease'
                             }}>
                                 <Image
                                     src={game.option_2_image || "/assets/queen.png"}
@@ -426,22 +512,44 @@ function GameCard({ game, index, setSelectedEvent }: any) {
                         </div>
 
                         <button
-                            onClick={() => setSelectedEvent(game)}
-                            className="btn-hover-effect"
+                            onClick={() => {
+                                if (timeLeft > 0) setSelectedEvent(game);
+                            }}
+                            disabled={timeLeft <= 0}
+                            className={timeLeft > 0 ? "btn-shimmer" : ""}
                             style={{
                                 width: '100%', height: '52px', borderRadius: '14px',
-                                background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
-                                color: '#fff',
+                                background: timeLeft > 0 ? 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' : '#333',
+                                color: timeLeft > 0 ? '#fff' : '#888',
                                 fontSize: '0.9rem', fontWeight: '800',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                 letterSpacing: '1px',
                                 border: 'none',
-                                boxShadow: '0 4px 15px rgba(244, 63, 94, 0.4)',
-                                transition: 'all 0.2s',
-                                textTransform: 'uppercase'
+                                boxShadow: timeLeft > 0 ? '0 4px 15px rgba(244, 63, 94, 0.4)' : 'none',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                textTransform: 'uppercase',
+                                cursor: timeLeft > 0 ? 'pointer' : 'not-allowed',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (timeLeft > 0) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(244, 63, 94, 0.6)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (timeLeft > 0) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(244, 63, 94, 0.4)';
+                                }
                             }}
                         >
-                            PLAY NOW <Play size={18} fill="currentColor" />
+                            {timeLeft > 0 ? (
+                                <>PLAY NOW <Play size={18} fill="currentColor" /></>
+                            ) : (
+                                <>EVENT EXPIRED <Clock size={18} /></>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -536,28 +644,58 @@ function GameCard({ game, index, setSelectedEvent }: any) {
     );
 }
 
-function PredictionCard({ event, user, onClose }: { event: any, user: any, onClose: () => void }) {
+function PredictionCard({ event, user, onClose, timeOffset, resolutionData }: { event: any, user: any, onClose: () => void, timeOffset: number, resolutionData?: any }) {
     const queryClient = useQueryClient();
-    const expires = new Date(event.expires_at);
-    const timeLeft = Math.max(0, expires.getTime() - Date.now());
-    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const { showToast } = useToast();
+    const [now, setNow] = useState(Date.now() + (timeOffset || 0));
 
-    // Fetch history
-    const { data: eventHistory = [] } = useQuery({
-        queryKey: ['bet-history', user?.id],
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(Date.now() + (timeOffset || 0));
+        }, 100);
+        return () => clearInterval(interval);
+    }, [timeOffset]);
+
+    const expires = new Date(event.expires_at);
+    // SYNCED TIME
+    const timeLeft = Math.max(0, expires.getTime() - now);
+    const minutes = Math.floor(timeLeft / 60000);
+    const seconds = Math.floor((timeLeft % 60000) / 1000);
+
+    // Fetch history SPECIFICALLY for this event to ensure lock state is accurate
+    // (Bypasses the 50-item limit of general history)
+    const { data: eventHistory = [], isLoading: isHistoryLoading } = useQuery({
+        queryKey: ['bet-check', user?.id, event?.id], // Unique key for this event
         queryFn: async () => {
-            if (!user?.id) return [];
-            const res = await fetch('/api/game/prediction/history', {
+            if (!user?.id || !event?.id) return [];
+            const res = await fetch(`/api/game/prediction/history?event_id=${event.id}`, {
                 headers: { 'x-user-id': user.id }
             });
             const data = await res.json();
-            return Array.isArray(data) ? data.slice(0, 10) : [];
+            return Array.isArray(data) ? data : [];
         },
-        enabled: !!user?.id
+        enabled: !!user?.id && !!event?.id,
+        refetchInterval: 5000,
+        refetchOnMount: 'always',
+        staleTime: 0
     });
 
+    // Check if user already has a bet on this event
+    // Using String() to ensure type safety (UUID vs string vs number)
+    const betOnOption1 = eventHistory.find((b: any) => String(b.event_id) === String(event?.id) && b.choice === 'option_1');
+    const betOnOption2 = eventHistory.find((b: any) => String(b.event_id) === String(event?.id) && b.choice === 'option_2');
+
+    // Use Object to track multiple local bets with amounts
+    const [localBets, setLocalBets] = useState<Record<string, number>>({});
+
+    const onOption1 = !!betOnOption1 || localBets.hasOwnProperty('option_1');
+    const onOption2 = !!betOnOption2 || localBets.hasOwnProperty('option_2');
+
     const [betAmount, setBetAmount] = useState(event.bet_mode === 'fixed' ? event.min_bet.toString() : '10');
+
+    // Determine display amount: Prefer server data, fallback to local fixed amount
+    const wagerAmount1 = betOnOption1 ? betOnOption1.amount : localBets['option_1'];
+    const wagerAmount2 = betOnOption2 ? betOnOption2.amount : localBets['option_2'];
 
     const betMutation = useMutation({
         mutationFn: async ({ amount, choice }: { amount: number, choice: string }) => {
@@ -575,20 +713,32 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
             if (!res.ok) throw new Error(data.error || 'Bet failed');
             return data;
         },
-        onSuccess: (data) => {
+        onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['active-predictions'] });
             queryClient.invalidateQueries({ queryKey: ['bet-history'] });
-            alert(`✅ BET PLACED! New Balance: ${data.newBalance} FLOW`);
-            onClose();
+            showToast(`BET PLACED! Balance: ${data.newBalance}`, 'success');
+            // Keep local lock for this specific choice
         },
-        onError: (err: any) => alert('❌ ' + err.message)
+        onError: (err: any, variables) => {
+            showToast(err.message, 'error');
+            // Unlock specific choice on error
+            setLocalBets(prev => {
+                const newRecord = { ...prev };
+                delete newRecord[variables.choice];
+                return newRecord;
+            });
+        }
     });
 
     const handleBet = (amount: number, choice: 'option_1' | 'option_2') => {
+        if ((choice === 'option_1' && onOption1) || (choice === 'option_2' && onOption2)) return;
+
         if (user.coins < amount) {
-            alert(`Insufficient balance! You have ${user.coins} FLOW`);
+            showToast(`Insufficient balance! Need ${amount} FLOW`, 'error');
             return;
         }
+        // Optimistically lock with specific amount
+        setLocalBets(prev => ({ ...prev, [choice]: amount }));
         betMutation.mutate({ amount, choice });
     };
 
@@ -608,20 +758,60 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
             boxShadow: '0 20px 80px rgba(0,0,0,0.8)',
             border: '2px solid #333'
         }}>
-            {betMutation.isPending && (
-                <div className="flex-center" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 30, flexDirection: 'column' }}>
-                    <div className="loader" style={{ borderTopColor: 'var(--primary)' }} />
-                    <p style={{ marginTop: '16px', fontSize: '0.9rem', color: 'var(--gold)', fontWeight: '900', letterSpacing: '1px' }}>PLACING BET...</p>
+            {/* RESULT OVERLAY */}
+            {resolutionData && resolutionData.id === event.id && (
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 100,
+                    background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.3s ease-out'
+                }}>
+                    <div className="animate-bounce" style={{ marginBottom: '20px' }}>
+                        {resolutionData.winner === 'tie' ? (
+                            <div style={{ fontSize: '4rem' }}>🤝</div>
+                        ) : (
+                            <div style={{
+                                width: '120px', height: '160px',
+                                background: resolutionData.winner === 'option_1' ? 'var(--primary)' : 'var(--secondary)',
+                                borderRadius: '16px', padding: '4px',
+                                boxShadow: resolutionData.winner === 'option_1'
+                                    ? '0 0 50px rgba(59, 130, 246, 0.6)'
+                                    : '0 0 50px rgba(236, 72, 153, 0.6)'
+                            }}>
+                                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+                                    <Image
+                                        src={resolutionData.winner === 'option_1' ? '/assets/king.png' : '/assets/queen.png'}
+                                        fill alt="Winner" style={{ objectFit: 'cover' }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <h2 style={{
+                        fontSize: '3rem', fontWeight: '950', color: '#fff', margin: 0,
+                        textTransform: 'uppercase', letterSpacing: '2px',
+                        textShadow: '0 4px 20px rgba(255,255,255,0.4)'
+                    }}>
+                        {resolutionData.winner === 'tie' ? 'DRAW!' :
+                            resolutionData.winner === 'option_1' ? 'KING WINS!' : 'QUEEN WINS!'}
+                    </h2>
+                    {resolutionData.isTie && (
+                        <p style={{ color: 'var(--text-dim)', marginTop: '8px', fontSize: '1rem', fontWeight: '600' }}>
+                            50% REFUND ISSUED
+                        </p>
+                    )}
                 </div>
             )}
+
+            {/* REMOVED BLOCKING LOADER */}
 
             {/* Close Button */}
             <button
                 onClick={onClose}
                 style={{
                     position: 'absolute',
-                    top: '20px',
-                    right: '20px',
+                    top: '12px',
+                    right: '12px',
                     background: 'rgba(255,255,255,0.08)',
                     border: '1px solid rgba(255,255,255,0.15)',
                     color: '#fff',
@@ -687,7 +877,7 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
                 }}>
                     <div style={{ width: '6px', height: '6px', background: 'var(--rose)', borderRadius: '50%', boxShadow: '0 0 8px var(--rose)' }} className="animate-pulse" />
                     <span style={{ fontSize: '0.68rem', color: 'var(--rose)', fontWeight: '950', letterSpacing: '0.8px' }}>
-                        {hours}h {minutes}m LEFT
+                        {minutes}m {seconds}s LEFT
                     </span>
                 </div>
 
@@ -710,15 +900,17 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
                             boxShadow: '0 20px 60px rgba(59, 130, 246, 0.4)',
                             border: '4px solid rgba(59, 130, 246, 0.8)',
                             transform: 'rotate(-4deg)',
-                            transition: 'all 0.3s'
+                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                         }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'rotate(-2deg) scale(1.05)';
+                                e.currentTarget.style.transform = 'rotate(-2deg) scale(1.05) translateY(-10px)';
                                 e.currentTarget.style.borderColor = '#60a5fa';
+                                e.currentTarget.style.boxShadow = '0 30px 80px rgba(59, 130, 246, 0.6)';
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'rotate(-4deg) scale(1)';
+                                e.currentTarget.style.transform = 'rotate(-4deg) scale(1) translateY(0)';
                                 e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.8)';
+                                e.currentTarget.style.boxShadow = '0 20px 60px rgba(59, 130, 246, 0.4)';
                             }}
                         >
                             <Image src={event.option_1_image || "/assets/king.png"} alt="Option 1" fill style={{ objectFit: 'cover' }} />
@@ -743,38 +935,60 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
                                     handleBet(amount, 'option_1');
                                 }
                             }}
-                            disabled={betMutation.isPending}
-                            className="btn-hover-effect"
+                            disabled={betMutation.isPending || onOption1}
+                            className={onOption1 ? "" : "btn-shimmer"}
                             style={{
                                 width: '260px',
                                 padding: '16px',
-                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                                color: '#fff',
+                                background: isHistoryLoading ? 'rgba(255,255,255,0.1)' :
+                                    onOption1 ? 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)' : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                color: onOption1 ? '#000' : '#fff',
                                 border: 'none',
                                 borderRadius: '14px',
                                 fontSize: '1rem',
                                 fontWeight: '900',
-                                cursor: 'pointer',
                                 letterSpacing: '1px',
-                                boxShadow: '0 8px 25px rgba(37, 99, 235, 0.4)',
-                                transition: 'all 0.2s',
-                                textTransform: 'uppercase'
+                                boxShadow: isHistoryLoading ? 'none' :
+                                    onOption1 ? '0 4px 15px rgba(255, 215, 0, 0.4)' : '0 8px 25px rgba(37, 99, 235, 0.4)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                textTransform: 'uppercase',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                cursor: (isHistoryLoading || onOption1 || event.status !== 'active') ? 'not-allowed' : 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!onOption1) {
+                                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                    e.currentTarget.style.boxShadow = '0 12px 35px rgba(37, 99, 235, 0.6)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!onOption1) {
+                                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(37, 99, 235, 0.4)';
+                                }
                             }}
                         >
-                            Or Select {event.option_1_label || 'KING'}
+                            {isHistoryLoading ? 'CHECKING...' :
+                                onOption1 ? `LOCKED ${wagerAmount1} 🔒` : 'BUY'
+                            }
                         </button>
                     </div>
 
-                    {/* VS Badge */}
+                    {/* VS Badge, centered */}
                     <div style={{
-                        marginTop: '120px',
-                        fontSize: '3rem',
+                        alignSelf: 'center',
+                        fontSize: '4.5rem',
                         fontWeight: '900',
                         fontStyle: 'italic',
                         background: 'linear-gradient(to right, #60a5fa, #f472b6)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
-                        filter: 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.5))'
+                        filter: 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.5))',
+                        animation: 'pulse 2s infinite',
+                        margin: '0 20px',
+                        transform: 'translate(-20px, -30px)', // Lift to center, nudge left
+                        zIndex: 20
                     }}>VS</div>
 
                     {/* Queen Card + Button */}
@@ -789,15 +1003,17 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
                             boxShadow: '0 20px 60px rgba(236, 72, 153, 0.4)',
                             border: '4px solid rgba(236, 72, 153, 0.8)',
                             transform: 'rotate(4deg)',
-                            transition: 'all 0.3s'
+                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                         }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'rotate(2deg) scale(1.05)';
+                                e.currentTarget.style.transform = 'rotate(2deg) scale(1.05) translateY(-10px)';
                                 e.currentTarget.style.borderColor = '#f472b6';
+                                e.currentTarget.style.boxShadow = '0 30px 80px rgba(236, 72, 153, 0.6)';
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'rotate(4deg) scale(1)';
+                                e.currentTarget.style.transform = 'rotate(4deg) scale(1) translateY(0)';
                                 e.currentTarget.style.borderColor = 'rgba(236, 72, 153, 0.8)';
+                                e.currentTarget.style.boxShadow = '0 20px 60px rgba(236, 72, 153, 0.4)';
                             }}
                         >
                             <Image src={event.option_2_image || "/assets/queen.png"} alt="Option 2" fill style={{ objectFit: 'cover' }} />
@@ -822,25 +1038,38 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
                                     handleBet(amount, 'option_2');
                                 }
                             }}
-                            disabled={betMutation.isPending}
-                            className="btn-hover-effect"
+                            disabled={betMutation.isPending || onOption2}
+                            className={onOption2 ? "" : "btn-shimmer"}
                             style={{
                                 width: '260px',
                                 padding: '16px',
-                                background: 'linear-gradient(135deg, #db2777 0%, #be185d 100%)',
-                                color: '#fff',
+                                background: isHistoryLoading ? 'rgba(255,255,255,0.1)' :
+                                    onOption2 ? 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)' : 'linear-gradient(135deg, #db2777 0%, #be185d 100%)',
+                                color: onOption2 ? '#000' : '#fff',
                                 border: 'none',
                                 borderRadius: '14px',
                                 fontSize: '1rem',
                                 fontWeight: '900',
-                                cursor: 'pointer',
-                                letterSpacing: '1px',
-                                boxShadow: '0 8px 25px rgba(219, 39, 119, 0.4)',
-                                transition: 'all 0.2s',
-                                textTransform: 'uppercase'
+                                cursor: (isHistoryLoading || onOption2 || event.status !== 'active') ? 'not-allowed' : 'pointer',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!onOption2) {
+                                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                    e.currentTarget.style.boxShadow = '0 12px 35px rgba(219, 39, 119, 0.6)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!onOption2) {
+                                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(219, 39, 119, 0.4)';
+                                }
                             }}
                         >
-                            Or Select {event.option_2_label || 'QUEEN'}
+                            {isHistoryLoading ? 'CHECKING...' :
+                                onOption2 ? `LOCKED ${wagerAmount2} 🔒` : 'BUY'
+                            }
                         </button>
                     </div>
                 </div>
@@ -995,67 +1224,92 @@ function PredictionCard({ event, user, onClose }: { event: any, user: any, onClo
                     gap: '12px',
                     overflowY: 'auto'
                 }}>
-                    {/* Quick Bet Buttons */}
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {[10, 25, 50, 100, 250].map(amount => (
-                            <button
-                                key={amount}
-                                onClick={() => setBetAmount(amount.toString())}
-                                style={{
-                                    flex: '1 1 calc(20% - 6px)',
-                                    minWidth: '50px',
-                                    padding: '10px 6px',
-                                    background: betAmount === amount.toString() ? 'var(--primary)' : 'rgba(59, 130, 246, 0.15)',
-                                    border: `1px solid ${betAmount === amount.toString() ? 'var(--primary)' : 'rgba(59, 130, 246, 0.3)'}`,
-                                    borderRadius: '8px',
-                                    color: betAmount === amount.toString() ? '#000' : 'var(--primary)',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '950',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                {amount}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Bet Controls - Conditional based on Mode */}
+                    {event.bet_mode === 'fixed' ? (
+                        <div style={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '20px',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: '12px',
+                            gap: '8px'
+                        }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                FIXED WAGER AMOUNT
+                            </span>
+                            <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', textShadow: '0 2px 10px rgba(59, 130, 246, 0.5)' }}>
+                                {parseInt(betAmount).toLocaleString()} <span style={{ fontSize: '1rem', color: 'var(--primary)' }}>FLOW</span>
+                            </span>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
+                                *This event has a fixed entry fee
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Quick Bet Buttons */}
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {[10, 25, 50, 100, 250].map(amount => (
+                                    <button
+                                        key={amount}
+                                        onClick={() => setBetAmount(amount.toString())}
+                                        style={{
+                                            flex: '1 1 calc(20% - 6px)',
+                                            minWidth: '50px',
+                                            padding: '10px 6px',
+                                            background: betAmount === amount.toString() ? 'var(--primary)' : 'rgba(59, 130, 246, 0.15)',
+                                            border: `1px solid ${betAmount === amount.toString() ? 'var(--primary)' : 'rgba(59, 130, 246, 0.3)'}`,
+                                            borderRadius: '8px',
+                                            color: betAmount === amount.toString() ? '#000' : 'var(--primary)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: '950',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {amount}
+                                    </button>
+                                ))}
+                            </div>
 
-                    {/* Custom Amount Input + SET Button */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <input
-                            type="number"
-                            placeholder="Enter coins"
-                            value={betAmount}
-                            onChange={(e) => setBetAmount(e.target.value)}
-                            style={{
-                                flex: 1,
-                                padding: '10px 12px',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(59, 130, 246, 0.3)',
-                                borderRadius: '8px',
-                                color: '#fff',
-                                fontSize: '0.8rem',
-                                outline: 'none'
-                            }}
-                        />
-                        <button
-                            onClick={() => {
-                                // Amount is already set in state
-                            }}
-                            style={{
-                                padding: '10px 20px',
-                                background: 'var(--emerald)',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: '#000',
-                                fontSize: '0.8rem',
-                                fontWeight: '950',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            SET
-                        </button>
-                    </div>
+                            {/* Custom Amount Input + SET Button */}
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                    type="number"
+                                    placeholder="Enter coins"
+                                    value={betAmount}
+                                    onChange={(e) => setBetAmount(e.target.value)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 12px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                                        borderRadius: '8px',
+                                        color: '#fff',
+                                        fontSize: '0.8rem',
+                                        outline: 'none'
+                                    }}
+                                />
+                                <button
+                                    style={{
+                                        padding: '10px 20px',
+                                        background: 'var(--emerald)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        color: '#000',
+                                        fontSize: '0.8rem',
+                                        fontWeight: '950',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    SET
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div >

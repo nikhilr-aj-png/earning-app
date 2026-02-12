@@ -52,6 +52,7 @@ export default function EarnPage() {
             return res.json();
         },
         enabled: !!user,
+        refetchInterval: 5000,
     });
 
     const completeTaskMutation = useMutation({

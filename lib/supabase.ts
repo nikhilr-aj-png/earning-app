@@ -42,3 +42,16 @@ export const supabaseAdmin = createSafeClient(mainUrl, serviceRoleKey, {
 });
 
 export const supabaseGame = createSafeClient(gameUrl, gameAnonKey);
+
+// Admin client for Game DB (Bypasses RLS)
+// Tries specific Game Service Key, falls back to Main Service Key
+const PROVIDED_GAME_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hc2p0YWlhZ3Fic2JlaHhydHV2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDEzMTMwMywiZXhwIjoyMDg1NzA3MzAzfQ.99f3sltTvMP7AnWK50pHwdbLlcg570nYrVy-JHPfMjQ'; // User provided 2026-02-11
+
+const gameServiceRoleKey = PROVIDED_GAME_SERVICE_ROLE_KEY || process.env.SUPABASE_GAME_SERVICE_ROLE_KEY || serviceRoleKey;
+
+export const supabaseGameAdmin = createSafeClient(gameUrl, gameServiceRoleKey, {
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false
+    }
+});

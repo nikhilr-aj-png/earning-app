@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Coins, Flame, Target, Trophy, LogOut, ChevronRight, Zap, TrendingUp, Users, Activity, Copy, Crown, History, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/context/ToastContext";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
     const { user, logout, refreshUser, loading } = useUser(); // Added loading
@@ -20,27 +21,19 @@ export default function Dashboard() {
         return "Good Evening";
     });
 
-    const [transactions, setTransactions] = useState<any[]>([]);
-
-    useEffect(() => {
-        const fetchTransactions = async () => {
-            try {
-                const response = await fetch('/api/user/transactions', {
-                    headers: { 'x-user-id': user?.id || '' }
-                });
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    setTransactions(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch transactions:', error);
-            }
-        };
-
-        if (user?.id) {
-            fetchTransactions();
-        }
-    }, [user?.id]);
+    const { data: transactions = [] } = useQuery({
+        queryKey: ['transactions', user?.id],
+        queryFn: async () => {
+            if (!user?.id) return [];
+            const response = await fetch('/api/user/transactions', {
+                headers: { 'x-user-id': user.id }
+            });
+            return response.json();
+        },
+        enabled: !!user?.id,
+        refetchInterval: 5000, // Poll every 5s for new transactions
+        initialData: []
+    });
 
     useEffect(() => {
         if (!loading && !user) {

@@ -37,7 +37,8 @@ export default function WalletPage() {
             const res = await fetch('/api/user', { headers: { 'x-user-id': user?.id || '' } });
             return res.json();
         },
-        enabled: !!user
+        enabled: !!user,
+        refetchInterval: 5000,
     });
 
     const handleUpiUpdate = async () => {
@@ -109,6 +110,7 @@ export default function WalletPage() {
             return res.json();
         },
         enabled: !!user,
+        refetchInterval: 5000,
     });
 
     const handleBuyFlow = async (flowAmount: number) => {
@@ -226,10 +228,17 @@ export default function WalletPage() {
                 </div>
                 <button
                     onClick={() => setShowUpiModal(true)}
+                    disabled={!!userProfile?.new_upi_id}
                     className="btn-secondary"
-                    style={{ padding: '8px 16px', fontSize: '0.7rem', height: 'auto', background: 'rgba(255,255,255,0.05)' }}
+                    style={{
+                        padding: '8px 16px', fontSize: '0.7rem', height: 'auto',
+                        background: userProfile?.new_upi_id ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
+                        opacity: userProfile?.new_upi_id ? 0.5 : 1,
+                        cursor: userProfile?.new_upi_id ? 'not-allowed' : 'pointer',
+                        border: userProfile?.new_upi_id ? '1px solid #333' : '1px solid var(--glass-border)'
+                    }}
                 >
-                    {userProfile?.upi_id ? 'CHANGE' : 'LINK NOW'}
+                    {userProfile?.new_upi_id ? 'PENDING APPROVAL' : (userProfile?.upi_id ? 'CHANGE' : 'LINK NOW')}
                 </button>
             </div>
 

@@ -3,6 +3,7 @@ import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 const DEFAULT_SETTINGS = {
     is_enabled: false,
+    is_game_loop_enabled: true, // Auto-start game loop by default
     free_task_count: 5,
     premium_task_count: 5,
     free_reward: 50,
