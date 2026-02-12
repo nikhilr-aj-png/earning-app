@@ -31,8 +31,17 @@ export default function Dashboard() {
             return response.json();
         },
         enabled: !!user?.id,
-        refetchInterval: 5000, // Poll every 5s for new transactions
+        refetchInterval: 5000,
         initialData: []
+    });
+
+    // System Settings
+    const { data: systemSettings } = useQuery({
+        queryKey: ['system-settings-dashboard'],
+        queryFn: async () => {
+            const res = await fetch('/api/system/config');
+            return res.json();
+        }
     });
 
     useEffect(() => {
@@ -206,28 +215,30 @@ export default function Dashboard() {
                 {/* Operations Menu */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-                    <Link href="/game" className="glass-panel flex-between" style={{ padding: '24px', textDecoration: 'none', borderRadius: '4px', border: '1px solid #222' }}>
-                        <div className="flex-center" style={{ gap: '20px' }}>
-                            <div style={{
-                                background: 'transparent',
-                                border: '1px solid var(--glass-border)',
-                                color: '#fff',
-                                padding: '14px', borderRadius: '4px'
-                            }}>
-                                <Zap size={24} strokeWidth={1} />
+                    {systemSettings?.game_section_enabled && (
+                        <Link href="/game" className="glass-panel flex-between" style={{ padding: '24px', textDecoration: 'none', borderRadius: '4px', border: '1px solid #222' }}>
+                            <div className="flex-center" style={{ gap: '20px' }}>
+                                <div style={{
+                                    background: 'transparent',
+                                    border: '1px solid var(--glass-border)',
+                                    color: '#fff',
+                                    padding: '14px', borderRadius: '4px'
+                                }}>
+                                    <Zap size={24} strokeWidth={1} />
+                                </div>
+                                <div>
+                                    <h4 style={{ fontWeight: '900', fontSize: '0.9rem', color: '#fff', letterSpacing: '1px' }}>ARENA OPERATIONS</h4>
+                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Live Payouts Enabled</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 style={{ fontWeight: '900', fontSize: '0.9rem', color: '#fff', letterSpacing: '1px' }}>ARENA OPERATIONS</h4>
-                                <p style={{ color: 'var(--text-dim)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Live Payouts Enabled</p>
-                            </div>
-                        </div>
-                        <span style={{
-                            background: 'var(--rose)', color: '#fff',
-                            fontSize: '0.6rem', fontWeight: '900',
-                            padding: '4px 8px', borderRadius: '2px', letterSpacing: '1px',
-                            animation: 'pulse 2s infinite'
-                        }}>LIVE</span>
-                    </Link>
+                            <span style={{
+                                background: 'var(--rose)', color: '#fff',
+                                fontSize: '0.6rem', fontWeight: '900',
+                                padding: '4px 8px', borderRadius: '2px', letterSpacing: '1px',
+                                animation: 'pulse 2s infinite'
+                            }}>LIVE</span>
+                        </Link>
+                    )}
 
                     <Link href="/earn" className="glass-panel flex-between" style={{ padding: '24px', textDecoration: 'none', borderRadius: '4px', border: '1px solid #222' }}>
                         <div className="flex-center" style={{ gap: '20px' }}>

@@ -41,6 +41,15 @@ export default function WalletPage() {
         refetchInterval: 5000,
     });
 
+    // System Settings for Toggles
+    const { data: systemSettings } = useQuery({
+        queryKey: ['system-settings-wallet'],
+        queryFn: async () => {
+            const res = await fetch('/api/system/config');
+            return res.json();
+        }
+    });
+
     const handleUpiUpdate = async () => {
         if (!upiInput.includes('@')) {
             showToast("INVALID UPI ID FORMAT", "error");
@@ -287,14 +296,16 @@ export default function WalletPage() {
             </div>
 
             {/* Quick Actions - Pro Palette */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '48px' }}>
-                <button
-                    onClick={() => setShowDepositModal(true)}
-                    className="btn"
-                    style={{ padding: '20px', background: 'var(--emerald)', color: '#fff', border: 'none', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.2)' }}
-                >
-                    BUY FLOW
-                </button>
+            <div style={{ display: 'grid', gridTemplateColumns: systemSettings?.buy_flow_enabled ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '48px' }}>
+                {systemSettings?.buy_flow_enabled && (
+                    <button
+                        onClick={() => setShowDepositModal(true)}
+                        className="btn"
+                        style={{ padding: '20px', background: 'var(--emerald)', color: '#fff', border: 'none', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.2)' }}
+                    >
+                        BUY FLOW
+                    </button>
+                )}
                 <button
                     onClick={() => setShowWithdrawModal(true)}
                     className="btn btn-secondary"

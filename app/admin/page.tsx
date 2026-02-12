@@ -163,6 +163,34 @@ function AdminPage() {
         }
     });
 
+    // SYSTEM SETTINGS
+    const { data: systemSettings, isLoading: systemSettingsLoading } = useQuery({
+        queryKey: ['admin-system-settings'],
+        queryFn: async () => {
+            const res = await fetch('/api/system/config'); // Use public endpoint for reading, it's fine
+            return res.json();
+        },
+        enabled: !!user
+    });
+
+    const updateSystemSettingsMutation = useMutation({
+        mutationFn: async (updates: any) => {
+            const res = await fetch('/api/admin/system/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                body: JSON.stringify(updates)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-system-settings'] });
+            alert("SYSTEM SETTINGS UPDATED");
+        },
+        onError: (err: any) => alert("UPDATE FAILED: " + err.message)
+    });
+
     // PERDICTION SYSTEM STATE
     const [showPredictionModal, setShowPredictionModal] = useState(false);
     const [predictionForm, setPredictionForm] = useState({
@@ -1484,6 +1512,52 @@ function AdminPage() {
 
             {view === 'systems' && (
                 <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+                    {/* GLOBAL CONTROLS */}
+                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)', background: 'rgba(234, 179, 8, 0.05)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)', marginBottom: '24px', letterSpacing: '2px' }}>GLOBAL CONTROLS</h3>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                            {/* BUY FLOW TOGGLE */}
+                            <div className="flex-between" style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #333' }}>
+                                <div>
+                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>BUY FLOW ACCESS</h4>
+                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Enable/Disable users from purchasing FLOW coins.</p>
+                                </div>
+                                <button
+                                    onClick={() => updateSystemSettingsMutation.mutate({ buy_flow_enabled: !systemSettings?.buy_flow_enabled })}
+                                    style={{
+                                        padding: '10px 20px', borderRadius: '24px', border: 'none',
+                                        background: systemSettings?.buy_flow_enabled ? 'var(--emerald)' : '#333',
+                                        color: systemSettings?.buy_flow_enabled ? '#000' : 'var(--text-dim)',
+                                        fontWeight: '950', fontSize: '0.75rem', cursor: 'pointer'
+                                    }}
+                                >
+                                    {systemSettings?.buy_flow_enabled ? 'ENABLED' : 'DISABLED'}
+                                </button>
+                            </div>
+
+                            {/* GAME SECTION TOGGLE */}
+                            <div className="flex-between" style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #333' }}>
+                                <div>
+                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>GAME ARENA</h4>
+                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Enable/Disable the Play/Arena section for all users.</p>
+                                </div>
+                                <button
+                                    onClick={() => updateSystemSettingsMutation.mutate({ game_section_enabled: !systemSettings?.game_section_enabled })}
+                                    style={{
+                                        padding: '10px 20px', borderRadius: '24px', border: 'none',
+                                        background: systemSettings?.game_section_enabled ? 'var(--emerald)' : '#333',
+                                        color: systemSettings?.game_section_enabled ? '#000' : 'var(--text-dim)',
+                                        fontWeight: '950', fontSize: '0.75rem', cursor: 'pointer'
+                                    }}
+                                >
+                                    {systemSettings?.game_section_enabled ? 'ENABLED' : 'DISABLED'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="glass-panel" style={{ padding: '40px', border: '1px solid #333', background: 'rgba(255,255,255,0.01)' }}>
                         <div style={{ marginBottom: '32px' }}>
                             <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>SYSTEM MAINTENANCE</h2>

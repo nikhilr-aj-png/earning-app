@@ -13,6 +13,23 @@ export default function GameHub() {
     const router = useRouter();
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
+    // System Settings - Poll every 1s
+    const { data: systemSettings } = useQuery({
+        queryKey: ['system-settings-game'],
+        queryFn: async () => {
+            const res = await fetch('/api/system/config');
+            return res.json();
+        },
+        refetchInterval: 1000,
+        refetchOnWindowFocus: true
+    });
+
+    useEffect(() => {
+        if (systemSettings && !systemSettings.game_section_enabled && !user?.is_admin) {
+            router.push('/dashboard');
+        }
+    }, [systemSettings, user, router]);
+
     const { data: games, isLoading } = useQuery({
         queryKey: ['games-list'],
         queryFn: async () => {

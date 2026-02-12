@@ -4,10 +4,21 @@ import { useUser } from "@/context/UserContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Wallet, CheckSquare, Trophy, User } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function BottomNav() {
     const { user } = useUser();
     const pathname = usePathname();
+
+    // System Settings - Poll for instant updates
+    const { data: systemSettings } = useQuery({
+        queryKey: ['system-settings-nav'],
+        queryFn: async () => {
+            const res = await fetch('/api/system/config');
+            return res.json();
+        },
+        refetchInterval: 1000
+    });
 
     if (!user || user.is_admin || pathname === '/') return null;
 
@@ -17,7 +28,12 @@ export default function BottomNav() {
         { name: 'PLAY', href: '/game', icon: Trophy },
         { name: 'WALLET', href: '/wallet', icon: Wallet },
         { name: 'PROFILE', href: '/profile', icon: User },
-    ];
+    ].filter(item => {
+        if (item.name === 'PLAY') {
+            return systemSettings?.game_section_enabled !== false; // Default to true if loading
+        }
+        return true;
+    });
 
     return (
         <nav className="glass-panel" style={{
