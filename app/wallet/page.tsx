@@ -13,7 +13,7 @@ export interface Transaction {
     created_at: string;
 }
 
-import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap, Shield } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, History, Wallet as WalletIcon, ChevronLeft, Layers, X, CheckCircle2, TrendingUp, Zap, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -243,8 +243,7 @@ export default function WalletPage() {
             </div>
 
             {/* Capital Balance Module - Extreme Vibrant Sapphire */}
-            <div className="glass-panel glass-vibrant" style={{
-                width: '75%',
+            <div className="glass-panel glass-vibrant responsive-width" style={{
                 margin: '0 auto 40px',
                 padding: '60px 24px',
                 background: 'linear-gradient(135deg, #1e40af 0%, #020617 100%)',
@@ -305,6 +304,111 @@ export default function WalletPage() {
                 </button>
             </div>
 
+            {/* PREMIUM UPGRADE SECTION */}
+            {!user?.is_premium && (
+                <div className="glass-panel responsive-width" style={{
+                    margin: '0 auto 48px',
+                    padding: '32px',
+                    background: 'linear-gradient(135deg, #FFD700 0%, #B8860B 100%)', // Gold Gradient
+                    border: '1px solid #FFD700',
+                    color: '#000',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{ position: 'relative', zIndex: 2 }}>
+                        <div className="flex-between" style={{ alignItems: 'flex-start', marginBottom: '20px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: '950', letterSpacing: '-1px', color: '#000', marginBottom: '8px' }}>
+                                    ELITE STATUS
+                                </h3>
+                                <p style={{ fontSize: '0.85rem', fontWeight: '800', opacity: 0.8 }}>
+                                    UNLOCK THE FULL POTENTIAL
+                                </p>
+                            </div>
+                            <div style={{
+                                background: '#000', color: '#FFD700',
+                                padding: '8px 16px', borderRadius: '12px',
+                                fontWeight: '900', fontSize: '1.2rem'
+                            }}>
+                                ₹99 <span style={{ fontSize: '0.6rem' }}>/ MO</span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                            <div className="flex-center" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px', borderRadius: '8px', gap: '8px' }}>
+                                <Zap size={18} /> <span style={{ fontWeight: '800', fontSize: '0.75rem' }}>AD-FREE EXPRIENCE</span>
+                            </div>
+                            <div className="flex-center" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px', borderRadius: '8px', gap: '8px' }}>
+                                <Users size={18} /> <span style={{ fontWeight: '800', fontSize: '0.75rem' }}>2X REFERRAL BONUS</span>
+                            </div>
+                            <div className="flex-center" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px', borderRadius: '8px', gap: '8px' }}>
+                                <CheckCircle2 size={18} /> <span style={{ fontWeight: '800', fontSize: '0.75rem' }}>PRIORITY SUPPORT</span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={async () => {
+                                if (!user) return;
+                                setIsProcessing(true);
+                                try {
+                                    showToast("INITIATING ELITE UPGRADE...", "info");
+                                    const orderRes = await fetch("/api/payment/create-order", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ userId: user.id, amount: 99, type: 'premium' })
+                                    });
+                                    const orderData = await orderRes.json();
+                                    if (!orderRes.ok) throw new Error(orderData.error);
+
+                                    const options = {
+                                        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+                                        amount: orderData.amount,
+                                        currency: "INR",
+                                        name: "EarnFlow ELITE",
+                                        description: "Upgrade to Premium Status",
+                                        order_id: orderData.id,
+                                        handler: async (response: any) => {
+                                            showToast("VERIFYING UPGRADE...", "info");
+                                            const verifyRes = await fetch("/api/payment/verify", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({
+                                                    razorpay_order_id: response.razorpay_order_id,
+                                                    razorpay_payment_id: response.razorpay_payment_id,
+                                                    razorpay_signature: response.razorpay_signature,
+                                                    userId: user.id,
+                                                    type: 'premium',
+                                                    amount: 99
+                                                })
+                                            });
+                                            if (verifyRes.ok) {
+                                                showToast("WELCOME TO ELITE.", "success");
+                                                refreshUser();
+                                            } else {
+                                                showToast("UPGRADE FAILED", "error");
+                                            }
+                                        },
+                                        prefill: { name: user.name, email: user.email },
+                                        theme: { color: "#FFD700" }
+                                    };
+                                    const rzp = new (window as any).Razorpay(options);
+                                    rzp.open();
+                                } catch (err: any) {
+                                    showToast(err.message, "error");
+                                } finally {
+                                    setIsProcessing(false);
+                                }
+                            }}
+                            className="btn"
+                            disabled={isProcessing}
+                            style={{ background: '#000', color: '#FFD700', border: 'none', width: '100%' }}
+                        >
+                            {isProcessing ? 'PROCESSING...' : 'ACTIVATE ELITE STATUS'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Transaction Ledger */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <div className="flex-between">
@@ -360,7 +464,7 @@ export default function WalletPage() {
             {showDepositModal && (
                 <div className="modal-overlay" style={{ display: 'flex' }}>
                     <div className="glass-panel animate-slide-up" style={{
-                        width: '75%', maxWidth: '500px', padding: '24px',
+                        width: '95%', maxWidth: '500px', padding: '24px',
                         maxHeight: '85vh', overflowY: 'auto',
                         border: '2px solid var(--emerald)', background: '#000',
                         position: 'relative', borderRadius: '24px'
@@ -417,7 +521,7 @@ export default function WalletPage() {
             {showWithdrawModal && (
                 <div className="modal-overlay" style={{ display: 'flex' }}>
                     <div className="glass-panel animate-slide-up" style={{
-                        width: '75%', maxWidth: '500px', padding: '24px',
+                        width: '95%', maxWidth: '500px', padding: '24px',
                         maxHeight: '85vh', overflowY: 'auto',
                         border: '2px solid var(--primary)', background: '#000',
                         position: 'relative', borderRadius: '24px'
@@ -474,7 +578,7 @@ export default function WalletPage() {
             {showUpiModal && (
                 <div className="modal-overlay" style={{ display: 'flex' }}>
                     <div className="glass-panel animate-slide-up" style={{
-                        width: '75%', maxWidth: '400px', padding: '32px',
+                        width: '95%', maxWidth: '400px', padding: '32px',
                         border: '1px solid var(--gold)', background: '#000',
                         position: 'relative', borderRadius: '24px', textAlign: 'center'
                     }}>

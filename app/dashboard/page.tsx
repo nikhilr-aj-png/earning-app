@@ -93,8 +93,7 @@ export default function Dashboard() {
             </div>
 
             {/* Executive Balance Card - Extreme Vibrant */}
-            <div className="glass-panel glass-vibrant" style={{
-                width: '75%',
+            <div className="glass-panel glass-vibrant responsive-width" style={{
                 margin: '0 auto 40px',
                 padding: '40px 24px',
                 background: 'linear-gradient(135deg, #1e40af 0%, #7e22ce 50%, #020617 100%)',
@@ -127,7 +126,7 @@ export default function Dashboard() {
 
 
             {/* Portfolio Sections Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '40px' }}>
+            <div className="responsive-grid" style={{ marginBottom: '40px' }}>
                 {/* Performance Metrics */}
                 {/* Recent Activity Log */}
                 <div className="glass-panel" style={{ padding: '20px', borderRadius: '4px', border: '1px solid #222', display: 'flex', flexDirection: 'column' }}>
