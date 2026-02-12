@@ -207,7 +207,7 @@ export default function WalletPage() {
     );
 
     return (
-        <div className="animate-fade-in" style={{ width: '100%', padding: '24px 8px' }}>
+        <div className="animate-fade-in" style={{ width: '100%', padding: '24px 8px', paddingBottom: '140px' }}>
             {/* Header */}
             <div className="flex-between" style={{ marginBottom: '32px' }}>
                 <Link href="/dashboard" className="glass-panel flex-center" style={{ width: '40px', height: '40px', padding: '0', borderRadius: '12px' }}>

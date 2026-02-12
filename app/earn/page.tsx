@@ -111,7 +111,7 @@ export default function EarnPage() {
     );
 
     return (
-        <div className="animate-fade-in" style={{ padding: '24px 20px', paddingBottom: '120px' }}>
+        <div className="animate-fade-in" style={{ padding: '24px 20px', paddingBottom: '140px' }}>
             <div style={{ marginBottom: '48px', position: 'relative' }}>
                 <h1 className="font-heading" style={{ fontSize: '3.2rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '8px', lineHeight: 1.1 }}>Flow Tasks</h1>
                 <div style={{ position: 'absolute', top: '0', right: '0', width: '200px', height: '100px', background: 'var(--emerald)', filter: 'blur(100px)', opacity: 0.1 }} />
