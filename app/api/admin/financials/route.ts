@@ -64,7 +64,7 @@ export async function GET(request: Request) {
             const userIds = Array.from(new Set(txList.map((t: any) => t.user_id)));
             const { data: profiles, error: pErr } = await supabaseAdmin
                 .from('profiles')
-                .select('id, name, email')
+                .select('id, name, email, upi_id')
                 .in('id', userIds);
 
             if (pErr) throw pErr;

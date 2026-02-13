@@ -84,6 +84,13 @@ export default function WalletPage() {
             return;
         }
 
+        if (!userProfile?.upi_id) {
+            showToast("PLEASE LINK UPI ID FIRST", "error");
+            setShowWithdrawModal(false);
+            setShowUpiModal(true);
+            return;
+        }
+
         setIsProcessing(true);
         try {
             showToast("INITIATING WITHDRAWAL PROTOCOL...", "info");

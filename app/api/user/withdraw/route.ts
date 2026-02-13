@@ -12,14 +12,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Minimum withdrawal is 5,000 FLOW (₹500)' }, { status: 400 });
         }
 
-        // 1. Check User Balance (READ: Allowed for public/user)
+        // 1. Check User Balance & UPI ID (READ: Allowed for public/user)
         const { data: user, error: userError } = await supabaseMain
             .from('profiles')
-            .select('coins')
+            .select('coins, upi_id')
             .eq('id', userId)
             .single();
 
         if (userError || !user) throw new Error("User data not found");
+
+        if (!user.upi_id) {
+            return NextResponse.json({ error: 'Please link a UPI ID before withdrawing.' }, { status: 400 });
+        }
 
         if (user.coins < flowAmount) {
             return NextResponse.json({ error: 'Insufficient FLOW balance' }, { status: 400 });

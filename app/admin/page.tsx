@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Users,
     Settings,
@@ -123,11 +123,11 @@ function AdminPage() {
     });
 
     const processWithdrawalMutation = useMutation({
-        mutationFn: async ({ transactionId, action, rejectionReason }: { transactionId: string, action: 'approve' | 'reject', rejectionReason?: string }) => {
+        mutationFn: async ({ transactionId, action, rejectionReason, mode }: { transactionId: string, action: 'approve' | 'reject', rejectionReason?: string, mode?: 'manual' | 'auto' }) => {
             const res = await fetch('/api/admin/withdrawals/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
-                body: JSON.stringify({ transactionId, action, rejectionReason })
+                body: JSON.stringify({ transactionId, action, rejectionReason, mode })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Processing failed');
@@ -1378,37 +1378,43 @@ function AdminPage() {
                                                         <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
                                                         <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '800' }}>{new Date(tx.created_at).toLocaleString()}</p>
                                                     </div>
+                                                    <p style={{ marginTop: '4px', fontSize: '0.7rem', color: 'var(--gold)', fontWeight: '950', letterSpacing: '1px' }}>
+                                                        UPI: {tx.profiles?.upi_id || "NOT LINKED"}
+                                                    </p>
                                                 </div>
                                             </div>
 
                                             <div style={{ display: 'flex', gap: '12px' }}>
                                                 {tx.status === 'pending' ? (
                                                     <>
-                                                        <button
-                                                            onClick={() => {
-                                                                if (window.confirm("CONFIRM PAYOUT?\nThis will mark the transaction as completed.")) {
-                                                                    processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'approve' });
-                                                                }
-                                                            }}
-                                                            disabled={processWithdrawalMutation.isPending}
-                                                            className="btn"
-                                                            style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--emerald)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
-                                                        >
-                                                            APPROVE
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                const reason = prompt("REJECTION REASON (Optional):");
-                                                                if (reason !== null) {
-                                                                    processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'reject', rejectionReason: reason });
-                                                                }
-                                                            }}
-                                                            disabled={processWithdrawalMutation.isPending}
-                                                            className="btn"
-                                                            style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
-                                                        >
-                                                            REJECT
-                                                        </button>
+                                                        <div className="flex" style={{ gap: '8px' }}>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (window.confirm("CONFIRM MANUAL PAYOUT?\n1. Ensure you have PAID the user externally.\n2. This will only mark the status as COMPLETED.")) {
+                                                                        processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'approve' });
+                                                                    }
+                                                                }}
+                                                                disabled={processWithdrawalMutation.isPending}
+                                                                className="btn"
+                                                                style={{ padding: '8px 16px', fontSize: '0.65rem', background: 'var(--emerald)', border: 'none', color: '#fff' }}
+                                                            >
+                                                                MARK AS PAID
+                                                            </button>
+
+                                                            <button
+                                                                onClick={() => {
+                                                                    const reason = prompt("REJECTION REASON (Optional):");
+                                                                    if (reason !== null) {
+                                                                        processWithdrawalMutation.mutate({ transactionId: tx.id, action: 'reject', rejectionReason: reason });
+                                                                    }
+                                                                }}
+                                                                disabled={processWithdrawalMutation.isPending}
+                                                                className="btn"
+                                                                style={{ padding: '8px 16px', fontSize: '0.65rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
+                                                            >
+                                                                REJECT
+                                                            </button>
+                                                        </div>
                                                     </>
                                                 ) : (
                                                     <span style={{
@@ -1427,337 +1433,342 @@ function AdminPage() {
                             </div>
                         </div>
                     </div>
-                )}
+                )
+            }
 
-            {view === 'upi_requests' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                    <div>
-                        <div className="flex-between" style={{ marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>UPI CHANGE REQUESTS</h2>
-                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
-                                {financialData?.upiRequests?.length || 0} PENDING CHANGES
+            {
+                view === 'upi_requests' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                        <div>
+                            <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '4px', color: '#fff' }}>UPI CHANGE REQUESTS</h2>
+                                <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-dim)' }}>
+                                    {financialData?.upiRequests?.length || 0} PENDING CHANGES
+                                </div>
                             </div>
-                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {financialsError ? (
-                                <div className="glass-panel" style={{ padding: '24px', border: '1px solid var(--error)', background: 'rgba(239, 68, 68, 0.05)' }}>
-                                    <p style={{ color: 'var(--error)', fontSize: '0.75rem', fontWeight: '900' }}>ERROR: {financialRespError?.message || 'FAILED TO SCAN REQUESTS'}</p>
-                                </div>
-                            ) : financialsLoading || !financialData?.upiRequests ? (
-                                <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Scanning Requests...</p>
-                            ) : financialData.upiRequests.length === 0 ? (
-                                <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
-                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO UPI CHANGE REQUESTS.</p>
-                                </div>
-                            ) : (
-                                financialData?.upiRequests?.map((req: any) => (
-                                    <div key={req.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', background: 'rgba(0,0,0,0.2)' }}>
-                                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                                            <div style={{
-                                                width: '48px', height: '48px', borderRadius: '12px',
-                                                background: 'rgba(59, 130, 246, 0.1)',
-                                                border: '1px solid var(--sapphire)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                            }}>
-                                                <Settings size={20} color="var(--sapphire)" />
-                                            </div>
-                                            <div>
-                                                <h4 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--sapphire)', marginBottom: '4px' }}>
-                                                    NEW: {req.new_upi_id}
-                                                </h4>
-                                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                    <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '950' }}>{req.name?.toUpperCase()}</p>
-                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
-                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>OLD: {req.upi_id || 'NOT SET'}</p>
-                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
-                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>{req.email}</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {financialsError ? (
+                                    <div className="glass-panel" style={{ padding: '24px', border: '1px solid var(--error)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                                        <p style={{ color: 'var(--error)', fontSize: '0.75rem', fontWeight: '900' }}>ERROR: {financialRespError?.message || 'FAILED TO SCAN REQUESTS'}</p>
+                                    </div>
+                                ) : financialsLoading || !financialData?.upiRequests ? (
+                                    <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Scanning Requests...</p>
+                                ) : financialData.upiRequests.length === 0 ? (
+                                    <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', border: '1px solid #222' }}>
+                                        <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO UPI CHANGE REQUESTS.</p>
+                                    </div>
+                                ) : (
+                                    financialData?.upiRequests?.map((req: any) => (
+                                        <div key={req.id} className="glass-panel flex-between" style={{ padding: '24px', border: '1px solid #111', background: 'rgba(0,0,0,0.2)' }}>
+                                            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                                                <div style={{
+                                                    width: '48px', height: '48px', borderRadius: '12px',
+                                                    background: 'rgba(59, 130, 246, 0.1)',
+                                                    border: '1px solid var(--sapphire)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                }}>
+                                                    <Settings size={20} color="var(--sapphire)" />
+                                                </div>
+                                                <div>
+                                                    <h4 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--sapphire)', marginBottom: '4px' }}>
+                                                        NEW: {req.new_upi_id}
+                                                    </h4>
+                                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                        <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '950' }}>{req.name?.toUpperCase()}</p>
+                                                        <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>OLD: {req.upi_id || 'NOT SET'}</p>
+                                                        <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>•</span>
+                                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '800' }}>{req.email}</p>
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        if (window.confirm(`APPROVE UPI CHANGE?\n${req.upi_id || 'NONE'} -> ${req.new_upi_id}`)) {
+                                                            processUpiMutation.mutate({ targetUserId: req.id, action: 'approve' });
+                                                        }
+                                                    }}
+                                                    disabled={processUpiMutation.isPending}
+                                                    className="btn"
+                                                    style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--sapphire)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)' }}
+                                                >
+                                                    APPROVE CHANGE
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (window.confirm("REJECT REQUEST?")) {
+                                                            processUpiMutation.mutate({ targetUserId: req.id, action: 'reject' });
+                                                        }
+                                                    }}
+                                                    disabled={processUpiMutation.isPending}
+                                                    className="btn"
+                                                    style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
+                                                >
+                                                    REJECT
+                                                </button>
+                                            </div>
                                         </div>
-
-                                        <div style={{ display: 'flex', gap: '12px' }}>
-                                            <button
-                                                onClick={() => {
-                                                    if (window.confirm(`APPROVE UPI CHANGE?\n${req.upi_id || 'NONE'} -> ${req.new_upi_id}`)) {
-                                                        processUpiMutation.mutate({ targetUserId: req.id, action: 'approve' });
-                                                    }
-                                                }}
-                                                disabled={processUpiMutation.isPending}
-                                                className="btn"
-                                                style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'var(--sapphire)', border: 'none', color: '#fff', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)' }}
-                                            >
-                                                APPROVE CHANGE
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (window.confirm("REJECT REQUEST?")) {
-                                                        processUpiMutation.mutate({ targetUserId: req.id, action: 'reject' });
-                                                    }
-                                                }}
-                                                disabled={processUpiMutation.isPending}
-                                                className="btn"
-                                                style={{ padding: '12px 24px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)' }}
-                                            >
-                                                REJECT
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {view === 'systems' && (
-                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-
-                    {/* GLOBAL CONTROLS */}
-                    <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)', background: 'rgba(234, 179, 8, 0.05)' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)', marginBottom: '24px', letterSpacing: '2px' }}>GLOBAL CONTROLS</h3>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-                            {/* BUY FLOW TOGGLE */}
-                            <div className="flex-between" style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #333' }}>
-                                <div>
-                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>BUY FLOW ACCESS</h4>
-                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Enable/Disable users from purchasing FLOW coins.</p>
-                                </div>
-                                <button
-                                    onClick={() => updateSystemSettingsMutation.mutate({ buy_flow_enabled: !systemSettings?.buy_flow_enabled })}
-                                    style={{
-                                        padding: '10px 20px', borderRadius: '24px', border: 'none',
-                                        background: systemSettings?.buy_flow_enabled ? 'var(--emerald)' : '#333',
-                                        color: systemSettings?.buy_flow_enabled ? '#000' : 'var(--text-dim)',
-                                        fontWeight: '950', fontSize: '0.75rem', cursor: 'pointer'
-                                    }}
-                                >
-                                    {systemSettings?.buy_flow_enabled ? 'ENABLED' : 'DISABLED'}
-                                </button>
-                            </div>
-
-                            {/* GAME SECTION TOGGLE */}
-                            <div className="flex-between" style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #333' }}>
-                                <div>
-                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>GAME ARENA</h4>
-                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Enable/Disable the Play/Arena section for all users.</p>
-                                </div>
-                                <button
-                                    onClick={() => updateSystemSettingsMutation.mutate({ game_section_enabled: !systemSettings?.game_section_enabled })}
-                                    style={{
-                                        padding: '10px 20px', borderRadius: '24px', border: 'none',
-                                        background: systemSettings?.game_section_enabled ? 'var(--emerald)' : '#333',
-                                        color: systemSettings?.game_section_enabled ? '#000' : 'var(--text-dim)',
-                                        fontWeight: '950', fontSize: '0.75rem', cursor: 'pointer'
-                                    }}
-                                >
-                                    {systemSettings?.game_section_enabled ? 'ENABLED' : 'DISABLED'}
-                                </button>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
+                )
+            }
 
-                    <div className="glass-panel" style={{ padding: '40px', border: '1px solid #333', background: 'rgba(255,255,255,0.01)' }}>
-                        <div style={{ marginBottom: '32px' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>SYSTEM MAINTENANCE</h2>
-                            <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginTop: '8px', letterSpacing: '1px' }}>PRUNE EXPIRED DATA AND OPTIMIZE PERFORMANCE</p>
-                        </div>
+            {
+                view === 'systems' && (
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>EXPIRED QUIZ PRUNING</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Permanently remove all quizzes that have passed their expiration date. This is a safe operation and will not affect user balances or active missions.</p>
-                                </div>
-                                <button
-                                    disabled={isPruning}
-                                    onClick={async () => {
-                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all expired quizzes from the database.")) return;
+                        {/* GLOBAL CONTROLS */}
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)', background: 'rgba(234, 179, 8, 0.05)' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--gold)', marginBottom: '24px', letterSpacing: '2px' }}>GLOBAL CONTROLS</h3>
 
-                                        setIsPruning(true);
-                                        try {
-                                            const res = await fetch('/api/admin/systems/cleanup', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Content-Type': 'application/json',
-                                                    'x-user-id': user?.id || ''
-                                                },
-                                                body: JSON.stringify({ action: 'prune_quizzes' })
-                                            });
-                                            const data = await res.json();
-                                            if (data.success) {
-                                                alert(`SUCCESS: ${data.message}`);
-                                                queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
-                                            } else {
-                                                alert(`ERROR: ${data.error}`);
-                                            }
-                                        } catch (e) {
-                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
-                                        } finally {
-                                            setIsPruning(false);
-                                        }
-                                    }}
-                                    className="btn"
-                                    style={{
-                                        padding: '16px 32px',
-                                        background: isPruning ? '#333' : 'rgba(239, 68, 68, 0.1)',
-                                        border: `1px solid ${isPruning ? '#444' : 'var(--error)'}`,
-                                        color: isPruning ? 'var(--text-dim)' : 'var(--error)',
-                                        fontWeight: '950',
-                                        fontSize: '0.75rem',
-                                        letterSpacing: '2px'
-                                    }}
-                                >
-                                    {isPruning ? 'PRUNING DATA...' : 'PRUNE EXPIRED QUIZZES'}
-                                </button>
-                            </div>
-
-                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>COMPLETED CARD GAMES</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Permanently remove all prediction events that are completed and their associated bet history. This will not affect active games.</p>
-                                </div>
-                                <button
-                                    disabled={isPruningPredictions}
-                                    onClick={async () => {
-                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all completed prediction events and their bets.")) return;
-                                        setIsPruningPredictions(true);
-                                        try {
-                                            const res = await fetch('/api/admin/systems/cleanup', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
-                                                body: JSON.stringify({ action: 'prune_predictions' })
-                                            });
-                                            const data = await res.json();
-                                            if (data.success) {
-                                                alert(`SUCCESS: ${data.message}`);
-                                                queryClient.invalidateQueries({ queryKey: ['admin-predictions'] });
-                                            } else {
-                                                alert(`ERROR: ${data.error}`);
-                                            }
-                                        } catch (e) {
-                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
-                                        } finally {
-                                            setIsPruningPredictions(false);
-                                        }
-                                    }}
-                                    className="btn"
-                                    style={{
-                                        padding: '16px 32px',
-                                        background: isPruningPredictions ? '#333' : 'rgba(239, 68, 68, 0.1)',
-                                        border: `1px solid ${isPruningPredictions ? '#444' : 'var(--error)'}`,
-                                        color: isPruningPredictions ? 'var(--text-dim)' : 'var(--error)',
-                                        fontWeight: '950',
-                                        fontSize: '0.75rem',
-                                        letterSpacing: '2px'
-                                    }}
-                                >
-                                    {isPruningPredictions ? 'PRUNING DATA...' : 'PRUNE COMPLETED GAMES'}
-                                </button>
-                            </div>
-
-                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>HISTORICAL TRANSACTIONS</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Clear transaction logs (deposits, withdrawals, rewards) older than 30 days. This does not affect current user balances.</p>
-                                </div>
-                                <button
-                                    disabled={isPruningTransactions}
-                                    onClick={async () => {
-                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete transaction logs older than 30 days.")) return;
-                                        setIsPruningTransactions(true);
-                                        try {
-                                            const res = await fetch('/api/admin/systems/cleanup', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
-                                                body: JSON.stringify({ action: 'prune_transactions' })
-                                            });
-                                            const data = await res.json();
-                                            if (data.success) {
-                                                alert(`SUCCESS: ${data.message}`);
-                                                queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
-                                            } else {
-                                                alert(`ERROR: ${data.error}`);
-                                            }
-                                        } catch (e) {
-                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
-                                        } finally {
-                                            setIsPruningTransactions(false);
-                                        }
-                                    }}
-                                    className="btn"
-                                    style={{
-                                        padding: '16px 32px',
-                                        background: isPruningTransactions ? '#333' : 'rgba(239, 68, 68, 0.1)',
-                                        border: `1px solid ${isPruningTransactions ? '#444' : 'var(--error)'}`,
-                                        color: isPruningTransactions ? 'var(--text-dim)' : 'var(--error)',
-                                        fontWeight: '950',
-                                        fontSize: '0.75rem',
-                                        letterSpacing: '2px'
-                                    }}
-                                >
-                                    {isPruningTransactions ? 'PRUNING DATA...' : 'PRUNE OLD TRANSACTIONS'}
-                                </button>
-                            </div>
-
-                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>ACTIVITY HISTORY</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Clear all game activity logs, including 2-Card Game history and completed arcade rounds. Recommended for periodic maintenance.</p>
-                                </div>
-                                <button
-                                    disabled={isPruningActivities}
-                                    onClick={async () => {
-                                        if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all game activity logs and finished arcade rounds.")) return;
-                                        setIsPruningActivities(true);
-                                        try {
-                                            const res = await fetch('/api/admin/systems/cleanup', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
-                                                body: JSON.stringify({ action: 'prune_game_history' })
-                                            });
-                                            const data = await res.json();
-                                            if (data.success) {
-                                                alert(`SUCCESS: ${data.message}`);
-                                            } else {
-                                                alert(`ERROR: ${data.error}`);
-                                            }
-                                        } catch (e) {
-                                            alert("CRITICAL ERROR: Maintenance pipe failed.");
-                                        } finally {
-                                            setIsPruningActivities(false);
-                                        }
-                                    }}
-                                    className="btn"
-                                    style={{
-                                        padding: '16px 32px',
-                                        background: isPruningActivities ? '#333' : 'rgba(239, 68, 68, 0.1)',
-                                        border: `1px solid ${isPruningActivities ? '#444' : 'var(--error)'}`,
-                                        color: isPruningActivities ? 'var(--text-dim)' : 'var(--error)',
-                                        fontWeight: '950',
-                                        fontSize: '0.75rem',
-                                        letterSpacing: '2px'
-                                    }}
-                                >
-                                    {isPruningActivities ? 'PRUNING DATA...' : 'PRUNE ACTIVITY LOGS'}
-                                </button>
-                            </div>
-
-                            <div className="glass-panel" style={{ padding: '32px', border: '1px solid #111', background: 'rgba(255, 255, 255, 0.02)', opacity: 0.5, cursor: 'not-allowed' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                                {/* BUY FLOW TOGGLE */}
+                                <div className="flex-between" style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #333' }}>
                                     <div>
-                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--text-dim)', marginBottom: '8px' }}>USER SENSITIVE DATA (PROTECTED)</h3>
-                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>DELETION OF WALLET DATA, LOGIN LOGS, AND PROFILES IS RESTRICTED BY CORE PROTOCOL.</p>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>BUY FLOW ACCESS</h4>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Enable/Disable users from purchasing FLOW coins.</p>
                                     </div>
-                                    <div style={{ padding: '8px 16px', border: '1px solid #333', borderRadius: '4px', fontSize: '0.6rem', color: 'var(--text-dim)' }}>LOCKED</div>
+                                    <button
+                                        onClick={() => updateSystemSettingsMutation.mutate({ buy_flow_enabled: !systemSettings?.buy_flow_enabled })}
+                                        style={{
+                                            padding: '10px 20px', borderRadius: '24px', border: 'none',
+                                            background: systemSettings?.buy_flow_enabled ? 'var(--emerald)' : '#333',
+                                            color: systemSettings?.buy_flow_enabled ? '#000' : 'var(--text-dim)',
+                                            fontWeight: '950', fontSize: '0.75rem', cursor: 'pointer'
+                                        }}
+                                    >
+                                        {systemSettings?.buy_flow_enabled ? 'ENABLED' : 'DISABLED'}
+                                    </button>
+                                </div>
+
+                                {/* GAME SECTION TOGGLE */}
+                                <div className="flex-between" style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #333' }}>
+                                    <div>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '950', color: '#fff', marginBottom: '4px' }}>GAME ARENA</h4>
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Enable/Disable the Play/Arena section for all users.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => updateSystemSettingsMutation.mutate({ game_section_enabled: !systemSettings?.game_section_enabled })}
+                                        style={{
+                                            padding: '10px 20px', borderRadius: '24px', border: 'none',
+                                            background: systemSettings?.game_section_enabled ? 'var(--emerald)' : '#333',
+                                            color: systemSettings?.game_section_enabled ? '#000' : 'var(--text-dim)',
+                                            fontWeight: '950', fontSize: '0.75rem', cursor: 'pointer'
+                                        }}
+                                    >
+                                        {systemSettings?.game_section_enabled ? 'ENABLED' : 'DISABLED'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="glass-panel" style={{ padding: '40px', border: '1px solid #333', background: 'rgba(255,255,255,0.01)' }}>
+                            <div style={{ marginBottom: '32px' }}>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px' }}>SYSTEM MAINTENANCE</h2>
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginTop: '8px', letterSpacing: '1px' }}>PRUNE EXPIRED DATA AND OPTIMIZE PERFORMANCE</p>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+                                <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>EXPIRED QUIZ PRUNING</h3>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Permanently remove all quizzes that have passed their expiration date. This is a safe operation and will not affect user balances or active missions.</p>
+                                    </div>
+                                    <button
+                                        disabled={isPruning}
+                                        onClick={async () => {
+                                            if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all expired quizzes from the database.")) return;
+
+                                            setIsPruning(true);
+                                            try {
+                                                const res = await fetch('/api/admin/systems/cleanup', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'x-user-id': user?.id || ''
+                                                    },
+                                                    body: JSON.stringify({ action: 'prune_quizzes' })
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    alert(`SUCCESS: ${data.message}`);
+                                                    queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
+                                                } else {
+                                                    alert(`ERROR: ${data.error}`);
+                                                }
+                                            } catch (e) {
+                                                alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                            } finally {
+                                                setIsPruning(false);
+                                            }
+                                        }}
+                                        className="btn"
+                                        style={{
+                                            padding: '16px 32px',
+                                            background: isPruning ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                            border: `1px solid ${isPruning ? '#444' : 'var(--error)'}`,
+                                            color: isPruning ? 'var(--text-dim)' : 'var(--error)',
+                                            fontWeight: '950',
+                                            fontSize: '0.75rem',
+                                            letterSpacing: '2px'
+                                        }}
+                                    >
+                                        {isPruning ? 'PRUNING DATA...' : 'PRUNE EXPIRED QUIZZES'}
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>COMPLETED CARD GAMES</h3>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Permanently remove all prediction events that are completed and their associated bet history. This will not affect active games.</p>
+                                    </div>
+                                    <button
+                                        disabled={isPruningPredictions}
+                                        onClick={async () => {
+                                            if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all completed prediction events and their bets.")) return;
+                                            setIsPruningPredictions(true);
+                                            try {
+                                                const res = await fetch('/api/admin/systems/cleanup', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                                                    body: JSON.stringify({ action: 'prune_predictions' })
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    alert(`SUCCESS: ${data.message}`);
+                                                    queryClient.invalidateQueries({ queryKey: ['admin-predictions'] });
+                                                } else {
+                                                    alert(`ERROR: ${data.error}`);
+                                                }
+                                            } catch (e) {
+                                                alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                            } finally {
+                                                setIsPruningPredictions(false);
+                                            }
+                                        }}
+                                        className="btn"
+                                        style={{
+                                            padding: '16px 32px',
+                                            background: isPruningPredictions ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                            border: `1px solid ${isPruningPredictions ? '#444' : 'var(--error)'}`,
+                                            color: isPruningPredictions ? 'var(--text-dim)' : 'var(--error)',
+                                            fontWeight: '950',
+                                            fontSize: '0.75rem',
+                                            letterSpacing: '2px'
+                                        }}
+                                    >
+                                        {isPruningPredictions ? 'PRUNING DATA...' : 'PRUNE COMPLETED GAMES'}
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>HISTORICAL TRANSACTIONS</h3>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Clear transaction logs (deposits, withdrawals, rewards) older than 30 days. This does not affect current user balances.</p>
+                                    </div>
+                                    <button
+                                        disabled={isPruningTransactions}
+                                        onClick={async () => {
+                                            if (!window.confirm("ARE YOU SURE?\nThis will permanently delete transaction logs older than 30 days.")) return;
+                                            setIsPruningTransactions(true);
+                                            try {
+                                                const res = await fetch('/api/admin/systems/cleanup', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                                                    body: JSON.stringify({ action: 'prune_transactions' })
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    alert(`SUCCESS: ${data.message}`);
+                                                    queryClient.invalidateQueries({ queryKey: ['admin-financials'] });
+                                                } else {
+                                                    alert(`ERROR: ${data.error}`);
+                                                }
+                                            } catch (e) {
+                                                alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                            } finally {
+                                                setIsPruningTransactions(false);
+                                            }
+                                        }}
+                                        className="btn"
+                                        style={{
+                                            padding: '16px 32px',
+                                            background: isPruningTransactions ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                            border: `1px solid ${isPruningTransactions ? '#444' : 'var(--error)'}`,
+                                            color: isPruningTransactions ? 'var(--text-dim)' : 'var(--error)',
+                                            fontWeight: '950',
+                                            fontSize: '0.75rem',
+                                            letterSpacing: '2px'
+                                        }}
+                                    >
+                                        {isPruningTransactions ? 'PRUNING DATA...' : 'PRUNE OLD TRANSACTIONS'}
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel" style={{ padding: '32px', border: '1px solid #222', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: '950', color: '#fff', marginBottom: '8px' }}>ACTIVITY HISTORY</h3>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', maxWidth: '400px' }}>Clear all game activity logs, including 2-Card Game history and completed arcade rounds. Recommended for periodic maintenance.</p>
+                                    </div>
+                                    <button
+                                        disabled={isPruningActivities}
+                                        onClick={async () => {
+                                            if (!window.confirm("ARE YOU SURE?\nThis will permanently delete all game activity logs and finished arcade rounds.")) return;
+                                            setIsPruningActivities(true);
+                                            try {
+                                                const res = await fetch('/api/admin/systems/cleanup', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json', 'x-user-id': user?.id || '' },
+                                                    body: JSON.stringify({ action: 'prune_game_history' })
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    alert(`SUCCESS: ${data.message}`);
+                                                } else {
+                                                    alert(`ERROR: ${data.error}`);
+                                                }
+                                            } catch (e) {
+                                                alert("CRITICAL ERROR: Maintenance pipe failed.");
+                                            } finally {
+                                                setIsPruningActivities(false);
+                                            }
+                                        }}
+                                        className="btn"
+                                        style={{
+                                            padding: '16px 32px',
+                                            background: isPruningActivities ? '#333' : 'rgba(239, 68, 68, 0.1)',
+                                            border: `1px solid ${isPruningActivities ? '#444' : 'var(--error)'}`,
+                                            color: isPruningActivities ? 'var(--text-dim)' : 'var(--error)',
+                                            fontWeight: '950',
+                                            fontSize: '0.75rem',
+                                            letterSpacing: '2px'
+                                        }}
+                                    >
+                                        {isPruningActivities ? 'PRUNING DATA...' : 'PRUNE ACTIVITY LOGS'}
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel" style={{ padding: '32px', border: '1px solid #111', background: 'rgba(255, 255, 255, 0.02)', opacity: 0.5, cursor: 'not-allowed' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--text-dim)', marginBottom: '8px' }}>USER SENSITIVE DATA (PROTECTED)</h3>
+                                            <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>DELETION OF WALLET DATA, LOGIN LOGS, AND PROFILES IS RESTRICTED BY CORE PROTOCOL.</p>
+                                        </div>
+                                        <div style={{ padding: '8px 16px', border: '1px solid #333', borderRadius: '4px', fontSize: '0.6rem', color: 'var(--text-dim)' }}>LOCKED</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 
@@ -1805,6 +1816,7 @@ function UserCard({ user, onEdit, isAdmin }: { user: any, onEdit: (u: any) => vo
                     </div>
                 )}
             </div>
+
         </div>
     );
 }

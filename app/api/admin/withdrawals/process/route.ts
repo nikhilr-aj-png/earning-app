@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+    console.log("Processing Withdrawal Request (Manual Mode)...");
     try {
         const userId = req.headers.get('x-user-id');
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // VERIFY ADMIN (Use Admin client to ensure we can read any profile status)
+        // VERIFY ADMIN
         const { data: admin, error: adminError } = await supabaseAdmin
             .from('profiles')
             .select('is_admin')
@@ -17,13 +20,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const { transactionId, action, rejectionReason } = await req.json(); // action: 'approve' | 'reject'
+        const { transactionId, action, rejectionReason } = await req.json();
 
         if (!transactionId || !action) {
             return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
         }
 
-        // Fetch transaction (Use Admin client to bypass RLS)
+        // Fetch transaction
         const { data: tx, error: txFetchError } = await supabaseAdmin
             .from('transactions')
             .select('*')
@@ -37,20 +40,37 @@ export async function POST(req: Request) {
         }
 
         if (action === 'approve') {
-            // Update status to completed
+            // Get User details
+            const { data: userProfile, error: userError } = await supabaseAdmin
+                .from('profiles')
+                .select('id, name, email, upi_id')
+                .eq('id', tx.user_id)
+                .single();
+
+            if (userError || !userProfile) {
+                return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+            }
+
+            // Manual Mode Logic Only
+            const payoutId = `EF_${Date.now()}`;
+            const description = `WITHDRAWAL DISBURSED (₹${tx.amount / -10}) [REF: ${payoutId}]`;
+
             const { error: updateError } = await supabaseAdmin
                 .from('transactions')
-                .update({ status: 'completed' })
+                .update({
+                    status: 'completed',
+                    description: description
+                })
                 .eq('id', transactionId);
 
             if (updateError) throw updateError;
 
-            return NextResponse.json({ success: true, message: 'Withdrawal Approved' });
+            return NextResponse.json({ success: true, message: 'Marked as Paid Manually', payoutId });
 
         } else if (action === 'reject') {
             const refundAmount = Math.abs(tx.amount);
 
-            // 1. Refund Coins (Use Admin client)
+            // 1. Refund Coins
             const { error: refundError } = await supabaseAdmin.rpc('increment_user_coins', {
                 u_id: tx.user_id,
                 amount: refundAmount
@@ -58,7 +78,7 @@ export async function POST(req: Request) {
 
             if (refundError) throw refundError;
 
-            // 2. Update Transaction Status (Use Admin client)
+            // 2. Update Transaction Status
             const { error: updateError } = await supabaseAdmin
                 .from('transactions')
                 .update({
