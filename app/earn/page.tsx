@@ -149,24 +149,54 @@ export default function EarnPage() {
 
             {/* Completed Missions (The "Box" at the bottom) */}
             {tasks.filter(t => t.is_completed).length > 0 && (
-                <div style={{ width: '75%', margin: '80px auto 0', padding: '32px', background: 'rgba(255,255,255,0.01)', border: '1px solid #111', borderRadius: '24px' }}>
-                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '10px', marginBottom: '32px' }}>
-                        <CheckCircle2 size={16} color="var(--text-dim)" />
-                        <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: '950', letterSpacing: '2px' }}>COMPLETED TASK LOGS</span>
+                <div style={{ width: '100%', maxWidth: '800px', margin: '60px auto 0', padding: '20px', background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.4))', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+                    <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '12px', marginBottom: '24px' }}>
+                        <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                            <CheckCircle2 size={16} color="var(--emerald)" />
+                        </div>
+                        <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>MISSION ARCHIVE</span>
                     </div>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                        gap: '16px'
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: '12px'
                     }}>
                         {tasks.filter(t => t.is_completed).map((task: Task) => (
-                            <div key={task.id} className="glass-panel" style={{ padding: '20px', background: 'rgba(0,0,0,0.2)', border: '1px solid #222', borderRadius: '12px', opacity: 0.6 }}>
-                                <div className="flex-between">
-                                    <div>
-                                        <h4 style={{ fontSize: '0.75rem', fontWeight: '900', color: '#fff', marginBottom: '4px' }}>{task.title.toUpperCase()}</h4>
-                                        <p style={{ fontSize: '0.6rem', color: 'var(--emerald)', fontWeight: '950' }}>{task.earned_amount?.toLocaleString() || 0} FLOW CLAIMED</p>
-                                    </div>
-                                    <CheckCircle2 size={20} color="var(--emerald)" />
+                            <div key={task.id} className="glass-panel" style={{
+                                padding: '16px',
+                                background: 'rgba(255,255,255,0.02)',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px',
+                                transition: 'all 0.3s'
+                            }}>
+                                <div className="flex-center" style={{
+                                    width: '40px', height: '40px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                                    flexShrink: 0
+                                }}>
+                                    <CheckCircle2 size={18} color="var(--emerald)" />
+                                </div>
+                                <div style={{ flex: 1, overflow: 'hidden' }}>
+                                    <h4 style={{
+                                        fontSize: '0.8rem',
+                                        fontWeight: '800',
+                                        color: '#e2e8f0',
+                                        marginBottom: '4px',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        letterSpacing: '0.5px'
+                                    }}>
+                                        {task.title}
+                                    </h4>
+                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: '700', letterSpacing: '1px' }}>
+                                        <span style={{ color: 'var(--emerald)' }}>+{task.earned_amount?.toLocaleString() || 0} FLOW</span> CREDITED
+                                    </p>
                                 </div>
                             </div>
                         ))}
