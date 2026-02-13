@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
         const userId = req.headers.get('x-user-id');
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // VERIFY ADMIN
-        const { data: admin, error: adminError } = await supabaseMain
+        // VERIFY ADMIN (Use Admin client to ensure we can read any profile status)
+        const { data: admin, error: adminError } = await supabaseAdmin
             .from('profiles')
             .select('is_admin')
             .eq('id', userId)
@@ -23,8 +23,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
         }
 
-        // Fetch transaction
-        const { data: tx, error: txFetchError } = await supabaseMain
+        // Fetch transaction (Use Admin client to bypass RLS)
+        const { data: tx, error: txFetchError } = await supabaseAdmin
             .from('transactions')
             .select('*')
             .eq('id', transactionId)
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
         if (action === 'approve') {
             // Update status to completed
-            const { error: updateError } = await supabaseMain
+            const { error: updateError } = await supabaseAdmin
                 .from('transactions')
                 .update({ status: 'completed' })
                 .eq('id', transactionId);
@@ -48,21 +48,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, message: 'Withdrawal Approved' });
 
         } else if (action === 'reject') {
-            // Refund coins and update status to rejected
-            // tx.amount is negative (e.g. -5000). To refund, we add positive 5000.
-            // So we subtract the negative amount? No, we add Math.abs or just - (-5000).
             const refundAmount = Math.abs(tx.amount);
 
-            // 1. Refund Coins
-            const { error: refundError } = await supabaseMain.rpc('increment_user_coins', {
+            // 1. Refund Coins (Use Admin client)
+            const { error: refundError } = await supabaseAdmin.rpc('increment_user_coins', {
                 u_id: tx.user_id,
                 amount: refundAmount
             });
 
             if (refundError) throw refundError;
 
-            // 2. Update Transaction Status
-            const { error: updateError } = await supabaseMain
+            // 2. Update Transaction Status (Use Admin client)
+            const { error: updateError } = await supabaseAdmin
                 .from('transactions')
                 .update({
                     status: 'rejected',

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase'; // Use Admin for system updates
 
 export async function POST(req: Request) {
     try {
@@ -27,11 +27,11 @@ export async function POST(req: Request) {
         }
 
         if (type === 'premium') {
-            // 2. Update User Status to Premium (30 DAYS)
+            // 2. Update User Status to Premium (30 DAYS) - Use Admin
             const premiumUntil = new Date();
             premiumUntil.setDate(premiumUntil.getDate() + 30);
 
-            const { error: updateError } = await supabaseMain
+            const { error: updateError } = await supabaseAdmin
                 .from('profiles')
                 .update({
                     is_premium: true,
@@ -41,8 +41,8 @@ export async function POST(req: Request) {
 
             if (updateError) throw updateError;
 
-            // 3. Log Transaction
-            await supabaseMain.from('transactions').insert({
+            // 3. Log Transaction - Use Admin
+            await supabaseAdmin.from('transactions').insert({
                 user_id: userId,
                 amount: 99,
                 type: 'premium_upgrade',
@@ -52,18 +52,18 @@ export async function POST(req: Request) {
 
             return NextResponse.json({ success: true, message: "Payment verified and account upgraded" });
         } else if (type === 'coins') {
-            // 2. Add FLOW Coins (10:1 Ratio)
+            // 2. Add FLOW Coins (10:1 Ratio) - Use Admin RPC
             const coinsToAdd = amount * 10;
 
-            const { error: updateError } = await supabaseMain.rpc('increment_user_coins', {
+            const { error: updateError } = await supabaseAdmin.rpc('increment_user_coins', {
                 u_id: userId,
                 amount: coinsToAdd
             });
 
             if (updateError) throw updateError;
 
-            // 3. Log Transaction
-            await supabaseMain.from('transactions').insert({
+            // 3. Log Transaction - Use Admin
+            await supabaseAdmin.from('transactions').insert({
                 user_id: userId,
                 amount: coinsToAdd,
                 type: 'deposit',

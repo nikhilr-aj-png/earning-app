@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useUser } from "@/context/UserContext";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, ExternalLink, PlayCircle, Zap, ChevronRight, Info, Target, Coins, Timer, AlertTriangle, X, Activity } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, PlayCircle, Zap, ChevronRight, Info, Target, Coins, Timer, AlertTriangle, X, Activity, Shield } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/context/ToastContext";
 
@@ -19,6 +19,7 @@ export interface Task {
     expires_at?: string;
     is_completed?: boolean;
     is_locked?: boolean;
+    is_premium?: boolean;
     earned_amount?: number;
     questions?: Array<{
         question: string;
@@ -125,8 +126,8 @@ export default function EarnPage() {
                 </div>
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(5, 1fr)',
-                    gap: '12px'
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '16px'
                 }}>
                     {tasks.filter(t => !t.is_completed).length > 0 ? (
                         tasks.filter(t => !t.is_completed).map((task: Task) => (
@@ -419,17 +420,19 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
     return (
         <div className="glass-panel" style={{
             padding: '16px',
-            border: task.is_completed ? '1px solid #111' : '1px solid rgba(16, 185, 129, 0.2)',
+            border: task.is_completed ? '1px solid #111' : task.is_premium ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(16, 185, 129, 0.2)',
             borderRadius: '24px',
             background: task.is_completed
                 ? 'rgba(255,255,255,0.01)'
-                : 'linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(2, 6, 23, 0.95) 100%)',
+                : task.is_premium
+                    ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(2, 6, 23, 0.95) 100%)'
+                    : 'linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(2, 6, 23, 0.95) 100%)',
             display: 'flex', flexDirection: 'column', gap: '16px',
             transition: 'all 0.4s var(--transition)',
             position: 'relative',
             overflow: 'hidden',
             opacity: task.is_completed || isExpired ? 0.6 : 1,
-            boxShadow: task.is_completed ? 'none' : '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(16, 185, 129, 0.05)',
+            boxShadow: task.is_completed ? 'none' : task.is_premium ? '0 20px 60px rgba(0,0,0,0.5), inset 0 0 40px rgba(234, 179, 8, 0.05)' : '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(16, 185, 129, 0.05)',
         }}>
             {/* Animated Liquid Background Overlay */}
             {!task.is_completed && !isExpired && (
@@ -463,14 +466,15 @@ function MissionCard({ task, onExecute, isCompleting, isPremium }: { task: Task,
                         width: '44px', height: '44px',
                         borderRadius: '12px',
                         background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        color: task.type === 'quiz' ? 'var(--primary)' : '#fff',
-                        boxShadow: 'inset 0 0 20px rgba(255,255,255,0.01)'
+                        border: task.is_premium ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+                        color: task.type === 'quiz' ? 'var(--primary)' : task.is_premium ? 'var(--gold)' : '#fff',
+                        boxShadow: task.is_premium ? 'inset 0 0 20px rgba(234, 179, 8, 0.1)' : 'inset 0 0 20px rgba(16, 185, 129, 0.05)'
                     }} className="flex-center">
-                        {task.type === "ad" && <PlayCircle size={20} strokeWidth={1} />}
-                        {task.type === "visit" && <ExternalLink size={20} strokeWidth={1} />}
-                        {task.type === "checkin" && <CheckCircle2 size={20} strokeWidth={1} />}
-                        {task.type === "quiz" && <Zap size={20} strokeWidth={1} fill="var(--primary)" fillOpacity={0.1} />}
+                        {task.is_premium && <Shield size={24} strokeWidth={2} color="var(--gold)" fill="rgba(234, 179, 8, 0.2)" />}
+                        {!task.is_premium && task.type === "ad" && <PlayCircle size={24} strokeWidth={1} />}
+                        {!task.is_premium && task.type === "visit" && <ExternalLink size={24} strokeWidth={1} />}
+                        {!task.is_premium && task.type === "checkin" && <CheckCircle2 size={24} strokeWidth={1} />}
+                        {!task.is_premium && task.type === "quiz" && <Zap size={24} strokeWidth={1} fill="var(--primary)" fillOpacity={0.1} />}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>

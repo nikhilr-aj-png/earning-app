@@ -293,33 +293,34 @@ export default function GameHub() {
                         </div>
 
                         <div className="glass-panel" style={{
-                            padding: '14px 22px',
-                            borderRadius: '14px',
+                            padding: '8px 16px',
+                            borderRadius: '12px',
                             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(0,0,0,0.5))',
                             border: '1px solid rgba(16, 185, 129, 0.25)',
-                            boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15)'
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.1)'
                         }}>
-                            <div className="flex-center" style={{ gap: '10px' }}>
+                            <div className="flex-center" style={{ gap: '8px' }}>
                                 <div style={{
-                                    width: '9px',
-                                    height: '9px',
+                                    width: '6px',
+                                    height: '6px',
                                     background: 'var(--emerald)',
                                     borderRadius: '50%',
-                                    boxShadow: '0 0 14px var(--emerald)'
+                                    boxShadow: '0 0 10px var(--emerald)'
                                 }} />
                                 <span style={{
-                                    fontSize: '1.15rem',
+                                    fontSize: '0.9rem',
                                     fontWeight: '950',
                                     color: '#fff',
-                                    letterSpacing: '-0.4px'
+                                    letterSpacing: '1px',
+                                    fontVariantNumeric: 'tabular-nums'
                                 }}>
                                     {user.coins.toLocaleString()}
                                 </span>
                                 <span style={{
-                                    fontSize: '0.62rem',
+                                    fontSize: '0.55rem',
                                     color: 'var(--emerald)',
                                     fontWeight: '900',
-                                    letterSpacing: '0.8px'
+                                    letterSpacing: '0.5px'
                                 }}>FLOW</span>
                             </div>
                         </div>
@@ -333,7 +334,7 @@ export default function GameHub() {
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '2px' }}>LOADING GAMES...</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
                         {allGames.map((game: any, index: number) => (
                             <GameCard key={game.id || index} game={game} index={index} setSelectedEvent={setSelectedEvent} timeOffset={timeOffset} />
                         ))}

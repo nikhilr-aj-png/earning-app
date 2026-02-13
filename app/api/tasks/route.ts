@@ -46,6 +46,7 @@ export async function GET(request: Request) {
             ...task,
             is_completed: !!completion,
             is_locked: isLocked,
+            is_premium: task.target_audience === 'premium',
             earned_amount: completion?.amount || 0
         };
     });

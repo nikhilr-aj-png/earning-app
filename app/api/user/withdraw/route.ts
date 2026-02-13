@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
@@ -9,10 +9,10 @@ export async function POST(req: Request) {
         const { flowAmount } = await req.json();
 
         if (!flowAmount || flowAmount < 5000) {
-            return NextResponse.json({ error: 'Minimum withdrawal is 5,000 FLOW' }, { status: 400 });
+            return NextResponse.json({ error: 'Minimum withdrawal is 5,000 FLOW (₹500)' }, { status: 400 });
         }
 
-        // 1. Check User Balance
+        // 1. Check User Balance (READ: Allowed for public/user)
         const { data: user, error: userError } = await supabaseMain
             .from('profiles')
             .select('coins')
@@ -25,16 +25,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Insufficient FLOW balance' }, { status: 400 });
         }
 
-        // 2. Deduct coins (negative amount)
-        const { error: updateError } = await supabaseMain.rpc('increment_user_coins', {
+        // 2. Deduct coins (WRITE: Use Admin to bypass RLS)
+        const { error: updateError } = await supabaseAdmin.rpc('increment_user_coins', {
             u_id: userId,
             amount: -flowAmount
         });
 
         if (updateError) throw updateError;
 
-        // 3. Log Transaction
-        const { error: txError } = await supabaseMain.from('transactions').insert({
+        // 3. Log Transaction (WRITE: Use Admin to bypass RLS)
+        const { error: txError } = await supabaseAdmin.from('transactions').insert({
             user_id: userId,
             amount: -flowAmount,
             type: 'withdraw',

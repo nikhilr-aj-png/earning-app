@@ -10,6 +10,7 @@ export interface Transaction {
     amount: number;
     type: 'earn' | 'game_win' | 'game_loss' | 'withdraw' | 'bonus' | 'deposit' | 'premium_upgrade';
     description: string;
+    status?: string;
     created_at: string;
 }
 
@@ -218,19 +219,19 @@ export default function WalletPage() {
             </div>
 
             {/* UPI ID SECTION */}
-            <div className="glass-panel" style={{ width: '75%', margin: '0 auto 24px', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--glass-border)' }}>
-                <div className="flex-center" style={{ gap: '12px' }}>
-                    <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}>
-                        <Zap size={18} color="var(--gold)" fill="var(--gold)" />
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', margin: '0 auto 24px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', flexShrink: 0 }}>
+                        <Zap size={20} color="var(--gold)" fill="var(--gold)" />
                     </div>
-                    <div>
-                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px' }}>LINKED UPI ID</p>
-                        <p style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '800', letterSpacing: '0.05em' }}>
+                    <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px', marginBottom: '2px' }}>LINKED UPI ID</p>
+                        <p style={{ fontSize: '0.85rem', color: '#fff', fontWeight: '700', letterSpacing: '0.5px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                             {userProfile?.upi_id || 'NOT LINKED'}
                         </p>
                         {userProfile?.new_upi_id && (
-                            <p style={{ fontSize: '0.6rem', color: 'var(--gold)', fontWeight: '800', marginTop: '4px' }}>
-                                CHANGE REQUEST PENDING: {userProfile.new_upi_id}
+                            <p style={{ fontSize: '0.55rem', color: 'var(--gold)', fontWeight: '800', marginTop: '2px' }}>
+                                PENDING: {userProfile.new_upi_id}
                             </p>
                         )}
                     </div>
@@ -240,14 +241,16 @@ export default function WalletPage() {
                     disabled={!!userProfile?.new_upi_id}
                     className="btn-secondary"
                     style={{
-                        padding: '8px 16px', fontSize: '0.7rem', height: 'auto',
-                        background: userProfile?.new_upi_id ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
+                        padding: '8px 14px', fontSize: '0.65rem', height: 'auto',
+                        background: userProfile?.new_upi_id ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.08)',
                         opacity: userProfile?.new_upi_id ? 0.5 : 1,
                         cursor: userProfile?.new_upi_id ? 'not-allowed' : 'pointer',
-                        border: userProfile?.new_upi_id ? '1px solid #333' : '1px solid var(--glass-border)'
+                        border: userProfile?.new_upi_id ? '1px solid #333' : '1px solid rgba(255,255,255,0.1)',
+                        fontWeight: '800', letterSpacing: '1px',
+                        whiteSpace: 'nowrap', flexShrink: 0, borderRadius: '8px'
                     }}
                 >
-                    {userProfile?.new_upi_id ? 'PENDING APPROVAL' : (userProfile?.upi_id ? 'CHANGE' : 'LINK NOW')}
+                    {userProfile?.new_upi_id ? 'WAITING' : (userProfile?.upi_id ? 'CHANGE' : 'LINK')}
                 </button>
             </div>
 
@@ -278,16 +281,18 @@ export default function WalletPage() {
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '6px', marginBottom: '12px' }}>
                         LIQUIDITY RESERVE
                     </p>
-                    <div className="flex-center" style={{ gap: '16px' }}>
-                        <div style={{ textAlign: 'right' }}>
-                            <h2 style={{ fontSize: '4rem', fontWeight: '950', color: '#fff', letterSpacing: '-4px', lineHeight: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <h2 style={{ fontSize: '3.5rem', fontWeight: '950', color: '#fff', letterSpacing: '4px', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                                 {(user?.coins || 0).toLocaleString()}
                             </h2>
-                            <p style={{ fontSize: '1.2rem', fontWeight: '950', color: 'var(--emerald)', letterSpacing: '1px', marginTop: '4px' }}>
+                            <span style={{ fontSize: '1rem', fontWeight: '950', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px' }}>FLOW</span>
+                        </div>
+                        <div style={{ padding: '6px 16px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '20px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <p style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--emerald)', letterSpacing: '0.5px' }}>
                                 ≈ ₹{((user?.coins || 0) / 10).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
-                        <span style={{ color: 'var(--primary)', fontWeight: '950', fontSize: '1.25rem', marginTop: '12px', letterSpacing: '4px' }}>FLOW</span>
                     </div>
                 </div>
                 {/* Visual Depth */}
@@ -315,110 +320,7 @@ export default function WalletPage() {
                 </button>
             </div>
 
-            {/* PREMIUM UPGRADE SECTION */}
-            {!user?.is_premium && (
-                <div className="glass-panel responsive-width" style={{
-                    margin: '0 auto 48px',
-                    padding: '32px',
-                    background: 'linear-gradient(135deg, #FFD700 0%, #B8860B 100%)', // Gold Gradient
-                    border: '1px solid #FFD700',
-                    color: '#000',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <div style={{ position: 'relative', zIndex: 2 }}>
-                        <div className="flex-between" style={{ alignItems: 'flex-start', marginBottom: '20px' }}>
-                            <div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: '950', letterSpacing: '-1px', color: '#000', marginBottom: '8px' }}>
-                                    ELITE STATUS
-                                </h3>
-                                <p style={{ fontSize: '0.85rem', fontWeight: '800', opacity: 0.8 }}>
-                                    UNLOCK THE FULL POTENTIAL
-                                </p>
-                            </div>
-                            <div style={{
-                                background: '#000', color: '#FFD700',
-                                padding: '8px 16px', borderRadius: '12px',
-                                fontWeight: '900', fontSize: '1.2rem'
-                            }}>
-                                ₹99 <span style={{ fontSize: '0.6rem' }}>/ MO</span>
-                            </div>
-                        </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                            <div className="flex-center" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px', borderRadius: '8px', gap: '8px' }}>
-                                <Zap size={18} /> <span style={{ fontWeight: '800', fontSize: '0.75rem' }}>AD-FREE EXPRIENCE</span>
-                            </div>
-                            <div className="flex-center" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px', borderRadius: '8px', gap: '8px' }}>
-                                <Users size={18} /> <span style={{ fontWeight: '800', fontSize: '0.75rem' }}>2X REFERRAL BONUS</span>
-                            </div>
-                            <div className="flex-center" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px', borderRadius: '8px', gap: '8px' }}>
-                                <CheckCircle2 size={18} /> <span style={{ fontWeight: '800', fontSize: '0.75rem' }}>PRIORITY SUPPORT</span>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={async () => {
-                                if (!user) return;
-                                setIsProcessing(true);
-                                try {
-                                    showToast("INITIATING ELITE UPGRADE...", "info");
-                                    const orderRes = await fetch("/api/payment/create-order", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ userId: user.id, amount: 99, type: 'premium' })
-                                    });
-                                    const orderData = await orderRes.json();
-                                    if (!orderRes.ok) throw new Error(orderData.error);
-
-                                    const options = {
-                                        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-                                        amount: orderData.amount,
-                                        currency: "INR",
-                                        name: "EarnFlow ELITE",
-                                        description: "Upgrade to Premium Status",
-                                        order_id: orderData.id,
-                                        handler: async (response: any) => {
-                                            showToast("VERIFYING UPGRADE...", "info");
-                                            const verifyRes = await fetch("/api/payment/verify", {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({
-                                                    razorpay_order_id: response.razorpay_order_id,
-                                                    razorpay_payment_id: response.razorpay_payment_id,
-                                                    razorpay_signature: response.razorpay_signature,
-                                                    userId: user.id,
-                                                    type: 'premium',
-                                                    amount: 99
-                                                })
-                                            });
-                                            if (verifyRes.ok) {
-                                                showToast("WELCOME TO ELITE.", "success");
-                                                refreshUser();
-                                            } else {
-                                                showToast("UPGRADE FAILED", "error");
-                                            }
-                                        },
-                                        prefill: { name: user.name, email: user.email },
-                                        theme: { color: "#FFD700" }
-                                    };
-                                    const rzp = new (window as any).Razorpay(options);
-                                    rzp.open();
-                                } catch (err: any) {
-                                    showToast(err.message, "error");
-                                } finally {
-                                    setIsProcessing(false);
-                                }
-                            }}
-                            className="btn"
-                            disabled={isProcessing}
-                            style={{ background: '#000', color: '#FFD700', border: 'none', width: '100%' }}
-                        >
-                            {isProcessing ? 'PROCESSING...' : 'ACTIVATE ELITE STATUS'}
-                        </button>
-                    </div>
-                </div>
-            )}
 
             {/* Transaction Ledger */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -430,13 +332,13 @@ export default function WalletPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {transactions.filter(tx => tx.type === 'deposit' || tx.type === 'withdraw').length === 0 ? (
+                    {transactions.filter(tx => ['deposit', 'withdraw', 'premium_upgrade'].includes(tx.type)).length === 0 ? (
                         <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', border: '1px solid #222', borderRadius: '4px' }}>
                             <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT OPERATIONS DETECTED.</p>
                         </div>
                     ) : (
                         transactions
-                            .filter(tx => tx.type === 'deposit' || tx.type === 'withdraw')
+                            .filter(tx => ['deposit', 'withdraw', 'premium_upgrade'].includes(tx.type))
                             .map((tx: Transaction) => (
                                 <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)' }}>
                                     <div className="flex-center" style={{ gap: '20px' }}>
@@ -450,7 +352,18 @@ export default function WalletPage() {
                                             {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={2} /> : <ArrowUpRight size={20} strokeWidth={2} />}
                                         </div>
                                         <div>
-                                            <h4 style={{ fontSize: '0.85rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '1px', color: '#fff' }}>{tx.description.toUpperCase()}</h4>
+                                            <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '4px' }}>
+                                                <h4 style={{ fontSize: '0.85rem', fontWeight: '900', letterSpacing: '1px', color: '#fff', margin: 0 }}>{tx.description.toUpperCase()}</h4>
+                                                {tx.status && (
+                                                    <span style={{
+                                                        fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px',
+                                                        background: tx.status === 'completed' ? 'var(--emerald)' : tx.status === 'rejected' ? 'var(--red)' : 'var(--gold)',
+                                                        color: '#000', fontWeight: '800', letterSpacing: '0.5px'
+                                                    }}>
+                                                        {tx.status.toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.created_at)}</p>
                                         </div>
                                     </div>

@@ -28,16 +28,39 @@ export default function ProfilePage() {
         if (!user) return;
         setIsProcessing(true);
         try {
+            // Check internet/network
+            if (!navigator.onLine) {
+                throw new Error("No Internet Connection");
+            }
+
+            // Check if Razorpay is loaded
+            if (typeof (window as any).Razorpay === 'undefined') {
+                console.error("Razorpay SDK missing");
+                throw new Error("Razorpay SDK not loaded. Check connection.");
+            }
+
             showToast("INITIATING SECURE PROTOCOL...", "info");
 
             // 1. Create Razorpay Order
+            console.log("Creating order...");
             const orderRes = await fetch("/api/payment/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id, amount: 99, type: 'premium' }) // Fixed at ₹99
+                body: JSON.stringify({ userId: user.id, amount: 99, type: 'premium' })
             });
+
+            const contentType = orderRes.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await orderRes.text();
+                console.error("API Error (Non-JSON):", text);
+                throw new Error("Server Error: Invalid API Response");
+            }
+
             const orderData = await orderRes.json();
-            if (!orderRes.ok) throw new Error(orderData.error);
+            if (!orderRes.ok) {
+                console.error("Order API Error:", orderData);
+                throw new Error(orderData.error || "Order Creation Failed");
+            }
 
             // 2. Launch Razorpay Checkout
             const options = {
@@ -113,9 +136,23 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
-                <h1 style={{ fontSize: '3rem', fontWeight: '950', letterSpacing: '-4px', marginBottom: '12px', color: '#fff' }}>{user.name?.toUpperCase()}</h1>
+                <h1 style={{
+                    fontSize: '2.4rem',
+                    fontWeight: '800',
+                    letterSpacing: '1px',
+                    marginBottom: '12px',
+                    color: '#fff',
+                    textTransform: 'uppercase',
+                    textShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    background: 'linear-gradient(to right, #ffffff, #e2e8f0)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    display: 'inline-block'
+                }}>
+                    {user.name}
+                </h1>
                 <div className="flex-center" style={{ gap: '16px' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '950', letterSpacing: '6px' }}>EXECUTIVE PROTOCOL</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '4px' }}>EXECUTIVE PROTOCOL</span>
                     {user.is_premium ? (
                         <span className="badge-gold" style={{ fontSize: '0.6rem', fontWeight: '950', padding: '6px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Crown size={12} fill="currentColor" /> PREMIUM
