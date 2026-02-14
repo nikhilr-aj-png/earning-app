@@ -347,25 +347,31 @@ export default function WalletPage() {
                         transactions
                             .filter(tx => ['deposit', 'withdraw', 'premium_upgrade'].includes(tx.type))
                             .map((tx: Transaction) => (
-                                <div key={tx.id} className="glass-panel flex-between" style={{ padding: '24px', borderRadius: '4px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)' }}>
-                                    <div className="flex-center" style={{ gap: '20px' }}>
+                                <div key={tx.id} className="glass-panel flex-between" style={{ padding: '16px 20px', borderRadius: '12px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)', gap: '12px', alignItems: 'center' }}>
+                                    <div className="flex-center" style={{ gap: '16px', flex: 1, minWidth: 0, justifyContent: 'flex-start' }}>
                                         <div style={{
                                             padding: '12px', borderRadius: '8px',
                                             background: tx.amount > 0 ? 'var(--emerald-glow)' : 'var(--glass-bg)',
                                             border: tx.amount > 0 ? '1px solid var(--emerald)' : '1px solid var(--glass-border)',
                                             color: tx.amount > 0 ? 'var(--emerald)' : '#fff',
-                                            boxShadow: tx.amount > 0 ? '0 0 15px rgba(16, 185, 129, 0.1)' : 'none'
+                                            boxShadow: tx.amount > 0 ? '0 0 15px rgba(16, 185, 129, 0.1)' : 'none',
+                                            flexShrink: 0
                                         }}>
                                             {tx.amount > 0 ? <ArrowDownLeft size={20} strokeWidth={2} /> : <ArrowUpRight size={20} strokeWidth={2} />}
                                         </div>
-                                        <div>
-                                            <div className="flex-center" style={{ justifyContent: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                                                <h4 style={{ fontSize: '0.85rem', fontWeight: '900', letterSpacing: '1px', color: '#fff', margin: 0 }}>{tx.description.toUpperCase()}</h4>
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
+                                                <h4 style={{
+                                                    fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.5px', color: '#fff',
+                                                    margin: 0, overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: '1.2'
+                                                }}>
+                                                    {tx.description.toUpperCase()}
+                                                </h4>
                                                 {tx.status && (
                                                     <span style={{
                                                         fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px',
                                                         background: tx.status === 'completed' ? 'var(--emerald)' : tx.status === 'rejected' ? 'var(--red)' : 'var(--gold)',
-                                                        color: '#000', fontWeight: '800', letterSpacing: '0.5px'
+                                                        color: '#000', fontWeight: '800', letterSpacing: '0.5px', flexShrink: 0
                                                     }}>
                                                         {tx.status.toUpperCase()}
                                                     </span>
@@ -374,10 +380,10 @@ export default function WalletPage() {
                                             <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px' }}>{formatDate(tx.created_at)}</p>
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
+                                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
                                         <span style={{
-                                            fontSize: '1.25rem', fontWeight: '950',
-                                            color: tx.amount > 0 ? 'var(--emerald)' : '#fff', letterSpacing: '-1px'
+                                            fontSize: '1.1rem', fontWeight: '950',
+                                            color: tx.amount > 0 ? 'var(--emerald)' : '#fff', letterSpacing: '-0.5px'
                                         }}>
                                             {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
                                         </span>
@@ -447,117 +453,121 @@ export default function WalletPage() {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
             {/* WITHDRAW FLOW Modal */}
-            {showWithdrawModal && (
-                <div className="modal-overlay" style={{ display: 'flex' }}>
-                    <div className="glass-panel animate-slide-up" style={{
-                        width: '95%', maxWidth: '500px', padding: '24px',
-                        maxHeight: '85vh', overflowY: 'auto',
-                        border: '2px solid var(--primary)', background: '#000',
-                        position: 'relative', borderRadius: '24px'
-                    }}>
-                        <button
-                            onClick={() => setShowWithdrawModal(false)}
-                            style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
-                        >
-                            <X size={24} />
-                        </button>
+            {
+                showWithdrawModal && (
+                    <div className="modal-overlay" style={{ display: 'flex' }}>
+                        <div className="glass-panel animate-slide-up" style={{
+                            width: '95%', maxWidth: '500px', padding: '24px',
+                            maxHeight: '85vh', overflowY: 'auto',
+                            border: '2px solid var(--primary)', background: '#000',
+                            position: 'relative', borderRadius: '24px'
+                        }}>
+                            <button
+                                onClick={() => setShowWithdrawModal(false)}
+                                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
+                            >
+                                <X size={24} />
+                            </button>
 
-                        <div className="flex-center" style={{ gap: '16px', marginBottom: '32px' }}>
-                            <ArrowUpRight size={32} color="var(--primary)" />
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '4px' }}>WITHDRAW FLOW</h2>
-                        </div>
-
-                        <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1px', marginBottom: '24px', textAlign: 'center' }}>
-                            SELECT WITHDRAWAL TIER
-                        </p>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                            {[5000, 10000, 25000, 50000].map((flowAmt) => (
-                                <button
-                                    key={flowAmt}
-                                    onClick={() => handleWithdraw(flowAmt)}
-                                    disabled={isProcessing}
-                                    style={{
-                                        width: '100%', padding: '20px', background: 'rgba(255,255,255,0.02)',
-                                        border: '1px solid #222', borderRadius: '12px', display: 'flex',
-                                        justifyContent: 'space-between', alignItems: 'center', transition: '0.3s',
-                                        opacity: isProcessing ? 0.5 : 1
-                                    }}
-                                    className="buy-option-hover"
-                                >
-                                    <div style={{ textAlign: 'left' }}>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', display: 'block' }}>{flowAmt.toLocaleString()} FLOW</span>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800' }}>CASHOUT READY</span>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{ fontSize: '1.25rem', fontWeight: '950', color: 'var(--primary)' }}>₹{flowAmt / 10}</span>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', opacity: 0.6, justifyContent: 'center' }}>
-                            <Shield size={16} color="var(--primary)" />
-                            <p style={{ fontSize: '0.55rem', fontWeight: '900', letterSpacing: '1px' }}>MINIMUM PAYOUT: 5,000 FLOW</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* UPI MODAL */}
-            {showUpiModal && (
-                <div className="modal-overlay" style={{ display: 'flex' }}>
-                    <div className="glass-panel animate-slide-up" style={{
-                        width: '95%', maxWidth: '400px', padding: '32px',
-                        border: '1px solid var(--gold)', background: '#000',
-                        position: 'relative', borderRadius: '24px', textAlign: 'center'
-                    }}>
-                        <button
-                            onClick={() => setShowUpiModal(false)}
-                            style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <div className="flex-center" style={{ marginBottom: '24px', flexDirection: 'column', gap: '16px' }}>
-                            <div style={{ padding: '16px', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '50%', border: '1px solid var(--gold)' }}>
-                                <Zap size={32} color="var(--gold)" />
+                            <div className="flex-center" style={{ gap: '16px', marginBottom: '32px' }}>
+                                <ArrowUpRight size={32} color="var(--primary)" />
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '4px' }}>WITHDRAW FLOW</h2>
                             </div>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '2px' }}>
-                                {userProfile?.upi_id ? 'REQUEST UPI CHANGE' : 'LINK UPI ID'}
-                            </h2>
+
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1px', marginBottom: '24px', textAlign: 'center' }}>
+                                SELECT WITHDRAWAL TIER
+                            </p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                                {[5000, 10000, 25000, 50000].map((flowAmt) => (
+                                    <button
+                                        key={flowAmt}
+                                        onClick={() => handleWithdraw(flowAmt)}
+                                        disabled={isProcessing}
+                                        style={{
+                                            width: '100%', padding: '20px', background: 'rgba(255,255,255,0.02)',
+                                            border: '1px solid #222', borderRadius: '12px', display: 'flex',
+                                            justifyContent: 'space-between', alignItems: 'center', transition: '0.3s',
+                                            opacity: isProcessing ? 0.5 : 1
+                                        }}
+                                        className="buy-option-hover"
+                                    >
+                                        <div style={{ textAlign: 'left' }}>
+                                            <span style={{ fontSize: '1.1rem', fontWeight: '950', color: '#fff', display: 'block' }}>{flowAmt.toLocaleString()} FLOW</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800' }}>CASHOUT READY</span>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '1.25rem', fontWeight: '950', color: 'var(--primary)' }}>₹{flowAmt / 10}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', opacity: 0.6, justifyContent: 'center' }}>
+                                <Shield size={16} color="var(--primary)" />
+                                <p style={{ fontSize: '0.55rem', fontWeight: '900', letterSpacing: '1px' }}>MINIMUM PAYOUT: 5,000 FLOW</p>
+                            </div>
                         </div>
-
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '24px', lineHeight: 1.6 }}>
-                            {userProfile?.upi_id
-                                ? "Changing your UPI ID requires Admin Approval. This process may take up to 24-48 hours."
-                                : "Link your UPI ID for instant withdrawals. Once linked, it can only be changed with approval."}
-                        </p>
-
-                        <input
-                            type="text"
-                            placeholder="example@upi"
-                            value={upiInput}
-                            onChange={(e) => setUpiInput(e.target.value)}
-                            style={{
-                                width: '100%', padding: '16px', borderRadius: '12px',
-                                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
-                                color: '#fff', fontSize: '1rem', textAlign: 'center', marginBottom: '24px', fontWeight: '800'
-                            }}
-                        />
-
-                        <button
-                            onClick={handleUpiUpdate}
-                            disabled={isProcessing || !upiInput}
-                            className="btn"
-                            style={{ width: '100%', padding: '16px', background: 'var(--gold)', color: '#000', fontWeight: '950', letterSpacing: '1px' }}
-                        >
-                            {isProcessing ? 'PROCESSING...' : userProfile?.upi_id ? 'SUBMIT REQUEST' : 'LINK INSTANTLY'}
-                        </button>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+            {/* UPI MODAL */}
+            {
+                showUpiModal && (
+                    <div className="modal-overlay" style={{ display: 'flex' }}>
+                        <div className="glass-panel animate-slide-up" style={{
+                            width: '95%', maxWidth: '400px', padding: '32px',
+                            border: '1px solid var(--gold)', background: '#000',
+                            position: 'relative', borderRadius: '24px', textAlign: 'center'
+                        }}>
+                            <button
+                                onClick={() => setShowUpiModal(false)}
+                                style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div className="flex-center" style={{ marginBottom: '24px', flexDirection: 'column', gap: '16px' }}>
+                                <div style={{ padding: '16px', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '50%', border: '1px solid var(--gold)' }}>
+                                    <Zap size={32} color="var(--gold)" />
+                                </div>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', letterSpacing: '2px' }}>
+                                    {userProfile?.upi_id ? 'REQUEST UPI CHANGE' : 'LINK UPI ID'}
+                                </h2>
+                            </div>
+
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '24px', lineHeight: 1.6 }}>
+                                {userProfile?.upi_id
+                                    ? "Changing your UPI ID requires Admin Approval. This process may take up to 24-48 hours."
+                                    : "Link your UPI ID for instant withdrawals. Once linked, it can only be changed with approval."}
+                            </p>
+
+                            <input
+                                type="text"
+                                placeholder="example@upi"
+                                value={upiInput}
+                                onChange={(e) => setUpiInput(e.target.value)}
+                                style={{
+                                    width: '100%', padding: '16px', borderRadius: '12px',
+                                    background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
+                                    color: '#fff', fontSize: '1rem', textAlign: 'center', marginBottom: '24px', fontWeight: '800'
+                                }}
+                            />
+
+                            <button
+                                onClick={handleUpiUpdate}
+                                disabled={isProcessing || !upiInput}
+                                className="btn"
+                                style={{ width: '100%', padding: '16px', background: 'var(--gold)', color: '#000', fontWeight: '950', letterSpacing: '1px' }}
+                            >
+                                {isProcessing ? 'PROCESSING...' : userProfile?.upi_id ? 'SUBMIT REQUEST' : 'LINK INSTANTLY'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+        </div >
     );
 }

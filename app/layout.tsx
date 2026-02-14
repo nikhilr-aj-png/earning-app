@@ -6,6 +6,7 @@ import ClientProviders from "./ClientProviders";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import MonetagAds from "@/components/MonetagAds";
+import AdBlockDetector from "@/components/AdBlockDetector";
 
 const inter = Inter({
     variable: "--font-inter",
@@ -64,6 +65,7 @@ export default function RootLayout({
                         <Footer />
                         <BottomNav />
                         <MonetagAds />
+                        <AdBlockDetector />
                     </div>
                 </ClientProviders>
             </body>
