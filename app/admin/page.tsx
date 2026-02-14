@@ -50,6 +50,7 @@ function AdminPage() {
     const [isPruningPredictions, setIsPruningPredictions] = useState(false);
     const [isPruningTransactions, setIsPruningTransactions] = useState(false);
     const [isPruningActivities, setIsPruningActivities] = useState(false);
+    const [globalMessage, setGlobalMessage] = useState('');
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -172,6 +173,12 @@ function AdminPage() {
         },
         enabled: !!user
     });
+
+    useEffect(() => {
+        if (systemSettings?.global_message && !globalMessage) {
+            setGlobalMessage(systemSettings.global_message);
+        }
+    }, [systemSettings, globalMessage]);
 
     const updateSystemSettingsMutation = useMutation({
         mutationFn: async (updates: any) => {
@@ -1522,6 +1529,44 @@ function AdminPage() {
             {
                 view === 'systems' && (
                     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+                        {/* GLOBAL MESSAGE CONTROL */}
+                        <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--sapphire)', background: 'rgba(59, 130, 246, 0.05)' }}>
+                            <div className="flex-between" style={{ marginBottom: '24px' }}>
+                                <h3 style={{ fontSize: '1rem', fontWeight: '950', color: 'var(--sapphire)', letterSpacing: '2px' }}>GLOBAL MESSAGE PROTOCOL</h3>
+                                <div style={{ padding: '4px 12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                    <span style={{ fontSize: '0.6rem', color: 'var(--sapphire)', fontWeight: '950' }}>SMS HUB BROADCAST</span>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', lineHeight: '1.6' }}>
+                                    This message will be displayed in the **SMS HUB** of every user's profile. Use this for system-wide announcements, maintenance alerts, or special reward notices.
+                                </p>
+                                <textarea
+                                    value={globalMessage}
+                                    onChange={(e) => setGlobalMessage(e.target.value)}
+                                    placeholder="Enter global broadcast message..."
+                                    style={{
+                                        width: '100%', minHeight: '100px', background: 'rgba(0,0,0,0.3)', border: '1px solid #333',
+                                        borderRadius: '8px', padding: '16px', color: '#fff', fontSize: '0.85rem', fontWeight: '500',
+                                        fontFamily: 'inherit', resize: 'vertical'
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        updateSystemSettingsMutation.mutate({ global_message: globalMessage });
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        alignSelf: 'flex-start', padding: '12px 32px', background: 'var(--sapphire)', color: '#fff',
+                                        border: 'none', borderRadius: '8px', fontWeight: '950', fontSize: '0.75rem', letterSpacing: '1px'
+                                    }}
+                                >
+                                    BROADCAST MESSAGE
+                                </button>
+                            </div>
+                        </div>
 
                         {/* GLOBAL CONTROLS */}
                         <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--gold)', background: 'rgba(234, 179, 8, 0.05)' }}>

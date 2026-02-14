@@ -346,6 +346,7 @@ export default function WalletPage() {
                     ) : (
                         transactions
                             .filter(tx => ['deposit', 'withdraw', 'premium_upgrade', 'referral', 'earn', 'bonus'].includes(tx.type))
+                            .slice(0, 12)
                             .map((tx: Transaction) => (
                                 <div key={tx.id} className="glass-panel flex-between" style={{ padding: '16px 20px', borderRadius: '12px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)', gap: '12px', alignItems: 'center' }}>
                                     <div className="flex-center" style={{ gap: '16px', flex: 1, minWidth: 0, justifyContent: 'flex-start' }}>
@@ -365,7 +366,7 @@ export default function WalletPage() {
                                                     fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.5px', color: '#fff',
                                                     margin: 0, overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: '1.2'
                                                 }}>
-                                                    {tx.description.includes(']') ? tx.description.split(']')[1].trim().toUpperCase() : tx.description.toUpperCase()}
+                                                    {(tx.description.includes(']') ? tx.description.split(']')[1].trim() : tx.description) || tx.type.replace('_', ' ')}
                                                 </h4>
                                                 {tx.status && (
                                                     <span style={{

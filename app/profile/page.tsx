@@ -4,7 +4,8 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
-import { User, Mail, Shield, Copy, LogOut, ChevronRight, Zap, Users, TrendingUp, Crown, Star } from "lucide-react";
+import { User, Mail, Shield, Copy, LogOut, ChevronRight, Zap, Users, TrendingUp, Crown, Star, MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/context/ToastContext";
 import Link from "next/link";
 
@@ -12,6 +13,15 @@ export default function ProfilePage() {
     const { user, logout, refreshUser } = useUser();
     const { showToast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Fetch Global Message / System Settings
+    const { data: systemSettings, isLoading: systemSettingsLoading } = useQuery({
+        queryKey: ['system-config'],
+        queryFn: async () => {
+            const res = await fetch('/api/system/config');
+            return res.json();
+        }
+    });
 
     useEffect(() => {
         refreshUser();
@@ -163,6 +173,30 @@ export default function ProfilePage() {
                         </span>
                     )}
                 </div>
+            </div>
+
+            {/* SMS HUB - Message Center */}
+            <div className="glass-panel" style={{ padding: '32px', border: '1px solid var(--sapphire)', borderRadius: '12px', marginBottom: '24px', background: 'rgba(59, 130, 246, 0.05)', position: 'relative', overflow: 'hidden' }}>
+                <div className="flex-between" style={{ marginBottom: '20px', position: 'relative', zIndex: 2 }}>
+                    <div className="flex-center" style={{ gap: '12px' }}>
+                        <div style={{ padding: '10px', borderRadius: '100px', background: 'var(--sapphire-glow)', boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)' }}>
+                            <MessageSquare size={18} color="var(--sapphire)" strokeWidth={2.5} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: '950', letterSpacing: '2px' }}>SMS HUB</span>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--sapphire)', fontWeight: '900', letterSpacing: '1px' }}>SYSTEM DECRYPTED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                    <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "0.85rem", lineHeight: "1.7", fontWeight: '600', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '4px solid var(--sapphire)' }}>
+                        {systemSettingsLoading ? 'DECRYPTING BROADCAST...' : (systemSettings?.global_message || 'NO NEW SYSTEM NOTICES. ALL SYSTEMS NOMINAL.')}
+                    </p>
+                </div>
+
+                {/* Background Visual Decoration */}
+                <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '120px', height: '120px', background: 'var(--sapphire)', filter: 'blur(80px)', opacity: 0.1 }} />
             </div>
 
             {/* Account Information - High Fidelity */}

@@ -29,7 +29,7 @@ export default function SupportPage() {
                         <div>
                             <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>NEED QUICK HELP?</h3>
                             <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                                If you are facing payment issues or login problems, use our **Live Chat** option below for faster resolution. Our support team is online 24/7.
+                                If you are facing payment issues or login problems, contact our support team via email for resolution. Our team responds to all queries within 24 hours.
                             </p>
                         </div>
                     </div>
@@ -42,21 +42,11 @@ export default function SupportPage() {
                         </div>
                         <h3 style={{ fontSize: "0.85rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "8px" }}>EMAIL SUPPORT</h3>
                         <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: "32px", lineHeight: '1.6' }}>For account recovery and payment queries.</p>
-                        <a href="mailto:support@earnflow.com" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: "#fff", fontSize: "1rem", fontWeight: "800", textDecoration: "none" }}>
-                            support@earnflow.com <ExternalLink size={16} color="var(--primary)" />
+                        <a href="mailto:earnflow.user@gmail.com" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: "#fff", fontSize: "1rem", fontWeight: "800", textDecoration: "none" }}>
+                            earnflow.user@gmail.com <ExternalLink size={16} color="var(--primary)" />
                         </a>
                     </div>
 
-                    <div className="glass-panel" style={{ padding: "40px", border: "1px solid #222", borderRadius: "24px", background: 'rgba(34, 197, 94, 0.05)' }}>
-                        <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', width: 'fit-content', borderRadius: '12px', marginBottom: '24px' }}>
-                            <Zap size={24} color="var(--emerald)" strokeWidth={1.5} />
-                        </div>
-                        <h3 style={{ fontSize: "0.85rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "8px" }}>LIVE CHAT</h3>
-                        <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginBottom: "32px", lineHeight: '1.6' }}>Talk to our support agent instantly.</p>
-                        <button className="btn" style={{ background: 'var(--grad-emerald)', border: 'none', color: '#fff', padding: '12px 24px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '900' }}>
-                            START CHAT <ChevronLeft size={16} style={{ rotate: '180deg' }} />
-                        </button>
-                    </div>
                 </div>
 
                 <section>
