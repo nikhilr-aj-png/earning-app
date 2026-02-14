@@ -195,7 +195,9 @@ export default function Dashboard() {
                                         }}>
                                             {tx.description.includes('Result:')
                                                 ? tx.description.split('|')[1]?.trim() || tx.description.split(']')[1]?.trim()
-                                                : tx.type === 'earn' ? 'MISSION SUCCESS' : tx.description.split(']')[1]?.trim() || tx.type.toUpperCase()}
+                                                : tx.description.includes('WELCOME BONUS') ? 'WELCOME BONUS'
+                                                    : tx.description.includes('[REFERRAL]') ? (tx.description.split(']')[1]?.trim() || 'REFERRAL SUCCESS')
+                                                        : tx.type === 'earn' ? 'TASK COMPLETED' : tx.description.split(']')[1]?.trim() || tx.type.toUpperCase()}
                                         </div>
                                         <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', fontWeight: '700', textTransform: 'uppercase' }}>
                                             {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {tx.type}

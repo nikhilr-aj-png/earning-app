@@ -1773,6 +1773,19 @@ function AdminPage() {
 }
 
 function UserCard({ user, onEdit, isAdmin }: { user: any, onEdit: (u: any) => void, isAdmin?: boolean }) {
+    const isOnline = user.last_seen && (new Date().getTime() - new Date(user.last_seen).getTime() < 5 * 60 * 1000);
+
+    const getRelativeTime = (date: string) => {
+        if (!date) return 'NEVER';
+        const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+        if (seconds < 60) return 'JUST NOW';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}M AGO`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}H AGO`;
+        return new Date(date).toLocaleDateString();
+    };
+
     return (
         <div className="glass-panel flex-between" style={{
             padding: '24px',
@@ -1782,11 +1795,30 @@ function UserCard({ user, onEdit, isAdmin }: { user: any, onEdit: (u: any) => vo
             opacity: user.is_blocked ? 0.7 : 1
         }}>
             <div>
-                <div className="flex-center" style={{ gap: '8px', justifyContent: 'flex-start' }}>
-                    <h4 style={{ fontSize: '0.85rem', fontWeight: '950', letterSpacing: '1px', color: isAdmin ? 'var(--gold)' : (user.is_blocked ? 'var(--error)' : '#fff') }}>
-                        {user.name.toUpperCase()}
-                    </h4>
+                <div className="flex-center" style={{ gap: '12px', justifyContent: 'flex-start' }}>
+                    <div style={{ position: 'relative' }}>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: '950', letterSpacing: '1px', color: isAdmin ? 'var(--gold)' : (user.is_blocked ? 'var(--error)' : '#fff') }}>
+                            {user.name.toUpperCase()}
+                        </h4>
+                        <div style={{
+                            position: 'absolute', top: '-2px', right: '-12px',
+                            width: '8px', height: '8px', borderRadius: '50%',
+                            background: isOnline ? 'var(--emerald)' : '#444',
+                            boxShadow: isOnline ? '0 0 10px var(--emerald)' : 'none',
+                            border: '1px solid #000'
+                        }} title={isOnline ? 'Online' : `Offline (Last seen: ${getRelativeTime(user.last_seen)})`} />
+                    </div>
                     {isAdmin && <ShieldAlert size={12} color="var(--gold)" />}
+                    {!isOnline && (
+                        <span style={{ fontSize: '0.55rem', color: 'var(--text-dim)', fontWeight: '900', letterSpacing: '1px', marginLeft: '12px' }}>
+                            LAST SEEN: {getRelativeTime(user.last_seen)}
+                        </span>
+                    )}
+                    {isOnline && (
+                        <span style={{ fontSize: '0.55rem', color: 'var(--emerald)', fontWeight: '950', letterSpacing: '1px', marginLeft: '12px' }}>
+                            ONLINE NOW
+                        </span>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline', marginTop: '4px' }}>
                     <p style={{ fontSize: '0.7rem', color: '#fff', fontWeight: '900', letterSpacing: '1px' }}>{user.coins.toLocaleString()} FLOW</p>

@@ -110,7 +110,7 @@ export default function Home() {
     setIsSubmitting(true);
     setError("");
     try {
-      await verifyOtp(email, otp);
+      await verifyOtp(email, otp, name, refCode);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);

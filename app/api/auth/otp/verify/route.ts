@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseMain } from '@/lib/supabase';
+import { supabaseMain, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
         const user = authData.user;
         if (!user) throw new Error("Verification failed");
 
-        // 2. Check/Upsert Profile (Handling Registration logic)
-        const { data: profile, error: pError } = await supabaseMain
+        // 2. Check/Upsert Profile (Using Admin to bypass RLS)
+        const { data: profile, error: pError } = await supabaseAdmin
             .from('profiles')
             .select('*')
             .eq('id', user.id)
@@ -34,15 +34,15 @@ export async function POST(req: Request) {
             const generatedReferralCode = 'EF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const generatedDisplayId = Math.floor(10000000 + Math.random() * 90000000).toString();
 
-            const { data: newProfile, error: insError } = await supabaseMain
+            const { data: newProfile, error: insError } = await supabaseAdmin
                 .from('profiles')
                 .insert({
                     id: user.id,
                     email: user.email,
-                    name: metadata.full_name || user.email?.split('@')[0],
+                    name: metadata.full_name || name || user.email?.split('@')[0],
                     display_id: generatedDisplayId,
                     referral_code: generatedReferralCode,
-                    referred_by: metadata.referral_code,
+                    referred_by: referralCode?.trim()?.toUpperCase() || metadata.referral_code,
                     coins: 100 // Welcome bonus
                 })
                 .select()
@@ -51,45 +51,106 @@ export async function POST(req: Request) {
             if (insError) throw insError;
             finalProfile = newProfile;
 
-            // Log welcome transaction for new user
-            await supabaseMain.from('transactions').insert({
+            // Log welcome transaction for new user (With fallback)
+            const txPayload = {
                 user_id: user.id,
                 amount: 100,
-                type: 'referral',
+                type: 'earn',
+                status: 'completed',
                 description: 'WELCOME BONUS'
-            });
+            };
 
-            // 3. Credit Referrer
-            const referralCodeUsed = metadata.referral_code;
-            if (referralCodeUsed) {
-                try {
-                    const { data: referrer, error: refError } = await supabaseMain
-                        .from('profiles')
-                        .select('id, coins, is_premium, name')
-                        .eq('referral_code', referralCodeUsed)
-                        .single();
+            const { error: txE } = await supabaseAdmin.from('transactions').insert(txPayload);
+            if (txE && txE.message.includes('status')) {
+                const { status, ...legacyPayload } = txPayload;
+                await supabaseAdmin.from('transactions').insert(legacyPayload);
+            }
+        } else {
+            // If profile exists, ensure referralCode is saved if it was missing
+            if (!finalProfile.referred_by && referralCode) {
+                const { data: updatedProfile } = await supabaseAdmin
+                    .from('profiles')
+                    .update({ referred_by: referralCode.trim().toUpperCase() })
+                    .eq('id', user.id)
+                    .select()
+                    .single();
+                if (updatedProfile) finalProfile = updatedProfile;
+            }
+        }
 
-                    if (referrer && !refError) {
-                        const rewardAmount = referrer.is_premium ? 100 : 50;
+        // 3. Credit Referrer (Robust Implementation with Diagnostics)
+        const codeFromProfile = finalProfile?.referred_by;
+        const codeFromReq = referralCode;
+        const effectiveCode = (codeFromProfile || codeFromReq)?.trim()?.toUpperCase();
 
-                        // Update referrer's coins
-                        await supabaseMain
-                            .from('profiles')
-                            .update({ coins: (referrer.coins || 0) + rewardAmount })
-                            .eq('id', referrer.id);
+        const referralDiagnostics: any = {
+            effectiveCode,
+            isIssued: finalProfile?.referral_reward_issued,
+            referrerFound: false,
+            error: null
+        };
 
-                        // Log transaction for referrer
-                        await supabaseMain.from('transactions').insert({
-                            user_id: referrer.id,
-                            amount: rewardAmount,
-                            type: 'referral',
-                            description: `REFERRAL BONUS | ONBOARDED: ${finalProfile.name}`
-                        });
+        if (effectiveCode && effectiveCode !== 'NULL' && !finalProfile?.referral_reward_issued) {
+            try {
+                const { data: referrer, error: refError } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, coins, is_premium, name')
+                    .eq('referral_code', effectiveCode)
+                    .single();
+
+                if (referrer && !refError) {
+                    const rewardAmount = referrer.is_premium ? 100 : 50;
+                    console.log(`[Referral Progress] Referrer: ${referrer.name} (${referrer.id}), Reward: ${rewardAmount}`);
+
+                    // A. Credit Referrer (Use RPC for robustness)
+                    const { error: updError } = await supabaseAdmin.rpc('increment_user_coins', {
+                        u_id: referrer.id,
+                        amount: rewardAmount
+                    });
+
+                    if (updError) console.error(`[Referral Error] Coin Update Failed:`, updError.message);
+
+                    // B. Log Transaction (With Fallback for missing status column)
+                    const txPayload = {
+                        user_id: referrer.id,
+                        amount: rewardAmount,
+                        type: 'earn',
+                        status: 'completed',
+                        description: `[REFERRAL] NEW ONBOARDING: ${finalProfile.name}`
+                    };
+
+                    let { error: txError } = await supabaseAdmin.from('transactions').insert(txPayload);
+
+                    // If it failed, try without 'status' column in case SQL wasn't applied
+                    if (txError && txError.message.includes('status')) {
+                        console.warn("[Referral] Status column missing, falling back to legacy insert");
+                        const { status, ...legacyPayload } = txPayload;
+                        legacyPayload.type = 'earn';
+                        const { error: legacyError } = await supabaseAdmin.from('transactions').insert(legacyPayload);
+                        txError = legacyError;
                     }
-                } catch (err) {
-                    console.error("Referral credit failed:", err);
-                    // Don't throw, we don't want to break signup if referral credit fails
+
+                    if (txError) referralDiagnostics.error = `Tx Insert: ${txError.message}`;
+                    else referralDiagnostics.txResult = 'Success';
+
+                    // C. Mark as Issued & Update Profile back-link
+                    const { error: markError } = await supabaseAdmin
+                        .from('profiles')
+                        .update({
+                            referral_reward_issued: true,
+                            referred_by: effectiveCode
+                        })
+                        .eq('id', finalProfile.id);
+
+                    if (markError) console.error(`[Referral Error] Issuance Marking Failed:`, markError.message);
+
+                    finalProfile.referral_reward_issued = true;
+                    console.log(`[Referral Success] Reward synced for ${finalProfile.id}`);
+                } else if (refError) {
+                    console.error(`[Referral Error] Lookup failed for ${effectiveCode}:`, refError.message);
                 }
+            } catch (err) {
+                console.error("[Referral Fatal]:", err);
             }
         }
 
@@ -100,9 +161,10 @@ export async function POST(req: Request) {
             name: finalProfile.name,
             coins: finalProfile.coins,
             is_admin: finalProfile.is_admin || false,
-            is_premium: finalProfile.is_premium || false,
-            premium_until: finalProfile.premium_until,
-            is_blocked: finalProfile.is_blocked || false
+            is_premium: finalProfile?.is_premium || false,
+            premium_until: finalProfile?.premium_until,
+            is_blocked: finalProfile?.is_blocked || false,
+            referral_debug: referralDiagnostics // Diagnostic data
         });
 
     } catch (error: any) {

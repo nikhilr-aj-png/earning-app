@@ -100,12 +100,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [showToast]);
 
-    const verifyOtp = useCallback(async (email: string, token: string) => {
+    const verifyOtp = useCallback(async (email: string, token: string, name?: string, referralCode?: string) => {
         try {
             const res = await fetch('/api/auth/otp/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, token }),
+                body: JSON.stringify({ email, token, name, referralCode }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);

@@ -8,7 +8,7 @@ export interface Transaction {
     id: string;
     user_id: string;
     amount: number;
-    type: 'earn' | 'game_win' | 'game_loss' | 'withdraw' | 'bonus' | 'deposit' | 'premium_upgrade';
+    type: 'earn' | 'game_win' | 'game_loss' | 'withdraw' | 'bonus' | 'deposit' | 'premium_upgrade' | 'referral';
     description: string;
     status?: string;
     created_at: string;
@@ -339,13 +339,13 @@ export default function WalletPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {transactions.filter(tx => ['deposit', 'withdraw', 'premium_upgrade'].includes(tx.type)).length === 0 ? (
+                    {transactions.filter(tx => ['deposit', 'withdraw', 'premium_upgrade', 'referral', 'earn', 'bonus'].includes(tx.type)).length === 0 ? (
                         <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', border: '1px solid #222', borderRadius: '4px' }}>
                             <p style={{ color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '2px' }}>NO RECENT OPERATIONS DETECTED.</p>
                         </div>
                     ) : (
                         transactions
-                            .filter(tx => ['deposit', 'withdraw', 'premium_upgrade'].includes(tx.type))
+                            .filter(tx => ['deposit', 'withdraw', 'premium_upgrade', 'referral', 'earn', 'bonus'].includes(tx.type))
                             .map((tx: Transaction) => (
                                 <div key={tx.id} className="glass-panel flex-between" style={{ padding: '16px 20px', borderRadius: '12px', border: '1px solid #111', background: 'rgba(0,0,0,0.3)', gap: '12px', alignItems: 'center' }}>
                                     <div className="flex-center" style={{ gap: '16px', flex: 1, minWidth: 0, justifyContent: 'flex-start' }}>
@@ -365,7 +365,7 @@ export default function WalletPage() {
                                                     fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.5px', color: '#fff',
                                                     margin: 0, overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: '1.2'
                                                 }}>
-                                                    {tx.description.toUpperCase()}
+                                                    {tx.description.includes(']') ? tx.description.split(']')[1].trim().toUpperCase() : tx.description.toUpperCase()}
                                                 </h4>
                                                 {tx.status && (
                                                     <span style={{

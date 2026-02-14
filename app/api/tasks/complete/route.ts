@@ -26,8 +26,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'MISSION EXPIRED: Rewards no longer available.' }, { status: 410 });
         }
 
-        // 2. Fetch User Profile
-        const { data: profile, error: profileError } = await supabaseMain
+        // 2. Fetch User Profile (Use Admin to bypass RLS)
+        const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('coins, is_premium, is_admin')
             .eq('id', userId)
@@ -62,19 +62,22 @@ export async function POST(request: Request) {
 
         const newBalance = (profile.coins || 0) + totalReward;
 
-        // 3. Record Transaction (Use supabaseAdmin to bypass RLS for rewards)
-        const { error: txError } = await supabaseAdmin
-            .from('transactions')
-            .insert([
-                {
-                    user_id: userId,
-                    amount: totalReward,
-                    type: 'earn',
-                    description: totalCount !== undefined
-                        ? `[CLAIMED:${taskId}] Result: ${correctCount}/${totalCount} | ${task.title}`
-                        : `[CLAIMED:${taskId}] | ${task.title}`
-                }
-            ]);
+        // 3. Record Transaction (With robust fallback for missing status column)
+        const txPayload = {
+            user_id: userId,
+            amount: totalReward,
+            type: 'earn',
+            status: 'completed',
+            description: `[CLAIMED:${taskId}] TASK COMPLETED`
+        };
+
+        let { error: txError } = await supabaseAdmin.from('transactions').insert([txPayload]);
+
+        if (txError && txError.message.includes('status')) {
+            const { status, ...legacyPayload } = txPayload;
+            const { error: legacyError } = await supabaseAdmin.from('transactions').insert([legacyPayload]);
+            txError = legacyError;
+        }
 
         if (txError) {
             console.error('Transaction Error:', txError);

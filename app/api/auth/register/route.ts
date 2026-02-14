@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         }
 
         const userId = authData.user.id;
-        const generatedReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const generatedReferralCode = 'EF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
         // 2. Create Profile in Project 1
         const { data: profile, error: profileError } = await supabaseMain
@@ -30,9 +30,9 @@ export async function POST(request: Request) {
                     id: userId,
                     email: email,
                     name: name,
-                    coins: referralCode ? 100 : 0,
+                    coins: 100,
                     referral_code: generatedReferralCode,
-                    referred_by: referralCode
+                    referred_by: referralCode?.trim()?.toUpperCase()
                 }
             ])
             .select()
